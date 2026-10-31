@@ -43,6 +43,8 @@
     <button class="btn small ghost" id="projDelete" title="移到回收站，可恢复">删除</button>
     <button class="btn small ghost" id="projTrashBtn" title="回收站">回收站</button>
     <span class="spacer"></span>
+    <button class="btn small ghost" id="btnClearHistory" title="只清列表，不删图片文件">清空历史</button>
+    <button class="btn small ghost" id="btnOpenOut" title="在资源管理器中打开输出目录">打开输出目录</button>
     <label class="check" style="font-size:12px"><input type="checkbox" id="projShowHidden" /> 显示隐藏</label>
   </div>
 
@@ -258,9 +260,6 @@
           <div class="bar"><div class="fill" id="progressFill"></div></div>
           <div class="muted mono" id="progressText">准备中…</div>
         </div>
-        <div class="spacer"></div>
-        <button class="btn ghost small" id="btnClearHistory">清空历史</button>
-        <button class="btn ghost small" id="btnOpenOut">打开输出目录</button>
       </div>
       <div class="results" id="results">
         <div class="empty" id="empty">
