@@ -645,7 +645,22 @@ body.mode-pro .simple-only { display: none !important; }
 /* 提示词效果行（#26）：风格 / 通配符 / 数组 / 内联 LoRA */
 .fx-row { display: flex; align-items: center; gap: 8px; margin-top: 6px; flex-wrap: wrap; }
 .fx-row select { width: auto; max-width: 220px; }
-.fx-hint { font-size: 11px; line-height: 1.5; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; flex: 1 1 160px; }
+.fx-hint { font-size: 11px; line-height: 1.5; margin-top: 5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* 提示词辅助器（卡片页） */
+.ph-card { width: 640px; }
+.ph-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.ph-tile {
+  display: flex; gap: 10px; align-items: flex-start; text-align: left;
+  padding: 12px; border: 1px solid var(--line); border-radius: 12px;
+  background: #0f1219; color: var(--text); cursor: pointer;
+}
+.ph-tile:hover:not(:disabled) { border-color: #3f4f78; background: #141a26; }
+.ph-tile:disabled { opacity: .42; cursor: not-allowed; }
+.ph-tile .ico { font-size: 20px; line-height: 1.1; flex: 0 0 auto; }
+.ph-tile .txt b { display: block; font-size: 13px; }
+.ph-tile .txt span { display: block; color: var(--muted); font-size: 11.5px; line-height: 1.45; margin-top: 3px; }
+.ph-sep { height: 1px; background: var(--line); }
 
 .stagebar input[type="range"] { accent-color: var(--accent); }
 /* 项目管理动作（新建…锁定区）可收起：常驻太占地方，小三角一键展开 */

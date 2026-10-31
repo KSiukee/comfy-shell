@@ -277,6 +277,24 @@ $("styleDirBtn").addEventListener("click", async () => {
     toast(String(e), true);
   }
 });
+$("styleImportBtn").addEventListener("click", () => $("styleFile").click());
+$("styleFile").addEventListener("change", async () => {
+  const f = $("styleFile").files && $("styleFile").files[0];
+  if (!f) return;
+  try {
+    const text = await f.text();
+    const n = await api.call("style_import", {
+      name: f.name.replace(/\.json$/i, ""),
+      jsonText: text,
+    });
+    await loadStylePacks();
+    toast(`已导入 ${n} 个风格，下拉里挑一个`);
+  } catch (e) {
+    toast(String(e), true);
+  } finally {
+    $("styleFile").value = "";
+  }
+});
 ["prompt", "negative", "seed"].forEach((id) => {
   const el = $(id);
   if (el) el.addEventListener("input", updateFxHint);

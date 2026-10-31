@@ -30,7 +30,56 @@ fn is_ext(path: &Path, want: &str) -> bool {
         .unwrap_or(false)
 }
 
-/// 目录里的风格包；`positive` 必须非空，`{prompt}` 是原提示词的占位符。
+/// 一条风格：同时认我们的 `positive/negative` 和 SDXL/Fooocus 的 `prompt/negative_prompt`。
+fn style_from_value(v: &serde_json::Value, fallback: &str) -> Option<Style> {
+    let positive = v
+        .get("positive")
+        .or_else(|| v.get("prompt"))
+        .and_then(|x| x.as_str())
+        .unwrap_or("")
+        .trim()
+        .to_string();
+    if positive.is_empty() {
+        return None;
+    }
+    let negative = v
+        .get("negative")
+        .or_else(|| v.get("negative_prompt"))
+        .and_then(|x| x.as_str())
+        .unwrap_or("")
+        .trim()
+        .to_string();
+    let name = v
+        .get("name")
+        .and_then(|x| x.as_str())
+        .map(|s| s.trim().to_string())
+        .filter(|s| !s.is_empty())
+        .unwrap_or_else(|| fallback.to_string());
+    Some(Style { name, positive, negative })
+}
+
+fn styles_in_value(v: &serde_json::Value, fallback: &str) -> Vec<Style> {
+    let mut out = Vec::new();
+    if let Some(arr) = v.as_array() {
+        for it in arr {
+            if let Some(s) = style_from_value(it, fallback) {
+                out.push(s);
+            }
+        }
+    } else if let Some(arr) = v.get("styles").and_then(|x| x.as_array()) {
+        for it in arr {
+            if let Some(s) = style_from_value(it, fallback) {
+                out.push(s);
+            }
+        }
+    } else if let Some(s) = style_from_value(v, fallback) {
+        out.push(s);
+    }
+    out
+}
+
+/// 目录里的风格包；支持「一个文件一条」「一整个数组」（sdxl_styles/Fooocus 那种）。
+/// `positive`/`prompt` 必须非空；同名只留第一条。
 pub fn read_styles(dir: &Path) -> Vec<Style> {
     let mut out = Vec::new();
     let rd = match std::fs::read_dir(dir) {
@@ -50,26 +99,16 @@ pub fn read_styles(dir: &Path) -> Vec<Style> {
             Ok(v) => v,
             Err(_) => continue,
         };
-        let positive = v.get("positive").and_then(|x| x.as_str()).unwrap_or("").trim().to_string();
-        if positive.is_empty() {
-            continue;
+        let stem = p
+            .file_stem()
+            .and_then(|x| x.to_str())
+            .unwrap_or("style")
+            .to_string();
+        for s in styles_in_value(&v, &stem) {
+            if !out.iter().any(|x: &Style| x.name == s.name) {
+                out.push(s);
+            }
         }
-        let name = v
-            .get("name")
-            .and_then(|x| x.as_str())
-            .map(|s| s.trim().to_string())
-            .filter(|s| !s.is_empty())
-            .unwrap_or_else(|| {
-                p.file_stem()
-                    .and_then(|x| x.to_str())
-                    .unwrap_or("style")
-                    .to_string()
-            });
-        out.push(Style {
-            name,
-            positive,
-            negative: v.get("negative").and_then(|x| x.as_str()).unwrap_or("").trim().to_string(),
-        });
     }
     out.sort_by(|a, b| a.name.to_lowercase().cmp(&b.name.to_lowercase()));
     out
@@ -160,6 +199,55 @@ pub fn style_pack_open(app: tauri::AppHandle) -> Result<String, String> {
 #[tauri::command]
 pub fn style_list(app: tauri::AppHandle) -> Vec<Style> {
     read_styles(&styles_dir(&crate::cfg_dir(&app)))
+}
+
+fn safe_stem(name: &str) -> String {
+    let s: String = name
+        .chars()
+        .map(|c| if "\\/:*?\"<>|".contains(c) || c.is_control() { '_' } else { c })
+        .collect();
+    let s = s.trim().trim_end_matches('.').trim().to_string();
+    let s = if s.is_empty() { "imported".to_string() } else { s };
+    s.chars().take(60).collect()
+}
+
+/// 导入一份风格包（数组、`{styles:[…]}` 或单条；认 prompt/negative_prompt，也认 positive/negative），
+/// 统一存成我们的规范数组。同名文件自动加 `-2`/`-3`，绝不覆盖。
+pub fn import_styles_into(dir: &Path, name: &str, json_text: &str) -> Result<(usize, PathBuf), String> {
+    std::fs::create_dir_all(dir).map_err(|e| e.to_string())?;
+    let v: serde_json::Value =
+        serde_json::from_str(json_text).map_err(|e| format!("不是合法 JSON：{e}"))?;
+    let stem = safe_stem(name);
+    let styles = styles_in_value(&v, &stem);
+    if styles.is_empty() {
+        return Err("这份文件里没有可用的风格（每条要有 prompt 或 positive）".into());
+    }
+    let body: Vec<serde_json::Value> = styles
+        .iter()
+        .map(|s| {
+            serde_json::json!({
+                "name": s.name,
+                "positive": s.positive,
+                "negative": s.negative
+            })
+        })
+        .collect();
+    let text = serde_json::to_string_pretty(&body).map_err(|e| e.to_string())?;
+    let mut path = dir.join(format!("{stem}.json"));
+    let mut n = 2;
+    while path.exists() {
+        path = dir.join(format!("{stem}-{n}.json"));
+        n += 1;
+    }
+    crate::fsutil::atomic_write_str(&path, &text)?;
+    Ok((styles.len(), path))
+}
+
+#[tauri::command]
+pub fn style_import(app: tauri::AppHandle, name: String, json_text: String) -> Result<usize, String> {
+    let dir = styles_dir(&crate::cfg_dir(&app));
+    let (n, _path) = import_styles_into(&dir, &name, &json_text)?;
+    Ok(n)
 }
 
 #[tauri::command]

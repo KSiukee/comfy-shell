@@ -101,6 +101,8 @@ try {
   const outOfRoot = await evaluate("api.call('image_meta', { path: 'D:/__nope__/zzz.png' })");
   check("image_meta 拒绝越界/不存在的路径", outOfRoot === null || outOfRoot === undefined, String(outOfRoot));
   check("提示词风格下拉在", (await evaluate("!!document.getElementById('styleSel')")) === true);
+  check("提示词辅助按钮在", (await evaluate("!!document.getElementById('phOpen')")) === true);
+  check("提示词辅助卡片窗在", (await evaluate("!!document.getElementById('phModal')")) === true);
   const stylePacks = await evaluate("api.call('style_list')");
   check("style_list 返回数组", Array.isArray(stylePacks), `${Array.isArray(stylePacks) ? stylePacks.length : "?"} 个`);
   const wildcardMap = await evaluate("api.call('wildcard_map')");

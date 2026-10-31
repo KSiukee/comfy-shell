@@ -102,12 +102,15 @@
           <span>提示词</span>
           <span class="muted" style="font-size:11.5px">Ctrl+Enter 生成</span>
           <span class="spacer"></span>
-          <button class="btn small ghost" id="btnPoses2" title="白模姿势库">🕺 姿势</button>
-          <button class="btn small ghost" id="btnDeAi" title="追加去 AI 感后缀 + 负面词（含噪点/轻微畸变）">🎞 去AI感</button>
-          <button class="btn small ghost" id="btnAssist" title="本地小助手：中文需求 → 翻译 → 扩写 → 提示词">🤖 助手</button>
-          <button class="btn small ghost" id="btnAnalyze" title="丢一张图，让本地视觉模型拆成分类提示词">🔍 解析图</button>
-          <button class="btn small ghost" id="btnLayout" title="MOSS 排版：拖框定位置，文字/物体分开标注" hidden>🎨 排版</button>
-          <button class="btn small" id="btnEnhance" title="用官方提示词增强器把一句话扩写成完整画面描述">✨ 扩写</button>
+          <button class="btn small" id="phOpen" title="提示词辅助：姿势 / 去AI感 / 扩写 / 解析 / 排版 / 助手 / 风格">🧰 提示词辅助</button>
+          <span id="phSrc" hidden>
+            <button class="btn small ghost" id="btnPoses2" title="白模姿势库">🕺 姿势</button>
+            <button class="btn small ghost" id="btnDeAi" title="追加去 AI 感后缀 + 负面词（含噪点/轻微畸变）">🎞 去AI感</button>
+            <button class="btn small ghost" id="btnAssist" title="本地小助手：中文需求 → 翻译 → 扩写 → 提示词">🤖 助手</button>
+            <button class="btn small ghost" id="btnAnalyze" title="丢一张图，让本地视觉模型拆成分类提示词">🔍 解析图</button>
+            <button class="btn small ghost" id="btnLayout" title="MOSS 排版：拖框定位置，文字/物体分开标注" hidden>🎨 排版</button>
+            <button class="btn small" id="btnEnhance" title="用官方提示词增强器把一句话扩写成完整画面描述">✨ 扩写</button>
+          </span>
         </label>
         <div class="enhanced" id="enhanced" hidden>
           <div class="enhanced-head">
@@ -119,12 +122,7 @@
           <textarea id="enhancedText" rows="6"></textarea>
         </div>
         <textarea id="prompt" rows="6" placeholder="描述你想要的画面；也可以直接写中文。"></textarea>
-        <div class="fx-row">
-          <span class="muted" style="font-size:11.5px">风格</span>
-          <select id="styleSel" title="套用风格包（styles/*.json）；{prompt} 会换成你写的提示词"></select>
-          <button class="btn small ghost" id="styleDirBtn" title="打开样式目录：放风格包 *.json 与 wildcards/*.txt">样式目录</button>
-          <span class="muted fx-hint" id="fxHint"></span>
-        </div>
+        <div class="muted fx-hint" id="fxHint"></div>
       </div>
 
       <details class="field pro-only">
@@ -892,6 +890,25 @@
     </div>
   </div>
 
+  <!-- 提示词辅助器：把散在提示词栏的小按钮收成一张卡片页 -->
+  <div class="modal" id="phModal" hidden>
+    <div class="modal-card ph-card">
+      <h3>提示词辅助 <span class="muted" style="font-size:12px">写不动的时候，从这儿拿工具</span></h3>
+      <div class="ph-grid" id="phGrid"></div>
+      <div class="ph-sep"></div>
+      <div class="fx-row">
+        <span class="muted" style="font-size:11.5px">风格</span>
+        <select id="styleSel" title="套用风格包（styles/*.json）；{prompt} 会换成你写的提示词"></select>
+        <button class="btn small ghost" id="styleDirBtn" title="打开样式目录：放风格包 *.json 与 wildcards/*.txt">样式目录</button>
+        <button class="btn small ghost" id="styleImportBtn" title="导入 sdxl_styles / Fooocus 那种 json（整份数组也行）">导入风格包…</button>
+        <input type="file" id="styleFile" accept=".json,application/json" hidden />
+      </div>
+      <div class="modal-actions">
+        <button class="btn small ghost" id="phClose">关闭</button>
+      </div>
+    </div>
+  </div>
+
   <div class="modal" id="shotsModal" hidden>
     <div class="modal-card" style="width: 760px">
       <h3>镜头 <span class="muted" style="font-size:12px">一话 = 一组镜头 · 单格可重画</span></h3>
@@ -920,6 +937,7 @@
   <script src="app.js"></script>
   <script src="results.js"></script>
   <script src="promptfx.js"></script>
+  <script src="prompthelper.js"></script>
   <script src="projects.js"></script>
   <script src="vault.js"></script>
   <script src="layout.js"></script>
