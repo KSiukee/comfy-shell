@@ -441,6 +441,7 @@
       <button class="btn ghost small" id="lbNext" title="下一张（→）">→</button>
       <span class="mono" id="lightboxMeta"></span>
       <div class="spacer"></div>
+      <button class="btn ghost small" id="lbShot" title="把这张图存进某个镜头格">存为镜头</button>
       <button class="btn ghost small" id="lightboxRef">用作参考图</button>
       <button class="btn ghost small" id="lightboxReveal">在文件夹中显示</button>
       <button class="btn ghost small" id="lightboxClose">关闭</button>
@@ -930,6 +931,17 @@
       <div class="row tight" style="justify-content:flex-end;margin-top:12px">
         <button class="btn small primary" id="shotsExport">整话导出…</button>
         <button class="btn small ghost" id="shotsClose">关闭</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal" id="shotPickModal" hidden>
+    <div class="modal-card" style="width: 580px">
+      <h3>存为镜头 <span class="muted" style="font-size:12px">选一格放进去，或新建一格</span></h3>
+      <div id="shotPickList" class="shot-pick-list"></div>
+      <div class="modal-actions">
+        <button class="btn primary" id="shotPickNew">新建一格</button>
+        <button class="btn ghost" id="shotPickCancel">取消</button>
       </div>
     </div>
   </div>

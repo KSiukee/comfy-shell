@@ -687,6 +687,14 @@ body.mode-pro .simple-only { display: none !important; }
 .shots-split textarea { margin-top: 8px; }
 .shots-empty { display: flex; flex-direction: column; gap: 10px; align-items: flex-start; padding: 18px 4px; color: var(--muted); font-size: 12.5px; }
 
+/* 存为镜头：选一格 */
+.shot-pick-list { display: flex; flex-direction: column; gap: 6px; max-height: 46vh; overflow-y: auto; margin: 4px 0 10px; }
+.shot-pick-row { display: flex; gap: 10px; align-items: baseline; text-align: left; padding: 9px 10px; border: 1px solid var(--line); border-radius: 9px; background: #0f1219; color: var(--text); cursor: pointer; font: inherit; }
+.shot-pick-row:hover { border-color: #3f4f78; background: #141a26; }
+.shot-pick-row b { flex: 0 0 34px; color: var(--muted); font-weight: 500; }
+.shot-pick-row span:nth-child(2) { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 12.5px; }
+.shot-pick-row .mono { flex: 0 0 auto; font-size: 11px; }
+
 /* 提示词体检 */
 .lint-card { width: 520px; }
 .lint-list { display: flex; flex-direction: column; gap: 8px; max-height: 320px; overflow-y: auto; }

@@ -220,3 +220,83 @@ $("shotsPushPanels").onclick = () => {
   queueAdd();
   toast(`已推 ${lines.length} 条到队列（点左侧「批量队列」开始）`);
 };
+
+// ---------------------------------------------------------------- 单张图存为镜头
+let shotPickSource = null;
+
+async function attachImageToShot(id) {
+  const p = shotProject();
+  try {
+    await api.call("shot_add_image", { project: p.id, id, path: shotPickSource.path });
+    $("shotPickModal").hidden = true;
+    toast("已存进这一格");
+    if (!$("shotsModal").hidden) await shotsRefresh();
+  } catch (e) {
+    toast(String(e), true);
+  }
+}
+
+async function openShotPick(r) {
+  const p = shotProject();
+  if (!p) return toast("先选一个项目（镜头按项目存）", true);
+  if (p.private) return toast("私密项目暂不支持镜头", true);
+  if (!r || !r.path) return toast("这张图没有本地路径", true);
+  shotPickSource = r;
+  const box = $("shotPickList");
+  box.textContent = "";
+  let shots = [];
+  try {
+    shots = await api.call("shots_list", { project: p.id });
+  } catch (e) {
+    toast(String(e), true);
+  }
+  if (!shots.length) {
+    const p2 = document.createElement("div");
+    p2.className = "muted";
+    p2.style.cssText = "padding:10px 2px;font-size:12px";
+    p2.textContent = "这个项目还没有镜头。点下面「新建一格」，用这张图的提示词生成第 1 格。";
+    box.appendChild(p2);
+  }
+  for (const s of shots) {
+    const row = document.createElement("button");
+    row.type = "button";
+    row.className = "shot-pick-row";
+    const idx = document.createElement("b");
+    idx.textContent = `#${s.index}`;
+    const txt = document.createElement("span");
+    txt.textContent = s.prompt;
+    const cnt = document.createElement("span");
+    cnt.className = "muted mono";
+    cnt.textContent = `🖼 ${s.images.length}`;
+    row.append(idx, txt, cnt);
+    row.onclick = () => attachImageToShot(s.id);
+    box.appendChild(row);
+  }
+  $("shotPickModal").hidden = false;
+}
+
+$("lbShot").onclick = () => {
+  if (typeof lightboxItem === "undefined" || !lightboxItem) return toast("先点开一张图", true);
+  openShotPick(lightboxItem);
+};
+$("shotPickCancel").onclick = () => ($("shotPickModal").hidden = true);
+$("shotPickModal").addEventListener("click", (e) => {
+  if (e.target === $("shotPickModal")) $("shotPickModal").hidden = true;
+});
+$("shotPickNew").onclick = async () => {
+  const p = shotProject();
+  if (!p) return toast("先选一个项目", true);
+  const prompt = (shotPickSource.prompt || "").trim() || "（这张图）";
+  try {
+    const shots = await api.call("shots_add", {
+      project: p.id,
+      prompts: [prompt],
+      defaults: shotDefaults(),
+    });
+    const created = shots[shots.length - 1];
+    if (!created) throw new Error("新建镜头失败");
+    await attachImageToShot(created.id);
+  } catch (e) {
+    toast(String(e), true);
+  }
+};
