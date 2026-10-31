@@ -1,0 +1,17 @@
+# build
+src-tauri/target/
+build-release.log
+*.exe
+
+# large assets / datasets
+poses/
+ComfyUI/
+*.safetensors
+*.ckpt
+
+# screenshots & generated probes
+*.png
+!docs/**/*.png
+
+# local state
+dev/__pycache__/

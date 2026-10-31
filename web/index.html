@@ -1,0 +1,734 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>ComfyShell</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+        <rect x="2.5" y="2.5" width="19" height="19" rx="6" stroke="currentColor" stroke-width="1.6"/>
+        <circle cx="12" cy="12" r="4.2" stroke="currentColor" stroke-width="1.6"/>
+        <circle cx="12" cy="12" r="1.4" fill="currentColor"/>
+      </svg>
+      <span>ComfyShell</span>
+    </div>
+
+    <div class="status" id="status">
+      <span class="dot" id="statusDot"></span>
+      <span id="statusText">检测中…</span>
+      <span class="sep"></span>
+      <span class="mono" id="statusPort">:8188</span>
+      <span class="muted mono" id="statusVersion"></span>
+    </div>
+
+    <div class="actions">
+      <button class="btn ghost" id="btnUiMode" title="切换简单 / 专业界面">简单</button>
+      <button class="btn ghost" id="btnLibrary">图库</button>
+      <button class="btn ghost" id="btnStart">启动</button>
+      <button class="btn ghost" id="btnStop">停止</button>
+      <button class="btn ghost" id="btnSettings">设置</button>
+    </div>
+  </header>
+
+  <main class="layout">
+    <aside class="panel">
+      <div class="field">
+        <label>模型</label>
+        <div class="row tight">
+          <select id="model"></select>
+          <button class="btn icon pro-only" id="btnImportWf" title="导入 ComfyUI API 格式工作流 JSON">＋</button>
+          <button class="btn small ghost pro-only" id="btnMossPreset" hidden title="MOSS 官方采样：50 步 / CFG 3 / 1024 / SLG 22">官方预设</button>
+        </div>
+        <input type="file" id="wfFile" accept=".json,application/json" hidden />
+        <div class="hint" id="modelHint"></div>
+        <div class="row tight pro-only">
+          <span class="muted" style="font-size:11.5px;white-space:nowrap">人像预设</span>
+          <select id="presetSel">
+            <option value="">自定义</option>
+            <option value="real">真实感（Imagine + UltraReal 0.7）</option>
+            <option value="natural">自然耐看（SFT + Ultra 0.7 + Beauty 0.5）</option>
+            <option value="raw">生图感（Base + UltraReal 0.7）</option>
+            <option value="polished">精致人像（SFT + Beauty 0.7）</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="tabs" id="modeTabs">
+        <button class="tab active" data-mode="t2i">生图</button>
+        <button class="tab" data-mode="edit">改图</button>
+      </div>
+
+      <div class="field" id="refField" hidden>
+        <label class="row tight">
+          <span>参考图 <span class="muted" id="refHint"></span></span>
+          <span class="spacer"></span>
+          <button class="btn small ghost" id="btnPoses" title="白模姿势库（Shisei，CC0）">🕺 姿势库</button>
+        </label>
+        <div class="dropzone" id="dropzone">
+          <input type="file" id="fileInput" accept="image/png,image/jpeg,image/webp" multiple hidden />
+          <span>点击 / 拖入图片</span>
+        </div>
+        <div class="thumbs" id="thumbs"></div>
+      </div>
+
+      <div class="field grow">
+        <label class="row tight">
+          <span>提示词</span>
+          <span class="muted" style="font-size:11.5px">Ctrl+Enter 生成</span>
+          <span class="spacer"></span>
+          <button class="btn small ghost" id="btnPoses2" title="白模姿势库">🕺 姿势</button>
+          <button class="btn small ghost" id="btnAssist" title="本地小助手：中文需求 → 翻译 → 扩写 → 提示词">🤖 助手</button>
+          <button class="btn small ghost" id="btnAnalyze" title="丢一张图，让本地视觉模型拆成分类提示词">🔍 解析图</button>
+          <button class="btn small ghost" id="btnLayout" title="MOSS 排版：拖框定位置，文字/物体分开标注" hidden>🎨 排版</button>
+          <button class="btn small" id="btnEnhance" title="用官方提示词增强器把一句话扩写成完整画面描述">✨ 扩写</button>
+        </label>
+        <div class="enhanced" id="enhanced" hidden>
+          <div class="enhanced-head">
+            <span>扩写结果</span>
+            <span class="spacer"></span>
+            <button class="btn small" id="enhUse">采用</button>
+            <button class="btn small ghost" id="enhClose">×</button>
+          </div>
+          <textarea id="enhancedText" rows="6"></textarea>
+        </div>
+        <textarea id="prompt" rows="6" placeholder="描述你想要的画面；也可以直接写中文。"></textarea>
+      </div>
+
+      <details class="field pro-only">
+        <summary>反向提示词 <span class="muted" style="font-size:11px">填「不想要的东西」，不是「不要 XX」</span></summary>
+        <textarea id="negative" rows="3" placeholder="例如：face lighting, studio light, bright rim light"></textarea>
+        <button class="btn small ghost" id="btnTranslateNeg" style="align-self: flex-start">中 → 英</button>
+      </details>
+
+      <div class="field pro-only">
+        <label>尺寸</label>
+        <div class="chips" id="ratioChips">
+          <button data-r="1:1">1:1</button>
+          <button data-r="3:2">3:2</button>
+          <button data-r="2:3">2:3</button>
+          <button data-r="16:9">16:9</button>
+          <button data-r="9:16">9:16</button>
+        </div>
+        <div class="row">
+          <input type="number" id="width" value="1024" min="256" max="2048" step="32" />
+          <span class="muted">×</span>
+          <input type="number" id="height" value="1024" min="256" max="2048" step="32" />
+        </div>
+      </div>
+
+      <div class="field pro-only">
+        <label>步数 / CFG</label>
+        <div class="row tight">
+          <input type="number" id="steps" value="25" min="1" max="100" style="flex: 2 1 0" />
+          <span class="muted">CFG</span>
+          <input type="number" id="cfg" value="1" min="0" max="20" step="0.1" style="flex: 1 1 0" />
+        </div>
+        <div class="step-presets" id="stepPresets"></div>
+      </div>
+
+      <div class="row two pro-only">
+        <div class="field">
+          <label>种子</label>
+          <div class="row tight">
+            <input type="number" id="seed" value="-1" />
+            <button class="btn icon" id="btnDice" title="随机种子">🎲</button>
+          </div>
+        </div>
+        <div class="field">
+          <label>张数</label>
+          <input type="number" id="batch" value="1" min="1" max="4" />
+        </div>
+      </div>
+
+      <div class="field pro-only">
+        <label class="check"><input type="checkbox" id="turbo" /> 加速（turbo LoRA，8 步）</label>
+      </div>
+
+      <div class="field pro-only" id="slgField" hidden>
+        <label class="check"><input type="checkbox" id="mossSlg" checked /> SLG（MOSS 官方：约慢 25%，细节更实）</label>
+        <select id="slgTier">
+          <option value="22">标准（skip 22）</option>
+          <option value="22,24,26">强（skip 22/24/26）</option>
+        </select>
+      </div>
+
+      <div class="field pro-only">
+        <label>额外 LoRA</label>
+        <select id="lora"><option value="">（无）</option></select>
+        <div class="row tight" id="loraStrengthRow" hidden>
+          <span class="muted" style="font-size:11.5px;white-space:nowrap">强度</span>
+          <input type="range" id="loraStrength" min="0" max="2" step="0.05" value="1" />
+          <span class="mono muted" id="loraStrengthText">1.00</span>
+        </div>
+        <div class="row tight">
+          <span class="muted" style="font-size:11.5px;white-space:nowrap">+ LoRA 2</span>
+          <select id="lora2"><option value="">（无）</option></select>
+        </div>
+        <div class="row tight" id="lora2StrengthRow" hidden>
+          <span class="muted" style="font-size:11.5px;white-space:nowrap">强度</span>
+          <input type="range" id="lora2Strength" min="0" max="2" step="0.05" value="0.8" />
+          <span class="mono muted" id="lora2StrengthText">0.80</span>
+        </div>
+        <div class="hint" id="loraHint">选一个 LoRA 才会显示强度（0.6–0.9 更像，1.0 更贴）</div>
+      </div>
+
+      <div class="field simple-only">
+        <label>画质</label>
+        <select id="simpleQuality">
+          <option value="fast">快速</option>
+          <option value="std" selected>标准</option>
+          <option value="fine">精细</option>
+        </select>
+      </div>
+
+      <div class="field simple-only">
+        <label>比例</label>
+        <select id="simpleRatio">
+          <option value="1:1">方形 1:1</option>
+          <option value="3:2">横图 3:2</option>
+          <option value="2:3">竖图 2:3</option>
+          <option value="9:16">手机竖屏 9:16</option>
+        </select>
+      </div>
+
+      <div class="spacer"></div>
+
+      <details class="field queue-box">
+        <summary>批量队列 <span class="muted" id="queueCount">0</span></summary>
+        <textarea id="queueText" rows="4" placeholder="每行一条提示词，按当前模型/参数依次生成"></textarea>
+        <div class="row tight">
+          <button class="btn small" id="btnQueueAdd">加入队列</button>
+          <button class="btn small ghost" id="btnStorySplit" title="用本地 LLM 把剧情拆成连续分镜">剧情拆分…</button>
+          <button class="btn small primary" id="btnQueueRun">开始</button>
+          <button class="btn small ghost" id="btnQueueStop" hidden>停止</button>
+          <span class="muted mono" id="queueState"></span>
+        </div>
+      </details>
+
+      <details class="field queue-box pro-only">
+        <summary>横扫对比 <span class="muted">同一提示词，按模型 / 人像预设批量出图</span></summary>
+        <div class="row tight">
+          <select id="sweepMode" style="flex: 1 1 0">
+            <option value="presets">按人像预设</option>
+            <option value="models">按模型</option>
+          </select>
+          <select id="sweepSize" style="flex: 1 1 0">
+            <option value="one">当前尺寸</option>
+            <option value="five">5 个尺寸（512→1024）</option>
+          </select>
+          <select id="sweepBatch" style="flex: 0 0 90px">
+            <option value="1">1 张</option>
+            <option value="2">2 张</option>
+            <option value="3">3 张</option>
+          </select>
+        </div>
+        <div class="sweep-models" id="sweepModels"></div>
+        <div class="row tight">
+          <button class="btn small primary" id="btnSweepRun">开始横扫</button>
+          <span class="muted mono" id="sweepState"></span>
+        </div>
+      </details>
+
+      <div class="gen-footer">
+        <button class="btn primary big" id="btnGenerate">生成</button>
+        <button class="btn danger big" id="btnCancel" hidden>取消</button>
+      </div>
+    </aside>
+
+    <section class="stage">
+      <div class="stagebar">
+        <div class="progress-wrap" id="progressWrap" hidden>
+          <div class="bar"><div class="fill" id="progressFill"></div></div>
+          <div class="muted mono" id="progressText">准备中…</div>
+        </div>
+        <div class="spacer"></div>
+        <button class="btn ghost small" id="btnClearHistory">清空历史</button>
+        <button class="btn ghost small" id="btnOpenOut">打开输出目录</button>
+      </div>
+      <div class="results" id="results">
+        <div class="empty" id="empty">
+          <div class="empty-icon">◍</div>
+          <p>还没有图。左边写好提示词，点「生成」。</p>
+          <p class="muted">生成会静默调用本机 ComfyUI，不用打开它的界面。</p>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <div class="ctxmenu" id="ctxmenu" hidden></div>
+
+
+
+
+
+  <!-- local assistant -->
+  <div class="modal" id="assistModal" hidden>
+    <div class="modal-card" style="width: 720px">
+      <h3>本地小助手 <span class="muted" style="font-size:12px">Qwen3.5-9B · 最多 3 步工具调用</span></h3>
+      <textarea id="assistInput" rows="3" placeholder="用中文说需求，例如：雨夜街头穿红大衣的银发女孩，电影感，要能看到湿地面反光"></textarea>
+      <div class="row tight">
+        <button class="btn small primary" id="assistRun">运行</button>
+        <span class="muted mono" id="assistState"></span>
+        <span class="spacer"></span>
+        <button class="btn ghost small" id="assistClose">关闭</button>
+      </div>
+      <div id="assistSteps" style="display:flex;flex-direction:column;gap:6px;max-height:280px;overflow:auto"></div>
+      <textarea id="assistOut" rows="3" placeholder="最终提示词"></textarea>
+      <div class="row tight">
+        <button class="btn small primary" id="assistFill">填入提示词</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MOSS layout editor -->
+  <div class="modal" id="layoutModal" hidden>
+    <div class="modal-card" style="width: 1000px">
+      <h3>MOSS 排版 <span class="muted" style="font-size:12px">拖框定位置 · 文字/物体分开标注</span></h3>
+      <div class="row tight">
+        <select id="layoutPreset" style="flex: 0 0 190px">
+          <option value="">布局模板…</option>
+          <option value="ecom_main">电商主图（产品 + 底部文案）</option>
+          <option value="ecom_poster">电商海报（标题 + 产品 + 价格）</option>
+          <option value="left_right">左图右文</option>
+          <option value="three_rows">三分屏</option>
+          <option value="grid4">四宫格</option>
+        </select>
+        <input id="layoutSummary" placeholder="整张图的描述（summary）" style="flex: 2 1 0" />
+        <button class="btn small" id="layoutAddText">＋ 文字</button>
+        <button class="btn small" id="layoutAddObj">＋ 物体</button>
+        <span class="muted mono" id="layoutHint"></span>
+        <span class="spacer"></span>
+        <button class="btn ghost small" id="layoutClose">关闭</button>
+      </div>
+      <div class="row tight" style="align-items:flex-start">
+        <div id="layoutStage" style="position:relative;width:512px;height:512px;background:#0f1116;border:1px solid #2a2f3a;border-radius:8px;flex:0 0 auto;overflow:hidden">
+          <div id="layoutBoxes"></div>
+        </div>
+        <div id="layoutList" style="flex:1;display:flex;flex-direction:column;gap:6px;max-height:512px;overflow:auto"></div>
+      </div>
+      <div class="row tight">
+        <button class="btn small primary" id="layoutRun">按排版生成</button>
+        <span class="muted" style="font-size:11.5px">生成时用 layout JSON 作为提示词，位置按当前宽高换算</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- image analyzer -->
+  <div class="modal" id="anaModal" hidden>
+    <div class="modal-card" style="width: 860px">
+      <h3>看图拆提示词 <span class="muted" style="font-size:12px">本地 Qwen3-VL · 分类整理 · 不联网</span></h3>
+      <div class="row tight">
+        <input type="file" id="anaFile" accept="image/png,image/jpeg,image/webp" hidden />
+        <button class="btn small" id="anaPick">选择图片</button>
+        <button class="btn small primary" id="anaRun" disabled>解析</button>
+        <label class="check" style="font-size:12px"><input type="checkbox" id="anaTwoPass" checked /> 两段式（更准，慢一点）</label>
+        <span class="muted mono" id="anaState"></span>
+        <span class="spacer"></span>
+        <button class="btn ghost small" id="anaClose">关闭</button>
+      </div>
+      <div class="row tight" style="align-items:flex-start">
+        <img id="anaPreview" alt="" style="width:220px;max-height:300px;object-fit:contain;border-radius:8px;background:#0f1116" />
+        <div style="flex:1;display:flex;flex-direction:column;gap:6px" id="anaFields"></div>
+      </div>
+      <details id="anaRawBox">
+        <summary>完整提示词 / 原始 JSON</summary>
+        <textarea id="anaPrompt" rows="3" style="width:100%"></textarea>
+        <textarea id="anaRaw" rows="5" style="width:100%;font-size:11px"></textarea>
+      </details>
+      <div id="anaExtras" style="display:flex;flex-direction:column;gap:6px"></div>
+      <div class="row tight">
+        <button class="btn small ghost" id="anaAddExtra">＋ 加分类</button>
+        <button class="btn small primary" id="anaFillPrompt">组合成提示词</button>
+        <button class="btn small ghost" id="anaCopy">复制 JSON</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- pose library -->
+  <div class="modal" id="poseModal" hidden>
+    <div class="modal-card" style="width: 1000px">
+      <h3>白模姿势库 <span class="muted" style="font-size:12px">Shisei · CC0 · 280 组 × 5 机位</span></h3>
+      <div class="row tight">
+        <input id="poseSearch" placeholder="搜编号/名称，如 坐姿、P001、sitting" style="flex: 2 1 0" />
+        <select id="poseClass" style="flex: 1 1 0"><option value="">全部类别</option></select>
+        <select id="poseAngle"><option value="front">正面</option><option value="diag">斜侧</option><option value="side">侧面</option><option value="above">俯视</option><option value="below">仰视</option></select>
+        <span class="muted mono" id="poseCount"></span>
+        <span class="spacer"></span>
+        <button class="btn ghost small" id="poseClose">关闭</button>
+      </div>
+      <div class="hint">点卡片 = 加入参考图；点卡片右下「词」= 复制该姿势的英文描述</div>
+      <div class="pose-grid" id="poseGrid"></div>
+    </div>
+  </div>
+
+  <!-- crop picker -->
+  <div class="modal" id="cropModal" hidden>
+    <div class="modal-card" style="width: 760px">
+      <h3>标注画面区域 <span class="muted" style="font-size:12px">绿=只保留这块　红=训练前抹掉</span></h3>
+      <div class="row tight">
+        <button class="btn small primary" id="markKeep">绿：保留</button>
+        <button class="btn small" id="markErase">红：抹掉</button>
+        <button class="btn small ghost" id="markUndo">撤销</button>
+        <span class="muted mono" id="markState"></span>
+      </div>
+      <div class="crop-stage" id="cropStage">
+        <img id="cropImg" alt="" />
+        <div class="crop-overlay" id="cropOverlay"></div>
+      </div>
+      <div class="modal-actions">
+        <button class="btn ghost" id="cropClear">清除框</button>
+        <button class="btn ghost" id="cropCancel">取消</button>
+        <button class="btn primary" id="cropOk">确定</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- story split -->
+  <div class="modal" id="storyModal" hidden>
+    <div class="modal-card" style="width: 700px">
+      <h3>剧情拆分 <span class="muted" style="font-size:12px">本地模型拆格，人工确认后再推队列</span></h3>
+      <div class="field">
+        <label>剧情原文</label>
+        <textarea id="storyText" rows="6" placeholder="贴一段连续剧情，越具体越好"></textarea>
+      </div>
+      <div class="row two">
+        <div class="field"><label>最多几格</label><input type="number" id="storyMax" value="12" min="1" max="40" /></div>
+        <div class="field"><label>&nbsp;</label><button class="btn primary" id="storyGo">拆分</button></div>
+      </div>
+      <div class="field">
+        <label>分镜（一行一格，可编辑）</label>
+        <textarea id="storyPanels" rows="8"></textarea>
+      </div>
+      <div class="modal-actions">
+        <button class="btn ghost" id="storyCancel">取消</button>
+        <button class="btn primary" id="storyPush">推送到队列</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- lightbox -->
+  <div class="lightbox" id="lightbox" hidden>
+    <img id="lightboxImg" alt="" />
+    <div class="lightbox-bar">
+      <button class="btn ghost small" id="lbPrev" title="上一张（←）">←</button>
+      <span class="mono" id="lbPos"></span>
+      <button class="btn ghost small" id="lbNext" title="下一张（→）">→</button>
+      <span class="mono" id="lightboxMeta"></span>
+      <div class="spacer"></div>
+      <button class="btn ghost small" id="lightboxRef">用作参考图</button>
+      <button class="btn ghost small" id="lightboxReveal">在文件夹中显示</button>
+      <button class="btn ghost small" id="lightboxClose">关闭</button>
+    </div>
+  </div>
+
+  <!-- library -->
+  <div class="lib" id="library" hidden>
+    <div class="lib-head">
+      <strong>图库</strong>
+      <input id="libSearch" placeholder="搜索文件名或提示词…" />
+      <button class="btn ghost small" id="libTranslate" title="把查询翻成英文，再搜一遍提示词">中→英</button>
+      <span class="chip" id="libAltChip" hidden>译文：<b id="libAltText"></b><button id="libAltClear" title="清除译文">×</button></span>
+      <label class="check"><input type="checkbox" id="libStarOnly" /> 只看收藏</label>
+      <span class="muted" style="font-size:11.5px">大小</span>
+      <input type="range" id="libSize" min="110" max="320" step="10" value="180" style="width: 96px" />
+      <select id="libSort">
+        <option value="new">最新优先</option>
+        <option value="old">最早优先</option>
+        <option value="name">按文件名</option>
+      </select>
+      <span class="muted mono" id="libCount"></span>
+      <span class="spacer"></span>
+      <select id="libUpModel" class="mini-select" title="批量超分用的模型"></select>
+      <button class="btn ghost small" id="libBatchUp" disabled>批量超分</button>
+      <button class="btn ghost small" id="libExternal" title="选一个外部文件夹，把里面的图批量超分">外部文件夹超分…</button>
+      <button class="btn ghost small" id="libTrain">训练 LoRA…</button>
+      <input type="file" id="extFolder" webkitdirectory directory multiple hidden />
+      <button class="btn ghost small" id="libRefresh">刷新</button>
+      <button class="btn ghost small" id="libEdit" disabled>批量改图…</button>
+      <button class="btn ghost small" id="libCompare" disabled>对比选中</button>
+      <button class="btn danger small" id="libDelete" disabled>删除选中</button>
+      <button class="btn ghost small" id="libClose">关闭</button>
+    </div>
+    <div class="lib-grid" id="libGrid"></div>
+  </div>
+
+  <!-- image viewer -->
+  <div class="viewer" id="viewer" hidden>
+    <div class="viewer-stage" id="viewerStage">
+      <img id="viewerImg" alt="" />
+      <canvas id="maskCanvas" hidden></canvas>
+    </div>
+    <div class="mask-bar" id="maskBar" hidden>
+      <span class="muted">画笔</span>
+      <input type="range" id="maskBrush" min="6" max="180" value="48" />
+      <button class="btn ghost small" id="maskErase">橡皮</button>
+      <button class="btn ghost small" id="maskUndo">撤销</button>
+      <button class="btn ghost small" id="maskClear">清空</button>
+      <span class="muted" style="font-size:11.5px">白色区域会被重绘</span>
+      <span class="spacer"></span>
+      <button class="btn ghost small" id="maskCancel">取消</button>
+      <button class="btn primary small" id="maskStart">开始重绘</button>
+    </div>
+    <div class="viewer-bar">
+      <button class="btn ghost small" id="vwPrev" title="上一张（←）">←</button>
+      <span class="mono" id="vwPos"></span>
+      <button class="btn ghost small" id="vwNext" title="下一张（→）">→</button>
+      <span class="muted mono" id="vwName"></span>
+      <span class="spacer"></span>
+      <button class="btn ghost small" id="vwZoomOut">−</button>
+      <span class="mono" id="vwZoom">100%</span>
+      <button class="btn ghost small" id="vwZoomIn">+</button>
+      <button class="btn ghost small" id="vwFit">适应</button>
+      <select id="vwUpModel" class="mini-select" title="超分模型"></select>
+      <button class="btn primary small" id="vwUpscale">超分 4×</button>
+      <button class="btn ghost small" id="vwInpaint">局部重绘</button>
+      <button class="btn ghost small" id="vwRef">用作参考图</button>
+      <button class="btn ghost small" id="vwReveal">文件夹</button>
+      <button class="btn ghost small" id="vwClose">关闭</button>
+    </div>
+  </div>
+
+  <!-- compare -->
+  <div class="compare" id="compare" hidden>
+    <div class="cmp-panes">
+      <div class="cmp-pane"><img id="cmpA" alt="" /><span class="cmp-label" id="cmpALabel"></span></div>
+      <div class="cmp-pane"><img id="cmpB" alt="" /><span class="cmp-label" id="cmpBLabel"></span></div>
+    </div>
+    <div class="cmp-bar">
+      <button class="btn ghost small" id="cmpSwap">交换</button>
+      <span class="muted">缩放</span>
+      <input type="range" id="cmpZoom" min="100" max="400" value="100" />
+      <span class="mono muted" id="cmpZoomText">100%</span>
+      <span class="muted" style="font-size:11.5px">拖动平移</span>
+      <span class="spacer"></span>
+      <button class="btn ghost small" id="cmpExport">导出对比图</button>
+      <button class="btn ghost small" id="cmpClose">关闭</button>
+    </div>
+  </div>
+
+  <!-- batch edit (library selection) -->
+  <div class="modal" id="batchEditModal" hidden>
+    <div class="modal-card">
+      <h3>批量改图 <span class="muted mono" id="batchEditCount"></span></h3>
+      <p class="muted" style="font-size:12px;margin:0" id="batchEditModel"></p>
+      <div class="field">
+        <label>改动要求（对每张图套用）</label>
+        <textarea id="batchEditPrompt" rows="4" placeholder="例如：改成水彩画风格，保留主体和构图，纸张纹理可见"></textarea>
+      </div>
+      <div class="modal-actions">
+        <button class="btn ghost" id="batchEditCancel">取消</button>
+        <button class="btn primary" id="batchEditStart">开始</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- inpaint prompt -->
+  <div class="modal" id="inpaintModal" hidden>
+    <div class="modal-card">
+      <h3>局部重绘 <span class="muted mono" id="inpaintInfo"></span></h3>
+      <div class="field">
+        <label>这块区域要画成什么</label>
+        <textarea id="inpaintPrompt" rows="4" placeholder="例如：一朵红玫瑰 / a red rose"></textarea>
+      </div>
+      <div class="row two">
+        <div class="field">
+          <label>步数</label>
+          <input type="number" id="inpaintSteps" min="4" max="60" />
+          <div class="step-presets" id="inpaintStepPresets"></div>
+        </div>
+        <div class="field"><label>重绘强度</label><input type="number" id="inpaintDenoise" min="0.2" max="1" step="0.05" value="1" /></div>
+      </div>
+      <div class="row two">
+        <div class="field"><label>蒙版羽化（px）</label><input type="number" id="inpaintFeather" min="0" max="96" step="2" value="12" /></div>
+        <div class="field"><label>参考图（放进洞里）</label><label class="check"><input type="checkbox" id="inpaintUseRef" /> 带上当前参考图</label></div>
+      </div>
+      <div class="modal-actions">
+        <button class="btn ghost" id="inpaintCancel">取消</button>
+        <button class="btn primary" id="inpaintGo">开始</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- train lora -->
+  <div class="modal" id="trainModal" hidden>
+    <div class="modal-card">
+      <h3>训练 LoRA <span class="muted mono" id="trainCount"></span></h3>
+      <div class="row two">
+        <div class="field">
+          <label>数据集来源</label>
+          <label class="check"><input type="radio" name="trainSrc" value="library" checked /> 图库选中的图</label>
+          <label class="check"><input type="radio" name="trainSrc" value="folder" /> 外部文件夹</label>
+        </div>
+        <div class="field">
+          <label>&nbsp;</label>
+          <button class="btn ghost small" id="trainFolderPick">选择文件夹…</button>
+          <input type="file" id="trainFolder" webkitdirectory directory multiple hidden />
+        </div>
+      </div>
+      <div class="field" id="annRow" hidden>
+        <label>逐图标注（可选）</label>
+        <button class="btn small ghost" id="annTranslate" title="把中文标注翻成英文，模型只认英文">中→英 翻译标注</button>
+        <div class="ann-list" id="annList"></div>
+        <div class="hint">「要」会写进这张图的 caption；「不要」只记成建议负面，不会进训练；权重 2/3 会重复该图（等于加权）。</div>
+      </div>
+      <div class="field" id="trainCaptionRow" hidden>
+        <label>caption 前缀（可选）</label>
+        <input type="text" id="trainCaption" placeholder="例如 my_style, a photo of sks subject" />
+        <label class="check"><input type="checkbox" id="trainAutoCaption" checked /> 自动生成 caption（本地 Qwen3-VL 逐张描述，约 10 秒/张）</label>
+      </div>
+      <div class="row two simple-only">
+        <div class="field">
+          <label>训练什么</label>
+          <select id="simpleKind">
+            <option value="character">人物 / 角色</option>
+            <option value="style">画风 / 色调</option>
+            <option value="object">物件 / 产品</option>
+            <option value="scene">场景 / 建筑</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>像的程度</label>
+          <select id="simpleStrength">
+            <option value="light">轻（快，像一点）</option>
+            <option value="std" selected>标准</option>
+            <option value="heavy">重（很像，易过拟合）</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="row two">
+        <div class="field">
+          <label>模型文件名（英文）</label>
+          <input type="text" id="trainName" placeholder="例如 my_style_v1" />
+        </div>
+        <div class="field pro-only">
+          <label>基础模型</label>
+          <select id="trainBase">
+            <option value="flux3base">FLUX.3 Klein Base（bf16，推荐）</option>
+            <option value="moss">MOSS-Image SFT（bf16，9.5GB）</option>
+          </select>
+        </div>
+      </div>
+      <div class="field pro-only">
+        <label>继续训练（可选，基于已有 LoRA 再练一轮）</label>
+        <select id="trainExisting"><option value="">（从零开始）</option></select>
+      </div>
+      <div class="row two pro-only">
+        <div class="field">
+          <label>训练尺寸</label>
+          <select id="trainSize">
+            <option value="384">384 · 最省（低配）</option>
+            <option value="512">512 · 快（默认）</option>
+            <option value="640">640 · 建筑/纹理细节（约 13 秒/步）</option>
+            <option value="768">768 · 需 24G，本机 16G 会 OOM</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>构图</label>
+          <select id="trainAspect">
+            <option value="crop">中心裁切正方形</option>
+            <option value="keep">等比缩放 + 边缘延展（保留全图）</option>
+          </select>
+        </div>
+      </div>
+      <div class="row three pro-only">
+        <div class="field"><label>步数</label><input type="number" id="trainSteps" min="8" max="5000" value="200" /></div>
+        <div class="field"><label>Rank</label><input type="number" id="trainRank" min="1" max="128" value="16" /></div>
+        <div class="field"><label>学习率</label><input type="number" id="trainLr" step="0.00001" value="0.0002" /></div>
+      </div>
+      <div class="field">
+        <div class="progress"><div class="progress-fill" id="trainBar"></div></div>
+        <span class="muted mono" id="trainProgressText"></span>
+      </div>
+      <details class="field pro-only">
+        <summary>高级：压低显存 / 提速</summary>
+        <div class="row three">
+          <div class="field"><label>batch</label><input type="number" id="trainBatch" min="1" max="4" value="1" /></div>
+          <div class="field"><label>梯度累积</label><input type="number" id="trainGrad" min="1" max="16" value="1" /></div>
+          <div class="field"><label>检查点深度</label><input type="number" id="trainDepth" min="1" max="3" value="3" /></div>
+        </div>
+        <div class="row two">
+          <div class="field"><label class="check"><input type="checkbox" id="trainOffload" checked /> CPU 卸载（省显存，慢）</label></div>
+          <div class="field">
+            <label>精度</label>
+            <select id="trainDtype"><option value="bf16">bf16（默认）</option><option value="fp16">fp16</option></select>
+          </div>
+        </div>
+        <div class="field">
+          <label>训练引擎</label>
+          <select id="trainEngine">
+            <option value="auto">自动（MOSS 走 kohya，其它走内置）</option>
+            <option value="builtin">内置（ComfyUI TrainLoraNode）</option>
+            <option value="kohya">kohya（外部脚本，支持 MOSS/大分辨率）</option>
+          </select>
+        </div>
+        <div class="row two">
+          <div class="field"><label>训练后评测张数（固定 prompt）</label><input type="number" id="trainEval" min="0" max="4" value="2" /></div>
+          <div class="field"><label>&nbsp;</label><span class="muted" style="font-size:11.5px">0 = 不跑，省 1–2 分钟</span></div>
+        </div>
+        <div class="step-presets" id="trainPresets"></div>
+        <label class="check"><input type="checkbox" id="trainRestart" checked /> 训练前重启 ComfyUI 清显存（约 20 秒，显存不够必勾）</label>
+        <div class="hint">显存不够就降尺寸 / 开卸载 / 勾上面的重启；检查点深度用 3（5 反而更吃显存）。</div>
+      </details>
+      <div id="trainResult" hidden>
+        <label class="muted" style="font-size:12px">损失曲线</label>
+        <img id="trainLoss" alt="loss curve" style="width:100%;border-radius:8px;border:1px solid var(--line)" />
+        <div id="trainEvalWrap" hidden>
+          <label class="muted" style="font-size:12px">固定评测（新 LoRA, 0.9 强度）</label>
+          <div class="eval-grid" id="trainEvalGrid"></div>
+        </div>
+      </div>
+      <div class="muted" style="font-size:11.5px" id="trainHint"></div>
+      <div class="modal-actions">
+        <button class="btn ghost" id="trainCancel">取消</button>
+        <button class="btn primary" id="trainGo">开始训练</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- settings -->
+  <div class="modal" id="settingsModal" hidden>
+    <div class="modal-card">
+      <h3>设置</h3>
+      <div class="field">
+        <label>ComfyUI 便携版目录</label>
+        <input type="text" id="setRoot" spellcheck="false" />
+        <div class="hint">包含 python_embeded 与 ComfyUI 子目录的那个文件夹。</div>
+      </div>
+      <div class="row two">
+        <div class="field">
+          <label>端口</label>
+          <input type="number" id="setPort" min="1024" max="65535" />
+        </div>
+        <div class="field">
+          <label>开机自动启动</label>
+          <label class="check"><input type="checkbox" id="setAutoStart" /> 随壳启动</label>
+        </div>
+      </div>
+      <label class="check"><input type="checkbox" id="setStopOnExit" /> 关闭壳时一并关掉 ComfyUI</label>
+      <label class="check"><input type="checkbox" id="setFreeEnhance" /> 扩写直接用未审查模型（跳过官方扩写器）</label>
+      <div class="hint">官方扩写器偶尔会拒绝；勾上后所有扩写都走本地 Qwen3-VL heretic。</div>
+      <div class="modal-actions">
+        <button class="btn ghost" id="btnSettingsCancel">取消</button>
+        <button class="btn primary" id="btnSettingsSave">保存</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast" hidden></div>
+
+  <script src="app.js"></script>
+</body>
+</html>
+
+
+
+
+
+
+
+

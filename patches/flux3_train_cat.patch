@@ -1,0 +1,11 @@
+--- a/comfy/ldm/flux3/model.py
++++ b/comfy/ldm/flux3/model.py
+@@
+-        torch.cat([img] + [tokens for tokens, _, _ in parts[1:]], dim=1, out=x)
++        joint = [img] + [tokens for tokens, _, _ in parts[1:]]
++        if torch.is_grad_enabled():
++            # training (LoRA): autograd cannot write into a preallocated buffer
++            x = torch.cat(joint, dim=1)
++        else:
++            torch.cat(joint, dim=1, out=x)
+*** End Patch
