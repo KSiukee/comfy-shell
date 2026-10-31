@@ -4,6 +4,7 @@
   "max_god_files": 6,
   "god_file_lines": 400,
   "max_lines": {
-    "web/app.js": 3426
+    "web/app.js": 3426,
+    "src-tauri/src/main.rs": 300
   }
 }

@@ -1,4 +1,60 @@
-   Compiling comfy-shell v0.56.0 (D:\deepseek-files\ai-tools\comfy-shell\src-tauri)
+   Compiling comfy-shell v0.57.0 (D:\deepseek-files\ai-tools\comfy-shell\src-tauri)
+warning: unused import: `tauri::State`
+ --> src\commands\ai.rs:4:5
+  |
+4 | use tauri::State;
+  |     ^^^^^^^^^^^^
+  |
+  = note: `#[warn(unused_imports)]` (part of `#[warn(unused)]`) on by default
+
+warning: unused import: `tauri::State`
+ --> src\commands\generation.rs:4:5
+  |
+4 | use tauri::State;
+  |     ^^^^^^^^^^^^
+
+warning: unused import: `Deserialize`
+ --> src\commands\system.rs:4:13
+  |
+4 | use serde::{Deserialize, Serialize};
+  |             ^^^^^^^^^^^
+
+warning: unused import: `tauri::State`
+ --> src\commands\training.rs:4:5
+  |
+4 | use tauri::State;
+  |     ^^^^^^^^^^^^
+
+warning: unused import: `tauri::State`
+ --> src\commands\training_files.rs:6:5
+  |
+6 | use tauri::State;
+  |     ^^^^^^^^^^^^
+
+warning: unused import: `tauri::State`
+ --> src\commands\training_kohya.rs:5:5
+  |
+5 | use tauri::State;
+  |     ^^^^^^^^^^^^
+
+warning: unused import: `tauri::State`
+ --> src\commands\training_run.rs:5:5
+  |
+5 | use tauri::State;
+  |     ^^^^^^^^^^^^
+
+warning: unused import: `tauri::State`
+ --> src\commands\upscale.rs:5:5
+  |
+5 | use tauri::State;
+  |     ^^^^^^^^^^^^
+
+warning: unused import: `State`
+  --> src\main.rs:28:31
+   |
+28 | use tauri::{Emitter, Manager, State};
+   |                               ^^^^^
+
 warning: use of deprecated associated function `chacha20poly1305::aead::hybrid_array::Array::<T, U>::from_slice`: use `TryFrom` instead
   --> src\vault.rs:82:26
    |
@@ -13,35 +69,35 @@ warning: use of deprecated associated function `chacha20poly1305::aead::hybrid_a
 98 |         .decrypt(XNonce::from_slice(nonce), ct)
    |                          ^^^^^^^^^^
 
+warning: unused variable: `total`
+   --> src\commands\training_files.rs:124:13
+    |
+124 |         let total = req.files.len();
+    |             ^^^^^ help: if this is intentional, prefix it with an underscore: `_total`
+    |
+    = note: `#[warn(unused_variables)]` (part of `#[warn(unused)]`) on by default
+
 warning: unused variable: `output`
    --> src\shots.rs:172:5
     |
 172 |     output: &Path,
     |     ^^^^^^ help: if this is intentional, prefix it with an underscore: `_output`
-    |
-    = note: `#[warn(unused_variables)]` (part of `#[warn(unused)]`) on by default
-
-warning: unused variable: `total`
-    --> src\main.rs:2039:13
-     |
-2039 |         let total = req.files.len();
-     |             ^^^^^ help: if this is intentional, prefix it with an underscore: `_total`
-
-warning: field `name` is never read
-    --> src\main.rs:1431:5
-     |
-1430 | struct TrainFile {
-     |        --------- field in this struct
-1431 |     name: String,
-     |     ^^^^
-     |
-     = note: `#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default
 
 warning: function `caption` is never used
    --> src\enhance.rs:101:8
     |
 101 | pub fn caption(port: u16, image: &str) -> Result<String, String> {
     |        ^^^^^^^
+    |
+    = note: `#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default
+
+warning: field `name` is never read
+  --> src\commands\training.rs:59:16
+   |
+58 | pub struct TrainFile {
+   |            --------- field in this struct
+59 |     pub(crate) name: String,
+   |                ^^^^
 
 warning: function `log_path` is never used
   --> src\server.rs:62:8
@@ -49,5 +105,5 @@ warning: function `log_path` is never used
 62 | pub fn log_path(root: &str) -> String {
    |        ^^^^^^^^
 
-warning: `comfy-shell` (bin "comfy-shell") generated 7 warnings (run `cargo fix --bin "comfy-shell" -p comfy-shell` to apply 2 suggestions)
-    Finished `dev` profile [unoptimized + debuginfo] target(s) in 15.17s
+warning: `comfy-shell` (bin "comfy-shell") generated 16 warnings (run `cargo fix --bin "comfy-shell" -p comfy-shell` to apply 11 suggestions)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 15.63s
