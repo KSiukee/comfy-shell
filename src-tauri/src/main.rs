@@ -204,6 +204,9 @@ fn main() {
             commands::system::job_cancel,
             commands::system::open_folder,
             commands::system::reveal_file,
+            commands::promptfx::style_list,
+            commands::promptfx::wildcard_map,
+            commands::promptfx::style_pack_open,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

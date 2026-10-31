@@ -119,6 +119,12 @@
           <textarea id="enhancedText" rows="6"></textarea>
         </div>
         <textarea id="prompt" rows="6" placeholder="描述你想要的画面；也可以直接写中文。"></textarea>
+        <div class="fx-row">
+          <span class="muted" style="font-size:11.5px">风格</span>
+          <select id="styleSel" title="套用风格包（styles/*.json）；{prompt} 会换成你写的提示词"></select>
+          <button class="btn small ghost" id="styleDirBtn" title="打开样式目录：放风格包 *.json 与 wildcards/*.txt">样式目录</button>
+          <span class="muted fx-hint" id="fxHint"></span>
+        </div>
       </div>
 
       <details class="field pro-only">
@@ -913,6 +919,7 @@
   <script src="store.js"></script>
   <script src="app.js"></script>
   <script src="results.js"></script>
+  <script src="promptfx.js"></script>
   <script src="projects.js"></script>
   <script src="vault.js"></script>
   <script src="layout.js"></script>

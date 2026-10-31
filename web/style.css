@@ -642,6 +642,11 @@ body.mode-pro .simple-only { display: none !important; }
 .topbar .status:has(.dot.err) #statusText { display: inline; }
 .topbar .status #statusText { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 /* 图区那条：进度 + 范围 + 大小 */
+/* 提示词效果行（#26）：风格 / 通配符 / 数组 / 内联 LoRA */
+.fx-row { display: flex; align-items: center; gap: 8px; margin-top: 6px; flex-wrap: wrap; }
+.fx-row select { width: auto; max-width: 220px; }
+.fx-hint { font-size: 11px; line-height: 1.5; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; flex: 1 1 160px; }
+
 .stagebar input[type="range"] { accent-color: var(--accent); }
 /* 项目管理动作（新建…锁定区）可收起：常驻太占地方，小三角一键展开 */
 .proj-toggle { padding: 4px 7px; font-size: 11px; line-height: 1; color: var(--muted); }

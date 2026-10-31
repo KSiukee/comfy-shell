@@ -100,6 +100,11 @@ try {
   check("版本 A/B 对比窗在", (await evaluate("!!document.getElementById('abModal')")) === true);
   const outOfRoot = await evaluate("api.call('image_meta', { path: 'D:/__nope__/zzz.png' })");
   check("image_meta 拒绝越界/不存在的路径", outOfRoot === null || outOfRoot === undefined, String(outOfRoot));
+  check("提示词风格下拉在", (await evaluate("!!document.getElementById('styleSel')")) === true);
+  const stylePacks = await evaluate("api.call('style_list')");
+  check("style_list 返回数组", Array.isArray(stylePacks), `${Array.isArray(stylePacks) ? stylePacks.length : "?"} 个`);
+  const wildcardMap = await evaluate("api.call('wildcard_map')");
+  check("wildcard_map 返回对象", !!wildcardMap && typeof wildcardMap === "object");
   const projects = await evaluate("api.call('project_list', { includeHidden: true })");
   check("project_list 返回数组", Array.isArray(projects), `${Array.isArray(projects) ? projects.length : "?"} 个项目`);
   check("测试项目 _test 在", Array.isArray(projects) && projects.some((p) => p.id === "_test"));

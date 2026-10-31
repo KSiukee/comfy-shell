@@ -2,6 +2,7 @@ pub mod ai;
 pub mod gallery;
 pub mod generation;
 pub mod projects;
+pub mod promptfx;
 pub mod system;
 pub mod training;
 pub mod training_files;
