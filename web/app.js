@@ -665,7 +665,6 @@ async function boot() {
   $("setFreeEnhance").checked = !!state.settings.freeEnhance;
 
   buildModelSelect();
-  buildSweepModels();
   refreshStatus(); // paint something before the slower queries
 
   try {
@@ -988,7 +987,6 @@ $("batchEditCancel").onclick = () => {
 };
 $("batchEditStart").onclick = () => runBatchEdit();
 
-$("btnSweepRun").onclick = () => runSweep();
 $("cmpExport").onclick = () => exportCompare();
 
 

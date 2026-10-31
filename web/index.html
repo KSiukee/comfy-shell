@@ -246,28 +246,30 @@
         </div>
       </details>
 
-      <details class="field queue-box pro-only">
-        <summary>横扫对比 <span class="muted">同一提示词，按模型 / 人像预设批量出图</span></summary>
-        <div class="row tight">
-          <select id="sweepMode" style="flex: 1 1 0">
-            <option value="presets">按人像预设</option>
-            <option value="models">按模型</option>
-          </select>
-          <select id="sweepSize" style="flex: 1 1 0">
-            <option value="one">当前尺寸</option>
-            <option value="five">5 个尺寸（512→1024）</option>
-          </select>
-          <select id="sweepBatch" style="flex: 0 0 90px">
-            <option value="1">1 张</option>
-            <option value="2">2 张</option>
-            <option value="3">3 张</option>
-          </select>
+      <details class="field queue-box pro-only" id="gridBox">
+        <summary>参数网格 <span class="muted">选两维扫一组，拼成表点一格采用</span></summary>
+        <div class="grid-axis">
+          <span class="muted">横轴</span>
+          <select id="gridXAxis"></select>
+          <input type="text" id="gridXValues" />
         </div>
-        <div class="sweep-models" id="sweepModels"></div>
-        <div class="row tight">
-          <button class="btn small primary" id="btnSweepRun">开始横扫</button>
-          <span class="muted mono" id="sweepState"></span>
+        <div class="grid-axis">
+          <span class="muted">纵轴</span>
+          <select id="gridYAxis"></select>
+          <input type="text" id="gridYValues" />
         </div>
+        <div class="row tight">
+          <button class="btn small ghost" id="gridTplModels">模型 × 尺寸</button>
+          <button class="btn small ghost" id="gridTplPresets">预设 × 尺寸</button>
+          <span class="muted mono" id="gridCount"></span>
+        </div>
+        <div class="row tight">
+          <button class="btn small primary" id="gridRun">开始网格</button>
+          <button class="btn small ghost" id="gridStop" hidden>停止</button>
+          <button class="btn small ghost" id="gridResume" hidden>继续上次</button>
+          <button class="btn small ghost" id="gridOpen">看结果</button>
+        </div>
+        <div class="muted mono" id="gridState" style="font-size:11px"></div>
       </details>
 
       <div class="gen-footer">
@@ -985,6 +987,16 @@
     </div>
   </div>
 
+  <div class="modal" id="gridModal" hidden>
+    <div class="modal-card" style="width: 92vw; max-width: 1400px">
+      <h3>参数网格 <span class="muted" id="gridModalMeta" style="font-size:12px"></span></h3>
+      <div class="grid-table" id="gridTable"></div>
+      <div class="modal-actions">
+        <button class="btn small ghost" id="gridModalClose">关闭</button>
+      </div>
+    </div>
+  </div>
+
   <div class="modal" id="problemsModal" hidden>
     <div class="modal-card" style="width: 760px">
       <h3>问题 <span class="muted" style="font-size:12px">最近的失败/错误集中在这里</span></h3>
@@ -1003,6 +1015,7 @@
   <script src="results.js"></script>
   <script src="workflowparams.js"></script>
   <script src="recipes.js"></script>
+  <script src="grid.js"></script>
   <script src="promptfx.js"></script>
   <script src="stylepick.js"></script>
   <script src="promptlint.js"></script>

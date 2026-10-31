@@ -104,6 +104,8 @@ try {
   check("提示词风格面板在", (await evaluate("!!document.getElementById('stylePop')")) === true);
   check("提示词体检窗在", (await evaluate("!!document.getElementById('lintModal')")) === true);
   check("使用说明窗在", (await evaluate("!!document.getElementById('helpModal')")) === true);
+  check("参数网格在", (await evaluate("!!document.getElementById('gridXAxis') && !!document.getElementById('gridYAxis')")) === true);
+  check("网格结果窗在", (await evaluate("!!document.getElementById('gridTable')")) === true);
   const layoutErr = await evaluate(
     "api.call('layout_check', { text: '{\"width\":1024,\"height\":1024,\"summary\":{\"caption\":\"x\"},\"items\":[]}' })",
   );
