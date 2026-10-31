@@ -66,3 +66,18 @@ fn branch_from_old_version() {
     assert_eq!(d.parent.as_deref(), Some(c.id.as_str()), "无效父版本退回最新");
     let _ = std::fs::remove_dir_all(&cfg);
 }
+
+#[test]
+fn layout_versions_are_marked_and_chained() {
+    let cfg = tmp("layout");
+    let _ = std::fs::remove_dir_all(&cfg);
+    let p = crate::project::create(&cfg, "排版版本").unwrap();
+    let a = save_layout(&cfg, &p.id, "第一版排版", r#"{"items":[]}"#).unwrap();
+    assert_eq!(a.kind, "layout");
+    assert_eq!(a.model_family, "moss");
+    assert!(a.parent.is_none());
+    let b = save_layout(&cfg, &p.id, "第二版排版", r#"{"items":[1]}"#).unwrap();
+    assert_eq!(b.parent.as_deref(), Some(a.id.as_str()));
+    assert_eq!(list(&cfg, &p.id).unwrap().len(), 2);
+    let _ = std::fs::remove_dir_all(&cfg);
+}

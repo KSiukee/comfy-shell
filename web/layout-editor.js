@@ -148,6 +148,21 @@ $("layoutTplSave").onclick = async () => {
   }
 };
 
+$("layoutVersionSave").onclick = async () => {
+  const p = window.projectUI && window.projectUI.currentObj ? window.projectUI.currentObj() : null;
+  if (!p) return toast("先选一个项目", true);
+  if (p.private) return toast("私密项目不记录排版版本", true);
+  const items = buildLayoutJson();
+  const name = ($("layoutTplName").value || "").trim() || `排版 ${new Date().toLocaleString()}`;
+  try {
+    const v = await api.call("layout_version_save", { project: p.id, name, items });
+    state.pendingLayout = items;
+    toast(`已存排版版本：${v.prompt}`);
+  } catch (e) {
+    toast(String(e), true);
+  }
+};
+
 $("layoutTplDel").onclick = async () => {
   const v = $("layoutPreset").value;
   if (!v.startsWith("tpl:")) return toast("先在下拉里选中「我的模板」里的一个", true);

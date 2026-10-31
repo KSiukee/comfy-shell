@@ -75,6 +75,10 @@ function verRow(v, project, rerender) {
   const head = document.createElement("div");
   head.className = "row tight";
   head.style.alignItems = "center";
+  const isLayout = v.kind === "layout";
+  const kind = document.createElement("span");
+  kind.textContent = isLayout ? "排版" : "出图";
+  kind.style.cssText = "font-size:11px;padding:1px 5px;border-radius:4px;background:" + (isLayout ? "#3a2f1e" : "#1e2a3a") + ";color:" + (isLayout ? "#d9a441" : "#7aa2d9");
   const time = document.createElement("span");
   time.className = "muted mono";
   time.style.fontSize = "11px";
@@ -95,10 +99,17 @@ function verRow(v, project, rerender) {
     $("versionsModal").hidden = true;
     toast(`下次生成从 #${idx} 分叉`);
   };
+  branch.hidden = isLayout;
   const fill = document.createElement("button");
   fill.className = "btn small";
-  fill.textContent = "填入";
+  fill.textContent = isLayout ? "载入排版" : "填入";
   fill.onclick = () => {
+    if (isLayout) {
+      state.pendingLayout = v.layout || null;
+      $("versionsModal").hidden = true;
+      toast("已载入排版，下次生成使用");
+      return;
+    }
     fillVersion(v);
     $("versionsModal").hidden = true;
     toast("已填入这版参数");
@@ -106,7 +117,7 @@ function verRow(v, project, rerender) {
   const diffBtn = document.createElement("button");
   diffBtn.className = "btn small ghost";
   diffBtn.textContent = "对比父版";
-  diffBtn.disabled = parentIdx < 0;
+  diffBtn.disabled = isLayout || parentIdx < 0;
   const del = document.createElement("button");
   del.className = "btn small ghost";
   del.textContent = "删";
@@ -119,7 +130,7 @@ function verRow(v, project, rerender) {
       toast(String(e), true);
     }
   };
-  head.append(verStars(v, project, rerender), time, parent, branch, fill, diffBtn, del);
+  head.append(verStars(v, project, rerender), kind, time, parent, branch, fill, diffBtn, del);
 
   const prompt = document.createElement("div");
   prompt.textContent = v.prompt;
@@ -152,6 +163,14 @@ function verRow(v, project, rerender) {
     }
   };
 
+  if (isLayout) {
+    const info = document.createElement("div");
+    info.className = "muted mono";
+    info.style.fontSize = "11px";
+    info.textContent = `MOSS 排版 · ${(v.layout || "").length} 字符`;
+    row.append(head, prompt, info);
+    return row;
+  }
   row.append(head, prompt, diffBox);
   return row;
 }

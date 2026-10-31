@@ -250,6 +250,16 @@ pub fn shots_export(
 // ---------------------------------------------------------------------------
 
 #[tauri::command]
+pub fn layout_version_save(
+    app: tauri::AppHandle,
+    project: String,
+    name: String,
+    items: String,
+) -> Result<versions::Version, String> {
+    versions::save_layout(&cfg_dir(&app), &project, &name, &items)
+}
+
+#[tauri::command]
 pub fn versions_list(app: tauri::AppHandle, project: String) -> Result<Vec<versions::Version>, String> {
     versions::list(&cfg_dir(&app), &project)
 }

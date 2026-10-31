@@ -166,6 +166,7 @@ fn main() {
             commands::projects::shot_set_layout,
             commands::projects::shot_delete,
             commands::projects::shots_export,
+            commands::projects::layout_version_save,
             commands::projects::versions_list,
             commands::projects::version_star,
             commands::projects::version_delete,

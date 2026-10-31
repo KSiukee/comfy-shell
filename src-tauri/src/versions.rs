@@ -32,6 +32,10 @@ pub struct Version {
     pub layout: Option<String>,
     pub images: Vec<String>,
     pub history_id: String,
+    #[serde(default = "image_kind")]
+    pub kind: String,
+    #[serde(default)]
+    pub model_family: String,
 }
 
 impl Default for Version {
@@ -53,6 +57,8 @@ impl Default for Version {
             layout: None,
             images: Vec::new(),
             history_id: String::new(),
+            kind: "image".into(),
+            model_family: String::new(),
         }
     }
 }
@@ -126,6 +132,56 @@ pub fn append(
         layout: seed.layout.clone(),
         images: images.to_vec(),
         history_id: history_id.to_string(),
+        kind: "image".into(),
+        model_family: String::new(),
+    };
+    list.push(v.clone());
+    save(cfg, project, &list)?;
+    Ok(v)
+}
+
+fn image_kind() -> String {
+    "image".into()
+}
+
+/// 把当前排版存成一个 `kind=layout` 的版本节点（父 = 上一条排版版本）。
+pub fn save_layout(
+    cfg: &Path,
+    project: &str,
+    name: &str,
+    items: &str,
+) -> Result<Version, String> {
+    if crate::vault::is_private(cfg, project) {
+        return Err("私密项目不记录排版版本".into());
+    }
+    if items.trim().is_empty() {
+        return Err("排版是空的".into());
+    }
+    let mut list = load(cfg, project)?;
+    let parent = list
+        .iter()
+        .rev()
+        .find(|v| v.kind == "layout")
+        .map(|v| v.id.clone());
+    let v = Version {
+        id: format!("v_{:08x}", rand::random::<u32>()),
+        parent,
+        created_at: now_ms(),
+        prompt: name.trim().to_string(),
+        negative: String::new(),
+        profile: String::new(),
+        mode: "layout".into(),
+        width: 0,
+        height: 0,
+        steps: 0,
+        cfg: 0.0,
+        seed: -1,
+        stars: 1,
+        layout: Some(items.to_string()),
+        images: Vec::new(),
+        history_id: String::new(),
+        kind: "layout".into(),
+        model_family: "moss".into(),
     };
     list.push(v.clone());
     save(cfg, project, &list)?;
