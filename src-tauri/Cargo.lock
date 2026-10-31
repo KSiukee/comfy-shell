@@ -363,7 +363,7 @@ dependencies = [
 
 [[package]]
 name = "comfy-shell"
-version = "0.43.3"
+version = "0.44.0"
 dependencies = [
  "base64 0.22.1",
  "image",

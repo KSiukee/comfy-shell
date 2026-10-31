@@ -88,6 +88,7 @@ try {
   check("排版模板下拉在", (await evaluate("!!document.getElementById('layoutPreset')")) === true);
   check("projects.js 已加载", (await evaluate("typeof window.projectUI === 'object'")) === true);
   check("大小滑条在", (await evaluate("!!document.getElementById('resSize')")) === true);
+  check("分隔条在", (await evaluate("!!document.getElementById('panelSplitter')")) === true);
   const projects = await evaluate("api.call('project_list', { includeHidden: true })");
   check("project_list 返回数组", Array.isArray(projects), `${Array.isArray(projects) ? projects.length : "?"} 个项目`);
 
