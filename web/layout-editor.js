@@ -342,6 +342,39 @@ function buildLayoutJson() {
   });
 }
 
+function layoutLoadJson(text) {
+  const data = typeof text === "string" ? JSON.parse(text) : text;
+  const items = (data && data.items) || [];
+  const w = Number($("width").value) || 1024;
+  const h = Number($("height").value) || 1024;
+  const clamp01 = (v) => Math.max(0, Math.min(1, v));
+  layoutItems = items.map((it) => {
+    const b = it.bbox || [0, 0, 0, 0];
+    const top = Number(b[0]) || 0;
+    const left = Number(b[1]) || 0;
+    const bottom = Number(b[2]) || 0;
+    const right = Number(b[3]) || 0;
+    const x = (left + w / 2) / w;
+    const y = (top + h / 2) / h;
+    const bw = (right - left) / w;
+    const bh = (bottom - top) / h;
+    return {
+      type: it.label === "text" ? "text" : "object",
+      desc: it.caption || "",
+      text: it.text || "",
+      bbox: [clamp01(x), clamp01(y), clamp01(bw), clamp01(bh)],
+    };
+  });
+  layoutSel = 0;
+  if (data && data.summary && data.summary.caption) {
+    $("layoutSummary").value = data.summary.caption;
+  }
+  layoutRender();
+  state.pendingLayout = buildLayoutJson();
+  layoutOpen();
+  return layoutItems.length;
+}
+
 $("btnLayout").onclick = () => { $("anaModal").hidden = true; $("poseModal").hidden = true; layoutOpen(); };
 $("layoutClose").onclick = () => ($("layoutModal").hidden = true);
 $("layoutAddText").onclick = () => layoutAdd("text");

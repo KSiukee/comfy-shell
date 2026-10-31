@@ -105,9 +105,18 @@ function verRow(v, project, rerender) {
   fill.textContent = isLayout ? "载入排版" : "填入";
   fill.onclick = () => {
     if (isLayout) {
-      state.pendingLayout = v.layout || null;
       $("versionsModal").hidden = true;
-      toast("已载入排版，下次生成使用");
+      if (typeof layoutLoadJson === "function") {
+        try {
+          const n = layoutLoadJson(v.layout || "{}");
+          toast(`已载入排版（${n} 个框），下次生成使用`);
+        } catch (e) {
+          toast(String(e), true);
+        }
+      } else {
+        state.pendingLayout = v.layout || null;
+        toast("已载入排版，下次生成使用");
+      }
       return;
     }
     fillVersion(v);
