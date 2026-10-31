@@ -112,7 +112,7 @@
           <span>提示词</span>
           <span class="muted" style="font-size:11.5px">Ctrl+Enter 生成</span>
           <span class="spacer"></span>
-          <button class="btn small" id="exprBtn" title="表情辅助：一键挑一个表情接在提示词后面">🙂 表情</button>
+          <button class="btn small" id="exprBtn" title="提示词添加器：表情 / 光线 / 构图 / 镜头 / 机位，中英双语">✚ 添加</button>
           <button class="btn small" id="phOpen" title="提示词辅助：姿势 / 去AI感 / 扩写 / 解析 / 排版 / 助手 / 风格">🧰 提示词辅助</button>
           <span id="phSrc" hidden>
             <button class="btn small ghost" id="btnPoses2" title="白模姿势库">🕺 姿势</button>
@@ -1001,13 +1001,13 @@
 
   <div class="modal" id="exprModal" hidden>
     <div class="modal-card" style="width: 860px">
-      <h3>表情辅助 <span class="muted" id="exprCount" style="font-size:12px"></span></h3>
+      <h3>提示词添加器 <span class="muted" id="exprCount" style="font-size:12px"></span></h3>
       <div class="row tight" style="margin-bottom:8px">
         <input type="text" id="exprSearch" placeholder="搜表情（中文 / 关键词）" style="flex:1 1 auto" />
       </div>
       <div class="row tight model-kinds" id="exprTabs"></div>
       <div class="expr-list" id="exprList"></div>
-      <div class="muted" style="font-size:11px;margin-top:8px">点一下就接在当前提示词末尾；已经有的不会重复加。预设里没有性别和镜头词，接在你的人物描述后面就行。</div>
+      <div class="muted" style="font-size:11px;margin-top:8px">点一下就接在当前提示词末尾；已有的不重复加。★ 收藏常用的。表情去掉了性别与镜头词，光线/构图/镜头/机位都是能直接接的短句。</div>
       <div class="modal-actions">
         <button class="btn small ghost" id="exprClose">关闭</button>
       </div>

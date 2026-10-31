@@ -1,0 +1,86 @@
+{
+  "note": "提示词添加器：光线 / 构图 / 镜头 / 机位。每条都是可直接接在提示词后面的短句，中英双语。",
+  "categories": [
+    {
+      "key": "light",
+      "label": "光线",
+      "items": [
+        { "n": "侧光", "zh": "侧光，明暗交界落在脸上", "en": "side lighting, shadow line across the face" },
+        { "n": "逆光", "zh": "逆光，边缘一圈轮廓光", "en": "backlit, rim light along the silhouette" },
+        { "n": "伦勃朗光", "zh": "伦勃朗光，脸侧三角光斑", "en": "Rembrandt lighting, triangle of light on the cheek" },
+        { "n": "蝴蝶光", "zh": "蝴蝶光，鼻下蝴蝶形阴影", "en": "butterfly lighting, butterfly shadow under the nose" },
+        { "n": "分割光", "zh": "分割光，脸一半亮一半暗", "en": "split lighting, half the face in shadow" },
+        { "n": "窗光", "zh": "柔和窗光，从侧面斜进来", "en": "soft window light from the side" },
+        { "n": "黄金时刻", "zh": "黄金时刻，暖色低角度阳光", "en": "golden hour, warm low sun" },
+        { "n": "蓝调时刻", "zh": "蓝调时刻，冷蓝环境光", "en": "blue hour, cold ambient light" },
+        { "n": "阴天柔光", "zh": "阴天柔光，几乎没有硬阴影", "en": "overcast soft light, no hard shadows" },
+        { "n": "硬光", "zh": "硬光，边界清晰的投影", "en": "hard light, crisp-edged shadows" },
+        { "n": "霓虹光", "zh": "霓虹光，粉蓝色块打在脸上", "en": "neon glow, pink and blue light on the face" },
+        { "n": "烛光", "zh": "烛光，暖橙色跳动光", "en": "candlelight, warm flickering glow" },
+        { "n": "顶光", "zh": "顶部光，眼窝带阴影", "en": "top light, shadows under the brow" },
+        { "n": "底光", "zh": "底光，从下方打上来", "en": "uplight from below" },
+        { "n": "丁达尔光", "zh": "丁达尔光，空气里有光柱", "en": "volumetric god rays through the air" },
+        { "n": "剪影", "zh": "剪影，主体全黑只留轮廓", "en": "silhouette, subject fully dark against the light" },
+        { "n": "光斑", "zh": "树叶漏下的斑驳光斑", "en": "dappled light through leaves" },
+        { "n": "混合色温", "zh": "冷背景暖主体，色温对比", "en": "mixed color temperature, warm subject against cool background" }
+      ]
+    },
+    {
+      "key": "frame",
+      "label": "构图",
+      "items": [
+        { "n": "三分法", "zh": "三分法构图，主体落在交点上", "en": "rule of thirds, subject on an intersection" },
+        { "n": "中心构图", "zh": "中心构图，主体居中对称", "en": "centered composition" },
+        { "n": "对称", "zh": "严格对称构图", "en": "strict symmetrical composition" },
+        { "n": "对角线", "zh": "对角线构图，画面有动势", "en": "diagonal composition" },
+        { "n": "引导线", "zh": "引导线把视线带向主体", "en": "leading lines toward the subject" },
+        { "n": "框架构图", "zh": "前景框架，像透过门框看", "en": "framing, seen through a doorway" },
+        { "n": "留白", "zh": "大量留白，主体偏一侧", "en": "lots of negative space, subject off to one side" },
+        { "n": "前景虚化", "zh": "前景虚化，主体清晰", "en": "blurred foreground, sharp subject" },
+        { "n": "特写", "zh": "特写，只到肩部", "en": "close-up, shoulders up" },
+        { "n": "半身", "zh": "半身构图，到腰部", "en": "half-body shot, waist up" },
+        { "n": "全身", "zh": "全身构图，含脚", "en": "full-body shot including feet" },
+        { "n": "环境肖像", "zh": "环境肖像，人物小、场景大", "en": "environmental portrait, small subject in a wide scene" },
+        { "n": "框不满", "zh": "画面裁掉部分肢体，更有张力", "en": "cropped framing, limbs cut off for tension" },
+        { "n": "重复元素", "zh": "背景重复元素，节奏感", "en": "repeating background elements" }
+      ]
+    },
+    {
+      "key": "lens",
+      "label": "镜头",
+      "items": [
+        { "n": "24mm 广角", "zh": "24mm 广角，透视夸张", "en": "24mm wide-angle, exaggerated perspective" },
+        { "n": "35mm 纪实", "zh": "35mm 纪实视角", "en": "35mm documentary look" },
+        { "n": "50mm 标准", "zh": "50mm 标准视角，接近人眼", "en": "50mm standard lens, natural perspective" },
+        { "n": "85mm 人像", "zh": "85mm 人像镜头，背景奶油化", "en": "85mm portrait lens, creamy background" },
+        { "n": "135mm 压缩", "zh": "135mm 长焦压缩，空间被压平", "en": "135mm telephoto compression, flattened space" },
+        { "n": "微距", "zh": "微距镜头，细节放大", "en": "macro lens, extreme detail" },
+        { "n": "鱼眼", "zh": "鱼眼镜头，明显桶形畸变", "en": "fisheye, strong barrel distortion" },
+        { "n": "移轴", "zh": "移轴镜头，像微缩模型", "en": "tilt-shift, miniature look" },
+        { "n": "浅景深", "zh": "浅景深 f/1.4，背景虚化成块", "en": "shallow depth of field f/1.4, background melted" },
+        { "n": "深景深", "zh": "深景深 f/8，前后都清楚", "en": "deep focus f/8, everything sharp" },
+        { "n": "焦外光斑", "zh": "焦外光斑，背景散成一粒粒光", "en": "bokeh balls in the background" },
+        { "n": "变形宽银幕", "zh": "变形宽银幕镜头，横向拉丝高光", "en": "anamorphic lens, horizontal flares" },
+        { "n": "老镜头", "zh": "老镜头质感，轻微柔焦与色散", "en": "vintage lens, slight softness and chromatic aberration" }
+      ]
+    },
+    {
+      "key": "angle",
+      "label": "机位",
+      "items": [
+        { "n": "正面", "zh": "正面平视", "en": "front view, eye level" },
+        { "n": "四分之三侧", "zh": "四分之三侧面", "en": "three-quarter profile" },
+        { "n": "正侧", "zh": "正侧面，只看到一侧轮廓", "en": "full profile, one-sided silhouette" },
+        { "n": "背面", "zh": "背面视角", "en": "from behind" },
+        { "n": "回头看", "zh": "回头越过肩膀看镜头", "en": "looking back over the shoulder" },
+        { "n": "俯视", "zh": "俯视机位，从上往下拍", "en": "high angle, looking down" },
+        { "n": "仰视", "zh": "低机位仰拍，显得高大", "en": "low angle, looking up" },
+        { "n": "主观视角", "zh": "第一人称主观视角", "en": "first-person POV" },
+        { "n": "过肩", "zh": "过肩镜头，前景有肩膀", "en": "over-the-shoulder shot" },
+        { "n": "荷兰角", "zh": "荷兰角，画面倾斜", "en": "dutch angle, tilted frame" },
+        { "n": "双人合照", "zh": "双人同框，一前一后", "en": "two-shot, one in front of the other" },
+        { "n": "头顶视角", "zh": "正上方俯拍，像无人机", "en": "top-down drone view" }
+      ]
+    }
+  ]
+}
