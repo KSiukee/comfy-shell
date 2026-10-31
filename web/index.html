@@ -43,6 +43,8 @@
     <button class="btn small ghost" id="projDelete" title="移到回收站，可恢复">删除</button>
     <button class="btn small ghost" id="projTrashBtn" title="回收站">回收站</button>
     <span class="spacer"></span>
+    <span class="muted" style="font-size:12px">大小</span>
+    <input type="range" id="resSize" min="240" max="560" step="10" value="440" style="width:110px;flex:0 0 110px" title="结果图大小（双击复位）" />
     <button class="btn small ghost" id="btnClearHistory" title="只清列表，不删图片文件">清空历史</button>
     <button class="btn small ghost" id="btnOpenOut" title="在资源管理器中打开输出目录">打开输出目录</button>
     <label class="check" style="font-size:12px"><input type="checkbox" id="projShowHidden" /> 显示隐藏</label>
@@ -253,8 +255,6 @@
         <button class="btn danger big" id="btnCancel" hidden>取消</button>
       </div>
     </aside>
-
-    <div class="splitter" id="panelSplitter" title="拖动调整左栏宽度（双击复位）"></div>
 
     <section class="stage">
       <div class="stagebar">
