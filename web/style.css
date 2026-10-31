@@ -697,6 +697,13 @@ body.mode-pro .simple-only { display: none !important; }
 .shot-pick-row span:nth-child(2) { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 12.5px; }
 .shot-pick-row .mono { flex: 0 0 auto; font-size: 11px; }
 
+/* 配方库 */
+.recipe-list { display: flex; flex-direction: column; gap: 6px; max-height: 52vh; overflow-y: auto; }
+.recipe-row { display: flex; align-items: center; gap: 8px; border: 1px solid var(--line); border-radius: 9px; padding: 8px 10px; background: #0f1219; }
+.recipe-main { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.recipe-main b { font-size: 13px; font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.recipe-main span { font-size: 11px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
 /* 自定义工作流参数表单 */
 .wf-params { display: flex; flex-direction: column; gap: 6px; }
 .wf-param { display: flex; align-items: center; gap: 8px; }

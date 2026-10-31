@@ -13,6 +13,7 @@ mod commands;
 mod pose;
 mod project;
 mod promptlib;
+mod recipes;
 mod server;
 mod shots;
 mod single_instance;
@@ -140,6 +141,9 @@ fn main() {
             commands::system::custom_save,
             commands::system::custom_delete,
             commands::system::custom_params,
+            commands::system::recipe_list,
+            commands::system::recipe_save,
+            commands::system::recipe_delete,
             commands::system::layout_tpl_list,
             commands::system::layout_tpl_load,
             commands::system::layout_tpl_save,

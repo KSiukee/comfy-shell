@@ -174,7 +174,16 @@ function verRow(v, project, rerender) {
       toast(String(e), true);
     }
   };
-  head.append(pick, verStars(v, project, rerender), kind, time, parent, branch, fill, diffBtn, del);
+  const recipeBtn = document.createElement("button");
+  recipeBtn.className = "btn small ghost";
+  recipeBtn.textContent = "存为配方";
+  recipeBtn.hidden = isLayout;
+  recipeBtn.onclick = () => {
+    $("versionsModal").hidden = true;
+    if (typeof recipeSaveFromVersion === "function") recipeSaveFromVersion(v);
+    else toast("配方库还没加载", true);
+  };
+  head.append(pick, verStars(v, project, rerender), kind, time, parent, branch, fill, recipeBtn, diffBtn, del);
 
   const prompt = document.createElement("div");
   prompt.textContent = v.prompt;

@@ -966,6 +966,25 @@
     </div>
   </div>
 
+  <div class="modal" id="recipesModal" hidden>
+    <div class="modal-card" style="width: 720px">
+      <h3>配方库 <span class="muted" style="font-size:12px">模型 + LoRA + 参数 + 风格 + 排版，一键复用</span></h3>
+      <div class="row tight" style="margin-bottom:8px">
+        <input type="text" id="recipeName" placeholder="配方名称（例如：夜景电影感人像）" style="flex:1 1 auto" />
+        <select id="recipeScope" style="flex:0 0 132px">
+          <option value="">全局</option>
+          <option value="project">只当前项目</option>
+        </select>
+        <button class="btn small primary" id="recipeSaveBtn">保存当前表单</button>
+      </div>
+      <div class="muted" style="font-size:11.5px;margin-bottom:10px">会把模型、尺寸、步数、CFG、LoRA、风格、提示词、排版一起存下来；应用时覆盖到表单。</div>
+      <div id="recipeList" class="recipe-list"></div>
+      <div class="modal-actions">
+        <button class="btn small ghost" id="recipeClose">关闭</button>
+      </div>
+    </div>
+  </div>
+
   <div class="modal" id="problemsModal" hidden>
     <div class="modal-card" style="width: 760px">
       <h3>问题 <span class="muted" style="font-size:12px">最近的失败/错误集中在这里</span></h3>
@@ -983,6 +1002,7 @@
   <script src="app.js"></script>
   <script src="results.js"></script>
   <script src="workflowparams.js"></script>
+  <script src="recipes.js"></script>
   <script src="promptfx.js"></script>
   <script src="stylepick.js"></script>
   <script src="promptlint.js"></script>

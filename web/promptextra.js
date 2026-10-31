@@ -26,6 +26,12 @@ window.PH_EXTRA = [
     desc: "人话版说明书：一分钟出图、各功能怎么用、常见问题",
     onclick: () => openHelp(),
   },
+  {
+    icon: "🧾",
+    title: "配方库",
+    desc: "把模型 + LoRA + 参数 + 风格 + 排版存成一份，一键套回来",
+    onclick: () => openRecipes(),
+  },
 ];
 
 async function mossDraft() {

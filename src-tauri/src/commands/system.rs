@@ -315,6 +315,26 @@ pub fn custom_params(app: tauri::AppHandle, name: String) -> Result<Vec<custom::
 }
 
 // ---------------------------------------------------------------------------
+// 配方库（#28）
+
+#[tauri::command]
+pub fn recipe_list(app: tauri::AppHandle) -> Vec<recipes::Recipe> {
+    recipes::list(&cfg_dir(&app))
+}
+
+#[tauri::command]
+pub fn recipe_save(app: tauri::AppHandle, recipe: String) -> Result<recipes::Recipe, String> {
+    let r: recipes::Recipe =
+        serde_json::from_str(&recipe).map_err(|e| format!("配方格式不对：{e}"))?;
+    recipes::save(&cfg_dir(&app), r)
+}
+
+#[tauri::command]
+pub fn recipe_delete(app: tauri::AppHandle, id: String) -> Result<(), String> {
+    recipes::delete(&cfg_dir(&app), &id)
+}
+
+// ---------------------------------------------------------------------------
 // Saved MOSS layout templates
 // ---------------------------------------------------------------------------
 
