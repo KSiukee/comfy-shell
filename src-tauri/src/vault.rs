@@ -47,6 +47,8 @@ pub struct VaultImage {
     pub height: u32,
     pub size: u64,
     pub mtime: u64,
+    #[serde(default)]
+    pub starred: bool,
 }
 
 #[derive(Serialize, Deserialize)]
@@ -264,6 +266,7 @@ pub fn make_private(cfg: &Path, output: &Path, id: &str) -> Result<Project, Stri
                 height,
                 size,
                 mtime,
+                starred: false,
             });
             idx += 1;
         }
@@ -308,6 +311,20 @@ pub fn unprivate(cfg: &Path, output: &Path, id: &str) -> Result<Project, String>
     let _ = std::fs::remove_file(meta_path(cfg, id));
     let _ = std::fs::remove_dir_all(images_dir(cfg, id));
     Ok(project)
+}
+
+/// 私密图片的收藏：写在加密 meta 里，不落 stars.json。
+pub fn set_star(cfg: &Path, id: &str, name: &str, on: bool) -> Result<(), String> {
+    safe_id(id)?;
+    let key = session_key()?;
+    let mut data = read_meta(cfg, id, &key)?;
+    let im = data
+        .images
+        .iter_mut()
+        .find(|x| x.name == name)
+        .ok_or("私密项目里没有这张图")?;
+    im.starred = on;
+    write_meta(cfg, &data, &key)
 }
 
 fn now_ms() -> u64 {
@@ -358,7 +375,7 @@ pub fn lib_items(cfg: &Path) -> Vec<crate::library::LibItem> {
                 mtime: im.mtime,
                 width: im.width,
                 height: im.height,
-                starred: false,
+                starred: im.starred,
             });
         }
     }
@@ -366,30 +383,5 @@ pub fn lib_items(cfg: &Path) -> Vec<crate::library::LibItem> {
 }
 
 #[cfg(test)]
-mod tests {
-    use super::*;
-
-    fn tmpcfg(tag: &str) -> PathBuf {
-        std::env::temp_dir().join(format!("cs_vault_{tag}_{}", std::process::id()))
-    }
-
-    #[test]
-    fn wrap_unwrap_and_wrong_password() {
-        let master = [7u8; KEY_LEN];
-        let wrapped = wrap_key("hunter2", &master).unwrap();
-        let got = unwrap_key("hunter2", &wrapped).unwrap();
-        assert_eq!(got, master);
-        assert!(unwrap_key("wrong", &wrapped).is_err());
-    }
-
-    #[test]
-    fn seal_open_roundtrip_and_tamper() {
-        let key = [9u8; KEY_LEN];
-        let sealed = seal(&key, b"hello vault").unwrap();
-        assert_eq!(open(&key, &sealed).unwrap(), b"hello vault");
-        let mut bad = sealed.clone();
-        let n = bad.len();
-        bad[n - 1] ^= 0xff;
-        assert!(open(&key, &bad).is_err());
-    }
-}
+#[path = "vault_tests.rs"]
+mod tests;

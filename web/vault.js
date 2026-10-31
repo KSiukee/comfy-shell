@@ -35,8 +35,87 @@ async function vaultRefreshStatus() {
     libScope = "project";
     if (libScopeSel) libScopeSel.value = "project";
   }
+  updateVaultButton();
   return vaultState;
 }
+
+function updateVaultButton() {
+  const b = $("vaultBtn");
+  if (!b) return;
+  b.textContent = vaultState.unlocked ? "🔓 锁定区" : "🔒 锁定区";
+  b.title = vaultState.unlocked ? "锁定区已解锁（点开管理）" : "锁定区：加密的私密项目";
+}
+
+// 静默解锁：窗口在前台、没有输入焦点、没有弹窗时，直接敲口令 + Enter。
+// 失败不提示、不加载任何私密项目；连错 5 次静默冷却 30 秒。
+let silentBuf = "";
+let silentFails = 0;
+let silentBlockUntil = 0;
+let silentTimer = null;
+
+function silentReset() {
+  silentBuf = "";
+  if (silentTimer) {
+    clearTimeout(silentTimer);
+    silentTimer = null;
+  }
+}
+
+function silentEligible() {
+  if (!vaultState.exists || vaultState.unlocked) return false;
+  if (!document.hasFocus()) return false;
+  if (document.querySelector(".modal:not([hidden])")) return false;
+  const el = document.activeElement;
+  if (!el) return true;
+  const tag = (el.tagName || "").toLowerCase();
+  if (tag === "input" || tag === "textarea" || tag === "select") return false;
+  return !el.isContentEditable;
+}
+
+window.addEventListener(
+  "keydown",
+  (e) => {
+    if (!silentEligible()) return;
+    if (e.ctrlKey || e.altKey || e.metaKey) return;
+    if (e.key === "Escape") {
+      silentReset();
+      return;
+    }
+    if (e.key === "Enter") {
+      if (!silentBuf) return;
+      e.preventDefault();
+      const pass = silentBuf;
+      silentReset();
+      if (Date.now() < silentBlockUntil) return;
+      api
+        .call("vault_unlock", { pass })
+        .then(async () => {
+          await vaultRefreshStatus();
+          vaultIdleAt = Date.now();
+        })
+        .catch(() => {
+          silentFails += 1;
+          if (silentFails >= 5) {
+            silentBlockUntil = Date.now() + 30000;
+            silentFails = 0;
+          }
+        });
+      return;
+    }
+    if (e.key.length === 1) {
+      const c = e.key.charCodeAt(0);
+      if (c >= 32 && c <= 126) {
+        e.preventDefault();
+        silentBuf += e.key;
+        if (silentBuf.length > 128) silentBuf = silentBuf.slice(-128);
+        if (silentTimer) clearTimeout(silentTimer);
+        silentTimer = setTimeout(silentReset, 5000);
+      }
+    }
+  },
+  true
+);
+window.addEventListener("blur", silentReset);
 
 async function vaultLockNow() {
   try {

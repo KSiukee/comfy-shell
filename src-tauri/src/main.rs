@@ -728,6 +728,12 @@ fn stars_list(app: tauri::AppHandle) -> Vec<String> {
 
 #[tauri::command]
 fn library_star(app: tauri::AppHandle, path: String, starred: bool) {
+    if let Some(rest) = path.strip_prefix("vault://") {
+        if let Some((id, name)) = rest.split_once('/') {
+            let _ = vault::set_star(&cfg_dir(&app), id, name, starred);
+        }
+        return;
+    }
     let state = app.state::<AppState>();
     let out = output_dir(&state);
     library::star(&cfg_dir(&app), &out, &path, starred);
