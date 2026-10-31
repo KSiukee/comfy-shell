@@ -237,10 +237,12 @@ function libProjectOf(subfolder) {
 function filterLibItems(items) {
   const active = projCurrent();
   return (items || []).filter((it) => {
+    const isVault = (it.path || "").startsWith("vault://");
+    if (libScope === "private") return isVault;
+    if (isVault) return false;
     const pid = libProjectOf(it.subfolder);
     if (pid === "_test") return false;
     if (pid && projState.hiddenIds.has(pid)) return false;
-    if (libScope === "private") return false; // #17 未启用
     if (libScope === "all") return true;
     return active ? pid === active.id : !pid;
   });

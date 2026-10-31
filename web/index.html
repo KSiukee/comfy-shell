@@ -42,6 +42,7 @@
     <button class="btn small ghost" id="projHide" title="隐藏只是不显示，文件仍是明文">隐藏</button>
     <button class="btn small ghost" id="projDelete" title="移到回收站，可恢复">删除</button>
     <button class="btn small ghost" id="projTrashBtn" title="回收站">回收站</button>
+    <button class="btn small ghost" id="vaultBtn" title="锁定区：加密的私密项目">🔒 锁定区</button>
     <span class="spacer"></span>
     <span class="muted" style="font-size:12px">大小</span>
     <input type="range" id="resSize" min="100" max="560" step="10" value="440" style="width:110px;flex:0 0 110px" title="结果图大小（双击复位）" />
@@ -769,11 +770,22 @@
     </div>
   </div>
 
+  <div class="modal" id="vaultModal" hidden>
+    <div class="modal-card" style="width: 560px">
+      <h3>锁定区 <span class="muted" style="font-size:12px">口令加密 · 锁定时连名字都不显示</span></h3>
+      <div id="vaultPane"></div>
+      <div class="row tight" style="justify-content:flex-end; margin-top:12px">
+        <button class="btn small ghost" id="vaultClose">关闭</button>
+      </div>
+    </div>
+  </div>
+
   <div class="toast" id="toast" hidden></div>
 
   <script src="store.js"></script>
   <script src="app.js"></script>
   <script src="projects.js"></script>
+  <script src="vault.js"></script>
   <script src="layout.js"></script>
 </body>
 </html>

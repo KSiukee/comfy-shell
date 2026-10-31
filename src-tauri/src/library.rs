@@ -186,7 +186,7 @@ fn jpeg_size(b: &[u8]) -> Option<(u32, u32)> {
     None
 }
 
-fn image_size(path: &Path) -> (u32, u32) {
+pub(crate) fn image_size(path: &Path) -> (u32, u32) {
     use std::io::Read;
     let mut f = match std::fs::File::open(path) {
         Ok(f) => f,
@@ -198,8 +198,16 @@ fn image_size(path: &Path) -> (u32, u32) {
     png_size(b).or_else(|| jpeg_size(b)).unwrap_or((0, 0))
 }
 
-/// Recursively collect images under `output`, newest first, capped.
+/// Recursively collect images under `output` + unlocked vault items, newest first.
 pub fn scan(cfg: &Path, output: &Path, cap: usize) -> Vec<LibItem> {
+    let mut items = scan_plain(cfg, output, cap);
+    items.extend(crate::vault::lib_items(cfg));
+    items.sort_by(|a, b| b.mtime.cmp(&a.mtime));
+    items.truncate(cap);
+    items
+}
+
+fn scan_plain(cfg: &Path, output: &Path, cap: usize) -> Vec<LibItem> {
     let key = cache_key(cfg, output);
     if let Ok(guard) = CACHE.lock() {
         if let Some((k, items)) = guard.as_ref() {

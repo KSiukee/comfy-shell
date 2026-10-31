@@ -90,6 +90,7 @@ try {
   check("大小滑条在", (await evaluate("!!document.getElementById('resSize')")) === true);
   check("分隔条在", (await evaluate("!!document.getElementById('panelSplitter')")) === true);
   check("图库范围在", (await evaluate("!!document.getElementById('libScope')")) === true);
+  check("锁定区按钮在", (await evaluate("!!document.getElementById('vaultBtn')")) === true);
   const projects = await evaluate("api.call('project_list', { includeHidden: true })");
   check("project_list 返回数组", Array.isArray(projects), `${Array.isArray(projects) ? projects.length : "?"} 个项目`);
 

@@ -11,6 +11,7 @@ mod project;
 mod server;
 mod single_instance;
 mod state;
+mod vault;
 
 use serde::{Deserialize, Serialize};
 use serde_json::json;
@@ -309,7 +310,24 @@ fn read_input_image(state: State<AppState>, name: String) -> Result<String, Stri
 
 /// Read any file under the ComfyUI output folder as a data URL (used by history).
 #[tauri::command]
-fn read_output_image(state: State<AppState>, path: String) -> Result<String, String> {
+fn read_output_image(app: tauri::AppHandle, state: State<AppState>, path: String) -> Result<String, String> {
+    if let Some(rest) = path.strip_prefix("vault://") {
+        let (id, name) = rest.split_once('/').ok_or("私密图片路径不对")?;
+        let bytes = crate::vault::read_image(&cfg_dir(&app), id, name)?;
+        let lower = name.to_lowercase();
+        let mime = if lower.ends_with(".webp") {
+            "image/webp"
+        } else if lower.ends_with(".jpg") || lower.ends_with(".jpeg") {
+            "image/jpeg"
+        } else {
+            "image/png"
+        };
+        use base64::Engine as _;
+        return Ok(format!(
+            "data:{mime};base64,{}",
+            base64::engine::general_purpose::STANDARD.encode(&bytes)
+        ));
+    }
     let root = std::path::PathBuf::from(state.settings.lock().unwrap().comfy_root.clone());
     let full = std::path::PathBuf::from(&path);
     let canon_root = root.canonicalize().unwrap_or(root.clone());
@@ -593,6 +611,53 @@ fn project_restore(app: tauri::AppHandle, state: State<AppState>, dir: String) -
 #[tauri::command]
 fn project_purge(app: tauri::AppHandle, dir: String) -> Result<(), String> {
     project::purge(&cfg_dir(&app), &dir)
+}
+
+// ---------------------------------------------------------------------------
+// 私密仓库（口令 → Argon2id → 主密钥；项目配置 + 图片加密）
+// ---------------------------------------------------------------------------
+
+#[tauri::command]
+fn vault_status(app: tauri::AppHandle) -> serde_json::Value {
+    vault::status(&cfg_dir(&app))
+}
+
+#[tauri::command]
+fn vault_setup(app: tauri::AppHandle, pass: String) -> Result<(), String> {
+    vault::setup(&cfg_dir(&app), &pass)
+}
+
+#[tauri::command]
+fn vault_unlock(app: tauri::AppHandle, pass: String) -> Result<(), String> {
+    vault::unlock(&cfg_dir(&app), &pass)
+}
+
+#[tauri::command]
+fn vault_lock() {
+    vault::lock();
+}
+
+#[tauri::command]
+fn project_make_private(
+    app: tauri::AppHandle,
+    state: State<AppState>,
+    id: String,
+) -> Result<project::Project, String> {
+    vault::make_private(&cfg_dir(&app), &output_dir(&state), &id)
+}
+
+#[tauri::command]
+fn project_private_list(app: tauri::AppHandle) -> Vec<project::Project> {
+    vault::list(&cfg_dir(&app))
+}
+
+#[tauri::command]
+fn project_unprivate(
+    app: tauri::AppHandle,
+    state: State<AppState>,
+    id: String,
+) -> Result<project::Project, String> {
+    vault::unprivate(&cfg_dir(&app), &output_dir(&state), &id)
 }
 
 // ---------------------------------------------------------------------------
@@ -2184,6 +2249,13 @@ fn main() {
             project_trash,
             project_restore,
             project_purge,
+            vault_status,
+            vault_setup,
+            vault_unlock,
+            vault_lock,
+            project_make_private,
+            project_private_list,
+            project_unprivate,
             library_scan,
             library_delete,
             delete_results,

@@ -100,7 +100,7 @@ fn safe_component(s: &str) -> Result<(), String> {
     Ok(())
 }
 
-fn load(cfg: &Path, id: &str) -> Result<Project, String> {
+pub(crate) fn load(cfg: &Path, id: &str) -> Result<Project, String> {
     safe_component(id)?;
     let text = std::fs::read_to_string(project_file(cfg, id)).map_err(|e| format!("读取项目失败：{e}"))?;
     serde_json::from_str(&text).map_err(|e| format!("解析项目失败：{e}"))
