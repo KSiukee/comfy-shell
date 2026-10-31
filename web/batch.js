@@ -2,14 +2,112 @@
 
 // ---------------------------------------------------------------- batch queue
 
-const queue = { items: [], running: false, stop: false, done: 0 };
+const queue = {
+  items: [],
+  running: false,
+  paused: false,
+  stop: false,
+  done: 0,
+  cancelCurrent: false,
+  seq: 0,
+};
+
+const qSleep = (ms) => new Promise((r) => setTimeout(r, ms));
+
+function queueEta() {
+  const secs = (state.results || [])
+    .slice(0, 20)
+    .map((r) => Number(r.seconds))
+    .filter((n) => Number.isFinite(n) && n > 0);
+  const avg = secs.length ? secs.reduce((a, b) => a + b, 0) / secs.length : 15;
+  const waiting = queue.items.filter((i) => i.status === "waiting").length;
+  return Math.max(1, Math.round(waiting * avg));
+}
+
+function queueMove(item, dir) {
+  if (item.status !== "waiting") return;
+  const idx = queue.items.indexOf(item);
+  if (idx < 0) return;
+  for (let j = idx + dir; j >= 0 && j < queue.items.length; j += dir) {
+    if (queue.items[j].status === "waiting") {
+      [queue.items[idx], queue.items[j]] = [queue.items[j], queue.items[idx]];
+      renderQueue();
+      return;
+    }
+  }
+}
 
 function renderQueue() {
-  $("queueCount").textContent = queue.items.length ? `${queue.done}/${queue.items.length}` : "0";
+  const box = $("queueList");
+  if (box) {
+    box.innerHTML = "";
+    queue.items.forEach((it, i) => {
+      const row = document.createElement("div");
+      row.className = `queue-item ${it.status}`;
+      const st = document.createElement("span");
+      st.className = "qs";
+      st.textContent =
+        it.status === "running" ? "▶" : it.status === "done" ? "✓" : it.status === "error" ? "!" : "·";
+      const txt = document.createElement("span");
+      txt.className = "qt";
+      txt.textContent = it.text;
+      txt.title = it.text;
+      const time = document.createElement("span");
+      time.className = "muted mono";
+      time.style.fontSize = "10px";
+      time.textContent = it.seconds ? `${Math.round(it.seconds)}s` : "";
+      row.append(st, txt, time);
+      if (it.status === "waiting") {
+        const up = document.createElement("button");
+        up.className = "btn ghost small";
+        up.textContent = "↑";
+        up.disabled = i === 0;
+        up.onclick = () => queueMove(it, -1);
+        const down = document.createElement("button");
+        down.className = "btn ghost small";
+        down.textContent = "↓";
+        down.onclick = () => queueMove(it, 1);
+        const del = document.createElement("button");
+        del.className = "btn ghost small";
+        del.textContent = "×";
+        del.title = "从队列移除";
+        del.onclick = () => {
+          queue.items = queue.items.filter((x) => x !== it);
+          renderQueue();
+        };
+        row.append(up, down, del);
+      } else if (it.status === "running") {
+        const cancel = document.createElement("button");
+        cancel.className = "btn ghost small";
+        cancel.textContent = "取消";
+        cancel.onclick = () => {
+          queue.cancelCurrent = true;
+          api.call("job_cancel");
+        };
+        row.append(cancel);
+      }
+      box.appendChild(row);
+    });
+  }
+  const waiting = queue.items.filter((i) => i.status === "waiting").length;
+  $("queueCount").textContent = queue.items.length
+    ? `${queue.done}/${queue.items.length}`
+    : "0";
   $("btnQueueRun").hidden = queue.running;
   $("btnQueueStop").hidden = !queue.running;
-  $("btnQueueRun").disabled = queue.items.length === 0;
-  $("queueState").textContent = queue.running ? "运行中…" : "";
+  const pause = $("btnQueuePause");
+  if (pause) {
+    pause.hidden = !queue.running;
+    pause.textContent = queue.paused ? "继续" : "暂停";
+  }
+  $("btnQueueRun").disabled = queue.items.length === 0 || !waiting;
+  $("queueState").textContent = queue.running
+    ? queue.paused
+      ? `已暂停 · 剩 ${waiting} 条 · ~${queueEta()}s`
+      : `运行中… 剩 ${waiting} 条 · ~${queueEta()}s`
+    : waiting
+      ? `待跑 ${waiting} 条`
+      : "";
 }
 
 function queueAdd() {
@@ -21,7 +119,9 @@ function queueAdd() {
     toast("先写几行提示词", true);
     return;
   }
-  queue.items.push(...lines);
+  for (const text of lines) {
+    queue.items.push({ id: ++queue.seq, text, status: "waiting", seconds: 0 });
+  }
   $("queueText").value = "";
   renderQueue();
   toast(`已加入 ${lines.length} 条`);
@@ -30,27 +130,62 @@ function queueAdd() {
 async function queueRun() {
   if (!(await ensureReady("开始队列"))) return;
   if (queue.running || !queue.items.length) return;
+  const waiting = queue.items.filter((i) => i.status === "waiting");
+  if (!waiting.length) {
+    toast("队列里没有待跑的条目", true);
+    return;
+  }
   if (!multiStart()) return;
   queue.running = true;
+  queue.paused = false;
   queue.stop = false;
+  queue.cancelCurrent = false;
   queue.done = 0;
+  for (const it of queue.items) {
+    if (it.status === "error") it.status = "waiting";
+    it.seconds = 0;
+  }
   renderQueue();
-  const total = queue.items.length;
-  while (queue.items.length && !queue.stop) {
-    $("prompt").value = queue.items[0];
-    const ok = await generate();
-    queue.items.shift();
-    if (ok) queue.done++;
+  const total = queue.items.filter((i) => i.status !== "done").length;
+
+  while (!queue.stop) {
+    if (queue.paused) {
+      await qSleep(250);
+      continue;
+    }
+    const item = queue.items.find((i) => i.status === "waiting");
+    if (!item) break;
+    item.status = "running";
+    item.startedAt = Date.now();
+    queue.cancelCurrent = false;
     renderQueue();
-    if (!ok && queue.stop) break;
+    $("prompt").value = item.text;
+    let ok = false;
+    try {
+      ok = await generate();
+    } catch (e) {
+      problemsAdd("queue", String(e), item.text);
+    }
+    item.seconds = (Date.now() - (item.startedAt || Date.now())) / 1000;
+    item.status = ok ? "done" : "error";
+    if (ok) queue.done += 1;
+    else problemsAdd("queue", `队列第 ${queue.done + 1} 条失败`, item.text);
+    renderQueue();
   }
   queue.running = false;
+  queue.paused = false;
   queue.stop = false;
+  queue.cancelCurrent = false;
   multiEnd();
   renderQueue();
   toast(`队列结束（完成 ${queue.done}/${total}）`);
 }
 
+$("btnQueuePause").onclick = () => {
+  if (!queue.running) return;
+  queue.paused = !queue.paused;
+  renderQueue();
+};
 
 // ---------------------------------------------------------------- batch edit from library
 

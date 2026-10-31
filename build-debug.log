@@ -1,4 +1,4 @@
-   Compiling comfy-shell v0.65.0 (D:\deepseek-files\ai-tools\comfy-shell\src-tauri)
+   Compiling comfy-shell v0.66.0 (D:\deepseek-files\ai-tools\comfy-shell\src-tauri)
 warning: unused import: `tauri::State`
  --> src\commands\ai.rs:4:5
   |
@@ -147,4 +147,4 @@ warning: function `log_path` is never used
    |        ^^^^^^^^
 
 warning: `comfy-shell` (bin "comfy-shell") generated 21 warnings (run `cargo fix --bin "comfy-shell" -p comfy-shell` to apply 12 suggestions)
-    Finished `dev` profile [unoptimized + debuginfo] target(s) in 4.32s
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 15.66s

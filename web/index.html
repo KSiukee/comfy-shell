@@ -30,6 +30,7 @@
       <button class="btn ghost" id="btnLibrary">图库</button>
       <button class="btn ghost" id="btnStart">启动</button>
       <button class="btn ghost" id="btnStop">停止</button>
+      <button class="btn ghost" id="problemsBtn" hidden>⚠ <span id="problemsCount">0</span></button>
       <button class="btn ghost" id="btnSettings">设置</button>
     </div>
   </header>
@@ -221,10 +222,12 @@
       <details class="field queue-box">
         <summary>批量队列 <span class="muted" id="queueCount">0</span></summary>
         <textarea id="queueText" rows="4" placeholder="每行一条提示词，按当前模型/参数依次生成"></textarea>
+        <div id="queueList" class="queue-list"></div>
         <div class="row tight">
           <button class="btn small" id="btnQueueAdd">加入队列</button>
           <button class="btn small ghost" id="btnStorySplit" title="用本地 LLM 把剧情拆成连续分镜">剧情拆分…</button>
           <button class="btn small primary" id="btnQueueRun">开始</button>
+          <button class="btn small ghost" id="btnQueuePause" hidden>暂停</button>
           <button class="btn small ghost" id="btnQueueStop" hidden>停止</button>
           <span class="muted mono" id="queueState"></span>
         </div>
@@ -839,6 +842,17 @@
     </div>
   </div>
 
+  <div class="modal" id="problemsModal" hidden>
+    <div class="modal-card" style="width: 760px">
+      <h3>问题 <span class="muted" style="font-size:12px">最近的失败/错误集中在这里</span></h3>
+      <div id="problemsList" style="max-height:58vh;overflow:auto;display:flex;flex-direction:column;gap:8px"></div>
+      <div class="modal-actions">
+        <button class="btn small ghost" id="problemsClear">清空</button>
+        <button class="btn small ghost" id="problemsClose">关闭</button>
+      </div>
+    </div>
+  </div>
+
   <div class="toast" id="toast" hidden></div>
 
   <script src="store.js"></script>
@@ -859,6 +873,7 @@
   <script src="region.js"></script>
   <script src="meta.js"></script>
   <script src="workspace.js"></script>
+  <script src="problems.js"></script>
   <script src="boot.js"></script>
 </body>
 </html>

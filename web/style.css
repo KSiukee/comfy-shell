@@ -537,3 +537,16 @@ body.mode-pro .simple-only { display: none !important; }
 }
 .projectbar select { width: 220px; flex: 0 0 220px; padding: 4px 8px; font-size: 12px; }
 .projectbar .btn { flex: 0 0 auto; white-space: nowrap; }
+
+/* queue + problems */
+.queue-list { display: flex; flex-direction: column; gap: 4px; margin: 6px 0; max-height: 220px; overflow: auto; }
+.queue-item { display: flex; align-items: center; gap: 5px; padding: 3px 6px; border: 1px solid var(--line); border-radius: 6px; font-size: 12px; }
+.queue-item .qs { width: 14px; text-align: center; color: var(--muted); }
+.queue-item.running { border-color: #4b7bbd; }
+.queue-item.running .qs { color: #7aa2d9; }
+.queue-item.done { opacity: .55; }
+.queue-item.error { border-color: #8a3b3b; }
+.queue-item.error .qs { color: #e06c75; }
+.queue-item .qt { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.queue-item button { padding: 0 4px; font-size: 11px; }
+.problem-row { border: 1px solid var(--line); border-radius: 6px; padding: 6px 8px; font-size: 12px; }
