@@ -231,6 +231,10 @@ generate = async function fxGenerate() {
   const style = currentStyle();
   const fxOn = jobs.some((j) => (j.loras && j.loras.length) || j.wildcards > 0) || !!style;
   if (!jobs.length || (jobs.length === 1 && !fxOn)) return baseGenerate();
+  if (typeof lintPrompt === "function") {
+    const warn = lintPrompt().filter((i) => i.level === "warn");
+    if (warn.length) toast(`体检发现 ${warn.length} 条要注意的（🧰 → 提示词体检）`, true);
+  }
   if (jobs.length > 1) toast(`数组展开：${jobs.length} 组，依次生成`);
   let ok = 0;
   for (const job of jobs) {

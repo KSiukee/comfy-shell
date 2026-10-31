@@ -331,6 +331,12 @@ pub fn layout_tpl_delete(app: tauri::AppHandle, name: String) -> Result<(), Stri
     layouts::delete(&cfg_dir(&app), &name)
 }
 
+/// 按 MOSS 官方 layout.md 校验一份排版 JSON；返回问题列表（空 = 通过）。
+#[tauri::command]
+pub fn layout_check(text: String) -> Result<Vec<String>, String> {
+    layouts::check_layout(&text)
+}
+
 
 #[tauri::command]
 pub fn open_folder(path: String) {

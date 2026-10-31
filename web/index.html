@@ -890,6 +890,18 @@
     </div>
   </div>
 
+  <!-- 提示词体检 -->
+  <div class="modal" id="lintModal" hidden>
+    <div class="modal-card lint-card">
+      <h3>提示词体检 <span class="muted" style="font-size:12px">只提示，不拦生成</span></h3>
+      <div class="lint-list" id="lintList"></div>
+      <div class="modal-actions">
+        <button class="btn small ghost" id="lintRefresh">重新体检</button>
+        <button class="btn small ghost" id="lintClose">关闭</button>
+      </div>
+    </div>
+  </div>
+
   <!-- 提示词辅助器：把散在提示词栏的小按钮收成一张卡片页 -->
   <div class="modal" id="phModal" hidden>
     <div class="modal-card ph-card">
@@ -949,10 +961,13 @@
   <script src="results.js"></script>
   <script src="promptfx.js"></script>
   <script src="stylepick.js"></script>
+  <script src="promptlint.js"></script>
+  <script src="promptextra.js"></script>
   <script src="prompthelper.js"></script>
   <script src="projects.js"></script>
   <script src="vault.js"></script>
   <script src="layout.js"></script>
+  <script src="layoutio.js"></script>
   <script src="data.js"></script>
   <script src="shots.js"></script>
   <script src="versions.js"></script>

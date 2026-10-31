@@ -145,12 +145,9 @@ function verRow(v, project, rerender) {
     if (isLayout) {
       $("versionsModal").hidden = true;
       if (typeof layoutLoadJson === "function") {
-        try {
-          const n = layoutLoadJson(v.layout || "{}");
-          toast(`已载入排版（${n} 个框），下次生成使用`);
-        } catch (e) {
-          toast(String(e), true);
-        }
+        Promise.resolve(layoutLoadJson(v.layout || "{}"))
+          .then((n) => toast(n ? `已载入排版（${n} 个框），下次生成使用` : "排版没能载入"))
+          .catch((e) => toast(String(e), true));
       } else {
         state.pendingLayout = v.layout || null;
         toast("已载入排版，下次生成使用");

@@ -3,6 +3,29 @@
 use crate::*;
 use tauri::State;
 
+/// 用本机模型写一份 MOSS 排版草稿（官方 layout.md 的草稿格式），失败会带着校验错误重试一次。
+#[tauri::command]
+pub async fn layout_draft(
+    app: tauri::AppHandle,
+    request: String,
+    width: Option<i64>,
+    height: Option<i64>,
+) -> Result<serde_json::Value, String> {
+    if request.trim().is_empty() {
+        return Err("先写一句想画什么".into());
+    }
+    let handle = app.clone();
+    tauri::async_runtime::spawn_blocking(move || {
+        let port = handle.state::<AppState>().settings.lock().unwrap().port;
+        if api::health(port).is_none() {
+            return Err("ComfyUI 没有在运行".into());
+        }
+        enhance::layout_draft(port, &request, width.unwrap_or(1024), height.unwrap_or(1024))
+    })
+    .await
+    .map_err(|e| format!("排版草稿失败: {e}"))?
+}
+
 #[tauri::command]
 pub async fn story_split(app: tauri::AppHandle, text: String, max_panels: u32) -> Result<Vec<String>, String> {
     if text.trim().is_empty() {

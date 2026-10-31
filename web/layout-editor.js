@@ -342,31 +342,32 @@ function buildLayoutJson() {
   });
 }
 
-function layoutLoadJson(text) {
-  const data = typeof text === "string" ? JSON.parse(text) : text;
-  const items = (data && data.items) || [];
-  const w = Number($("width").value) || 1024;
-  const h = Number($("height").value) || 1024;
-  const clamp01 = (v) => Math.max(0, Math.min(1, v));
-  layoutItems = items.map((it) => {
-    const b = it.bbox || [0, 0, 0, 0];
-    const top = Number(b[0]) || 0;
-    const left = Number(b[1]) || 0;
-    const bottom = Number(b[2]) || 0;
-    const right = Number(b[3]) || 0;
-    const x = (left + w / 2) / w;
-    const y = (top + h / 2) / h;
-    const bw = (right - left) / w;
-    const bh = (bottom - top) / h;
-    return {
-      type: it.label === "text" ? "text" : "object",
-      desc: it.caption || "",
-      text: it.text || "",
-      bbox: [clamp01(x), clamp01(y), clamp01(bw), clamp01(bh)],
-    };
-  });
+async function layoutLoadJson(text) {
+  let data;
+  try {
+    data = typeof text === "string" ? JSON.parse(text) : text;
+  } catch (e) {
+    toast(`排版 JSON 解析失败：${e}`, true);
+    return 0;
+  }
+  const errs = (await layoutCheckJson(data)) || [];
+  if (errs.length) {
+    toast(`排版没载入：${errs[0]}${errs.length > 1 ? `（共 ${errs.length} 条）` : ""}`, true);
+    if (typeof problemsAdd === "function") problemsAdd("layout", errs.join("\n"), "");
+    return 0;
+  }
+  const norm = normalizeLayoutDraft(data, Number($("width").value) || 1024, Number($("height").value) || 1024);
+  if (!norm.items.length) {
+    toast("这份排版里没有元素", true);
+    return 0;
+  }
+  if (!norm.compiled) {
+    $("width").value = norm.width;
+    $("height").value = norm.height;
+  }
+  layoutItems = norm.items;
   layoutSel = 0;
-  if (data && data.summary && data.summary.caption) {
+  if (data.summary && data.summary.caption) {
     $("layoutSummary").value = data.summary.caption;
   }
   layoutRender();
@@ -382,7 +383,14 @@ $("layoutAddObj").onclick = () => layoutAdd("object");
 $("layoutRun").onclick = async () => {
   const summary = ($("layoutSummary").value || $("prompt").value || "").trim();
   if (!summary) return toast("先写整张图的描述", true);
-  state.pendingLayout = buildLayoutJson();
+  const built = buildLayoutJson();
+  const errs = (await layoutCheckJson(built)) || [];
+  if (errs.length) {
+    toast(`排版有问题：${errs[0]}${errs.length > 1 ? `（共 ${errs.length} 条）` : ""}`, true);
+    if (typeof problemsAdd === "function") problemsAdd("layout", errs.join("\n"), "");
+    return;
+  }
+  state.pendingLayout = built;
   if (!$("prompt").value.trim()) $("prompt").value = summary;
   $("layoutModal").hidden = true;
   await generate();

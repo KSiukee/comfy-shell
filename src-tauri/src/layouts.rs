@@ -74,6 +74,86 @@ fn check_items(v: &Value) -> Result<(), String> {
     Ok(())
 }
 
+/// 校验一份 MOSS 排版 JSON，按官方 `references/layout.md` 的规矩来：
+/// - 草稿：`width/height`（16 的倍数）+ `items[].label/caption/bbox`（abs、xyxy、像素）
+/// - 编译后：`bbox_coord_space=abs_centralized` + `bbox_format=yxyx`（没有画布字段）
+/// 只报问题、不改东西；空 Vec 表示通过。
+pub fn check_layout(text: &str) -> Result<Vec<String>, String> {
+    let v: Value = serde_json::from_str(text).map_err(|e| format!("不是合法 JSON：{e}"))?;
+    let mut errs: Vec<String> = Vec::new();
+    let space = v.get("bbox_coord_space").and_then(|x| x.as_str()).unwrap_or("");
+    let fmt = v.get("bbox_format").and_then(|x| x.as_str()).unwrap_or("");
+    let compiled = space == "abs_centralized" || fmt == "yxyx";
+    let draft = !compiled;
+
+    let (w, h) = if draft {
+        let w = v.get("width").and_then(|x| x.as_i64()).unwrap_or(0);
+        let h = v.get("height").and_then(|x| x.as_i64()).unwrap_or(0);
+        if w <= 0 || h <= 0 {
+            errs.push("草稿要写 width / height（正整数）".into());
+        } else {
+            if w % 16 != 0 {
+                errs.push(format!("width {w} 不是 16 的倍数（MOSS 要求）"));
+            }
+            if h % 16 != 0 {
+                errs.push(format!("height {h} 不是 16 的倍数（MOSS 要求）"));
+            }
+        }
+        (w, h)
+    } else {
+        (0, 0)
+    };
+
+    let summary = v
+        .get("summary")
+        .and_then(|x| x.get("caption"))
+        .and_then(|x| x.as_str())
+        .unwrap_or("")
+        .trim();
+    if summary.is_empty() {
+        errs.push("summary.caption 不能为空".into());
+    }
+
+    let items = v.get("items").and_then(|x| x.as_array()).cloned().unwrap_or_default();
+    if items.is_empty() {
+        errs.push("items 不能为空".into());
+    }
+    for (i, it) in items.iter().enumerate() {
+        let n = i + 1;
+        let label = it.get("label").and_then(|x| x.as_str()).unwrap_or("");
+        if !["object", "character", "text"].contains(&label) {
+            errs.push(format!("第 {n} 项 label 只能是 object / character / text"));
+        }
+        if it.get("caption").and_then(|x| x.as_str()).unwrap_or("").trim().is_empty() {
+            errs.push(format!("第 {n} 项 caption 不能为空"));
+        }
+        if label == "text" && it.get("text").and_then(|x| x.as_str()).unwrap_or("").trim().is_empty() {
+            errs.push(format!("第 {n} 项是 text，必须写要渲染的原字（text）"));
+        }
+        let Some(bbox) = it.get("bbox").and_then(|x| x.as_array()) else {
+            errs.push(format!("第 {n} 项缺 bbox"));
+            continue;
+        };
+        if bbox.len() != 4 {
+            errs.push(format!("第 {n} 项 bbox 要 4 个数"));
+            continue;
+        }
+        let Some(nums) = bbox.iter().map(|x| x.as_f64()).collect::<Option<Vec<f64>>>() else {
+            errs.push(format!("第 {n} 项 bbox 里有非数字"));
+            continue;
+        };
+        if nums[2] <= nums[0] || nums[3] <= nums[1] {
+            errs.push(format!("第 {n} 项 bbox 的右下角要大于左上角"));
+        }
+        if draft && w > 0 && h > 0 {
+            if nums[0] < 0.0 || nums[1] < 0.0 || nums[2] > w as f64 || nums[3] > h as f64 {
+                errs.push(format!("第 {n} 项 bbox 超出画布 {w}×{h}"));
+            }
+        }
+    }
+    Ok(errs)
+}
+
 pub fn load(cfg: &Path, name: &str) -> Result<Value, String> {
     let text = std::fs::read_to_string(file(cfg, name))
         .map_err(|e| format!("读取模板失败：{e}"))?;
@@ -130,6 +210,61 @@ mod tests {
         assert!(check_items(&json!([{"type": "object", "desc": "x", "bbox": [0, 0, 2, 1]}])).is_err());
         assert!(check_items(&json!([{"type": "object", "desc": "x", "bbox": [0, 0, 0, 1]}])).is_err());
         assert!(check_items(&json!([{"type": "object", "bbox": [0, 0, 1, 1]}])).is_err());
+    }
+
+    #[test]
+    fn check_layout_accepts_draft_and_compiled() {
+        let draft = json!({
+            "width": 1536, "height": 1024,
+            "bbox_coord_space": "abs", "bbox_format": "xyxy",
+            "summary": {"caption": "campaign"},
+            "items": [
+                {"label": "object", "caption": "cup", "bbox": [176, 224, 800, 864]},
+                {"label": "text", "caption": "title", "text": "把日常，过成诗。", "bbox": [928, 272, 1408, 448]}
+            ]
+        });
+        assert!(check_layout(&draft.to_string()).unwrap().is_empty(), "{:?}", check_layout(&draft.to_string()));
+
+        let compiled = json!({
+            "summary": {"caption": "campaign"},
+            "items": [{"label": "object", "caption": "cup", "bbox": [-288, -592, 352, 32]}],
+            "bbox_coord_space": "abs_centralized", "bbox_format": "yxyx"
+        });
+        assert!(check_layout(&compiled.to_string()).unwrap().is_empty());
+    }
+
+    #[test]
+    fn check_layout_reports_real_problems() {
+        let cases = [
+            (json!({"width": 1000, "height": 1024, "summary": {"caption": "x"},
+                    "items": [{"label": "object", "caption": "cup", "bbox": [0, 0, 10, 10]}]}),
+             "16 的倍数"),
+            (json!({"width": 1024, "height": 1024, "summary": {"caption": ""},
+                    "items": [{"label": "object", "caption": "cup", "bbox": [0, 0, 10, 10]}]}),
+             "summary.caption"),
+            (json!({"width": 1024, "height": 1024, "summary": {"caption": "x"}, "items": []}),
+             "items 不能为空"),
+            (json!({"width": 1024, "height": 1024, "summary": {"caption": "x"},
+                    "items": [{"label": "widget", "caption": "cup", "bbox": [0, 0, 10, 10]}]}),
+             "label"),
+            (json!({"width": 1024, "height": 1024, "summary": {"caption": "x"},
+                    "items": [{"label": "text", "caption": "title", "bbox": [0, 0, 10, 10]}]}),
+             "原字"),
+            (json!({"width": 1024, "height": 1024, "summary": {"caption": "x"},
+                    "items": [{"label": "object", "caption": "cup", "bbox": [900, 0, 1200, 100]}]}),
+             "超出画布"),
+            (json!({"width": 1024, "height": 1024, "summary": {"caption": "x"},
+                    "items": [{"label": "object", "caption": "cup", "bbox": [100, 0, 100, 50]}]}),
+             "右下角"),
+        ];
+        for (doc, want) in cases {
+            let errs = check_layout(&doc.to_string()).unwrap();
+            assert!(
+                errs.iter().any(|e| e.contains(want)),
+                "期望有包含「{want}」的错误，实际 {errs:?}"
+            );
+        }
+        assert!(check_layout("{not json").is_err());
     }
 
     #[test]

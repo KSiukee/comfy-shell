@@ -575,3 +575,46 @@ fn extract_text(outputs: serde_json::Value) -> Result<String, String> {
 
 
 
+
+/// 让本机模型按 MOSS 官方 layout.md 写一份「排版草稿」（width/height + items，像素 xyxy）。
+/// 校验不通过就带着错误重试一次，仍不过就如实报错（不把坏草稿塞给画布）。
+const LAYOUT_SYS: &str = r#"You compose a MOSS-Image layout draft as JSON and nothing else.
+Example of the exact shape (values are illustrative):
+{"width":1024,"height":1024,"bbox_coord_space":"abs","bbox_format":"xyxy","summary":{"caption":"A warm poster for a coffee shop, white cup on a wooden table, morning light."},"items":[{"label":"object","caption":"A white ceramic cup on a wooden table, soft morning light from the left.","bbox":[160,240,640,760]},{"label":"text","caption":"Large dark-green Chinese title, crisp lettering, no backing panel.","text":"早安","bbox":[660,120,940,260]}]}
+Rules:
+- bbox is always [x1,y1,x2,y2] in canvas pixels: x1 < x2 and y1 < y2, all inside 0..W / 0..H.
+- 1 to 6 items, each a coherent visible unit. Text drawn on an object still gets its own item.
+- EVERY item whose label is "text" MUST also carry "text": the exact characters to render, in the user's language, with \n for intended line breaks.
+- Captions describe appearance and surface treatment only: no tool instructions, no coordinates, no quality keywords.
+- Keep W and H exactly as given. Reply with the JSON object only, no prose.
+"#;
+
+pub fn layout_draft(port: u16, request: &str, width: i64, height: i64) -> Result<Value, String> {
+    let base = format!("画布：{width}×{height}\n需求：{}", request.trim());
+    let mut prompt = base.clone();
+    let mut last = String::new();
+    for _ in 0..3 {
+        let wf = json!({
+            "1": {"class_type": "CLIPLoader",
+                  "inputs": {"clip_name": "qwen35_9b_heretic_int8_convrot.safetensors",
+                             "type": "flux3", "device": "default"}},
+            "2": {"class_type": "TextGenerate",
+                  "inputs": {"clip": ["1", 0], "prompt": prompt, "max_length": 900,
+                             "sampling_mode": "off", "system_prompt": LAYOUT_SYS}},
+            "3": {"class_type": "PreviewAny", "inputs": {"source": ["2", 0]}},
+        });
+        let raw = extract_text(api::run_raw(port, wf, 420)?)?;
+        let text = extract_json(&raw);
+        let decided = match serde_json::from_str::<Value>(&text) {
+            Ok(v) => match crate::layouts::check_layout(&v.to_string()) {
+                Ok(errs) if errs.is_empty() => return Ok(v),
+                Ok(errs) => errs.join("；"),
+                Err(e) => e,
+            },
+            Err(e) => format!("输出不是 JSON：{e}"),
+        };
+        last = decided;
+        prompt = format!("{base}\n\n上一次的问题：{last}\n只输出修正后的 JSON，不要解释。");
+    }
+    Err(format!("没写出合格的排版：{last}"))
+}

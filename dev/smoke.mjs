@@ -102,6 +102,11 @@ try {
   check("image_meta 拒绝越界/不存在的路径", outOfRoot === null || outOfRoot === undefined, String(outOfRoot));
   check("提示词风格按钮在", (await evaluate("!!document.getElementById('stylePickBtn')")) === true);
   check("提示词风格面板在", (await evaluate("!!document.getElementById('stylePop')")) === true);
+  check("提示词体检窗在", (await evaluate("!!document.getElementById('lintModal')")) === true);
+  const layoutErr = await evaluate(
+    "api.call('layout_check', { text: '{\"width\":1024,\"height\":1024,\"summary\":{\"caption\":\"x\"},\"items\":[]}' })",
+  );
+  check("layout_check 抓空 items", Array.isArray(layoutErr) && layoutErr.length === 1, JSON.stringify(layoutErr));
   check("提示词辅助按钮在", (await evaluate("!!document.getElementById('phOpen')")) === true);
   check("提示词辅助卡片窗在", (await evaluate("!!document.getElementById('phModal')")) === true);
   const stylePacks = await evaluate("api.call('style_list')");

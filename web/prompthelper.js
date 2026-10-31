@@ -14,8 +14,9 @@ function phBuild() {
   const grid = $("phGrid");
   if (!grid) return;
   grid.textContent = "";
-  for (const t of PH_TILES) {
-    const src = $(t.src);
+  const tiles = PH_TILES.concat(window.PH_EXTRA || []);
+  for (const t of tiles) {
+    const src = t.src ? $(t.src) : null;
     const b = document.createElement("button");
     b.type = "button";
     b.className = "ph-tile";
@@ -30,12 +31,13 @@ function phBuild() {
     desc.textContent = t.desc;
     txt.append(head, desc);
     b.append(ico, txt);
-    const off = !src || src.hidden || src.disabled;
+    const off = t.onclick ? false : !src || src.hidden || src.disabled;
     b.disabled = off;
     if (off) b.title = src && src.disabled ? "当前模型/模式下不可用" : "这个模型没有它";
     b.onclick = () => {
       closePh();
-      if (src) src.click();
+      if (t.onclick) t.onclick();
+      else if (src) src.click();
     };
     grid.appendChild(b);
   }

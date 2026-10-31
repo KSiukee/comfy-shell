@@ -3,6 +3,13 @@
 > 本文件是补写的更新历史：最早十二个版本没有当时的发布记录，依据 `dev/test_*.py`、截图、README 旧版与代码痕迹重建，
 > 标注「推断」的条目细节可能有偏差；有发布记录之后为当时实测记录。
 
+## v0.72.0
+- **排版 JSON 按 MOSS 官方规范校验**（`layouts::check_layout` + `layout_check` 命令）：草稿要求 `width/height` 是 16 的倍数、`items` 非空、`label ∈ object/character/text`、text 项必须写要渲染的原字、bbox 四个数且右下大于左上、不越界；编译后的 `abs_centralized/yxyx` 也认。导入坏文件不再静默裁剪，会说出「第几项、错在哪」并记进「问题」面板；「按排版生成」前也会先过一遍。
+- **导入两种格式都吃**：官方草稿（`width/height` + 像素 `xyxy`）与编译后（`abs_centralized` + `yxyx`）；草稿会顺带把画布宽高填回表单。
+- **提示词体检**（新 `web/promptlint.js`，🧰 里多一格）：扫未知通配符、内联 LoRA 不在模型列表、质量词堆砌（masterpiece/best quality/8k…）、估算 token 超 4K、反向提示词为空；**只提示不拦**，生成前若有着「注意」级问题会 toast 一次。
+- **排版草稿**（新 `layout_draft` 命令 + 🧰 一格）：用本机模型按当前画布写 MOSS 排版 JSON（官方草稿格式），校验不过会带着错误重试（最多 3 次），通过后直接进画布微调。实测一次通过：白杯 + 「早安」两项，`{label:object}` 与 `{label:text,text:"早安"}`。
+- Rust 单测 44（+2：草稿/编译两种格式通过、七类真实问题各抓得到）、冒烟 32（+2：体检窗、layout_check 抓空 items）。
+
 ## v0.71.1
 - **输入框统一深色**：全局输入样式只匹配 `input[type="text"]`，而界面里有 7 个没写 `type` 的输入框（风格搜索、排版描述/模板名、姿势搜索、图库搜索、提示词搜索、新建项目名）一直用浏览器默认白底。选择器补上 `input:not([type])` 与 `input[type="search"]`，七个一次到位（实测计算背景色都是 `#0f1219`）。
 - 风格搜索框显式补 `type="text"`，占位符颜色调暗到 `#5d6579`。
