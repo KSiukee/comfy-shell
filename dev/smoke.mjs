@@ -18,6 +18,10 @@ const child = spawn(exe, [], {
   stdio: "ignore",
   windowsHide: false,
 });
+let childExited = false;
+child.on("exit", () => {
+  childExited = true;
+});
 
 let ws;
 let nextId = 0;
@@ -26,6 +30,9 @@ const pending = new Map();
 async function pageTarget(timeoutMs = 25000) {
   const t0 = Date.now();
   while (Date.now() - t0 < timeoutMs) {
+    if (childExited) {
+      throw new Error("应用启动后立刻退出：可能已有显影在跑（单实例）。先关掉它再跑 smoke。");
+    }
     try {
       const list = await (await fetch(`http://127.0.0.1:${port}/json`)).json();
       const page = list.find((t) => t.type === "page");

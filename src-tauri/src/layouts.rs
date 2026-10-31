@@ -91,7 +91,7 @@ pub fn save(cfg: &Path, name: &str, items_json: &str) -> Result<String, String> 
     check_items(&v)?;
     std::fs::create_dir_all(dir(cfg)).map_err(|e| e.to_string())?;
     let text = serde_json::to_string_pretty(&v).map_err(|e| e.to_string())?;
-    std::fs::write(file(cfg, &name), text).map_err(|e| e.to_string())?;
+    crate::fsutil::atomic_write_str(&file(cfg, &name), &text)?;
     Ok(name)
 }
 

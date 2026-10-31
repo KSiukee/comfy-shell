@@ -57,7 +57,7 @@ pub fn save(cfg: &Path, name: &str, json_text: &str) -> Result<String, String> {
         return Err("这不像是 ComfyUI 的 API 格式工作流（每个节点应有 class_type 与 inputs）".into());
     }
     std::fs::create_dir_all(dir(cfg)).map_err(|e| e.to_string())?;
-    std::fs::write(dir(cfg).join(format!("{name}.json")), json_text).map_err(|e| e.to_string())?;
+    crate::fsutil::atomic_write_str(&dir(cfg).join(format!("{name}.json")), json_text)?;
     Ok(name)
 }
 

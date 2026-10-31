@@ -3,10 +3,12 @@
 mod api;
 mod custom;
 mod enhance;
+mod fsutil;
 mod history;
 mod layouts;
 mod library;
 mod server;
+mod single_instance;
 mod state;
 
 use serde::{Deserialize, Serialize};
@@ -1217,7 +1219,7 @@ fn save_experiment(handle: &tauri::AppHandle, name: &str, data: serde_json::Valu
         return;
     }
     if let Ok(text) = serde_json::to_string_pretty(&data) {
-        let _ = std::fs::write(dir.join(format!("{name}.json")), text);
+        let _ = fsutil::atomic_write_str(&dir.join(format!("{name}.json")), &text);
     }
 }
 
@@ -2046,9 +2048,28 @@ fn job_cancel(state: State<AppState>) {
 // ---------------------------------------------------------------------------
 
 fn main() {
+    // 同一份数据只许一个进程写：第二个实例拉一下前台信号就退出。
+    let _instance = match single_instance::acquire_single() {
+        Ok(Some(guard)) => guard,
+        Ok(None) => {
+            single_instance::signal_focus();
+            return;
+        }
+        Err(e) => {
+            eprintln!("{e}");
+            std::process::exit(1);
+        }
+    };
+    let focus_event = single_instance::create_focus_event();
+
     tauri::Builder::default()
-        .setup(|app| {
+        .setup(move |app| {
             let handle = app.handle().clone();
+            single_instance::spawn_focus_listener(focus_event, handle.clone());
+            let cfg = cfg_dir(&handle);
+            fsutil::cleanup_parts(&cfg);
+            fsutil::cleanup_parts(&cfg.join("workflows"));
+            fsutil::cleanup_parts(&cfg.join("layouts"));
             let settings = load_settings(&handle);
             app.manage(AppState {
                 child: Mutex::new(None),

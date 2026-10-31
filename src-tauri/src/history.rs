@@ -48,7 +48,7 @@ pub fn load(dir: &PathBuf) -> Vec<HistoryItem> {
 pub fn save(dir: &PathBuf, items: &[HistoryItem]) {
     let trimmed: Vec<&HistoryItem> = items.iter().take(MAX_ITEMS).collect();
     if let Ok(text) = serde_json::to_string(&trimmed) {
-        let _ = std::fs::write(path(dir), text);
+        let _ = crate::fsutil::atomic_write_str(&path(dir), &text);
     }
 }
 

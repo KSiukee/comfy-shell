@@ -91,5 +91,5 @@ pub(crate) fn load_settings(app: &tauri::AppHandle) -> Settings {
 pub(crate) fn write_settings(app: &tauri::AppHandle, s: &Settings) -> Result<(), String> {
     let p = cfg_dir(app).join("settings.json");
     let text = serde_json::to_string_pretty(s).map_err(|e| e.to_string())?;
-    std::fs::write(p, text).map_err(|e| e.to_string())
+    crate::fsutil::atomic_write_str(&p, &text)
 }

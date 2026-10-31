@@ -55,7 +55,7 @@ fn load_disk_cache(cfg: &Path, key: u64) -> Option<Vec<LibItem>> {
 fn save_disk_cache(cfg: &Path, key: u64, items: &[LibItem]) {
     let v = serde_json::json!({"key": key, "items": items});
     if let Ok(text) = serde_json::to_string(&v) {
-        let _ = std::fs::write(cache_file(cfg), text);
+        let _ = crate::fsutil::atomic_write_str(&cache_file(cfg), &text);
     }
 }
 
@@ -77,7 +77,7 @@ fn save_stars(cfg: &Path, set: &HashSet<String>) {
     let mut v: Vec<&String> = set.iter().collect();
     v.sort();
     if let Ok(text) = serde_json::to_string(&v) {
-        let _ = std::fs::write(stars_file(cfg), text);
+        let _ = crate::fsutil::atomic_write_str(&stars_file(cfg), &text);
     }
 }
 
