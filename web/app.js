@@ -1,4 +1,3 @@
-const { invoke } = window.__TAURI__.core;
 const { listen } = window.__TAURI__.event;
 
 const $ = (id) => document.getElementById(id);
@@ -84,7 +83,7 @@ function fmtTime(s) {
 
 async function refreshStatus() {
   try {
-    const st = await invoke("server_status");
+    const st = await api.call("server_status");
     state.healthy = st.healthy;
     const dot = $("statusDot");
     const text = $("statusText");
@@ -309,7 +308,7 @@ async function setThumbSrc(imgEl, name) {
     return;
   }
   try {
-    const url = await invoke("read_input_image", { name });
+    const url = await api.call("read_input_image", { name });
     thumbCache.set(name, url);
     imgEl.src = url;
   } catch {
@@ -329,7 +328,7 @@ async function addRefFile(file) {
     r.onerror = rej;
     r.readAsDataURL(file);
   });
-  const name = await invoke("save_ref_image", { name: file.name, dataUrl });
+  const name = await api.call("save_ref_image", { name: file.name, dataUrl });
   state.refs.push(name);
   thumbCache.set(name, dataUrl);
   renderRefs();
@@ -341,7 +340,7 @@ async function addRefFromDataUrl(dataUrl, label = "result") {
     toast(`这个模型最多 ${max} 张参考图`, true);
     return;
   }
-  const name = await invoke("save_ref_image", { name: label + ".png", dataUrl });
+  const name = await api.call("save_ref_image", { name: label + ".png", dataUrl });
   state.refs.push(name);
   thumbCache.set(name, dataUrl);
   if (state.mode !== "edit" && profile()?.supportsEdit) setMode("edit");
@@ -372,7 +371,7 @@ async function loadImageInto(img) {
     return;
   }
   try {
-    item.dataUrl = await invoke("read_output_image", { path });
+    item.dataUrl = await api.call("read_output_image", { path });
     img.src = item.dataUrl;
   } catch {
     img.alt = "读取失败";
@@ -385,7 +384,7 @@ async function deleteResults(items) {
   const paths = items.map((i) => i.path);
   if (!paths.length) return;
   try {
-    await invoke("delete_results", { paths });
+    await api.call("delete_results", { paths });
     state.results = state.results.filter((r) => !paths.includes(r.path));
     renderResults();
     if (!$("library").hidden) await loadLibrary();
@@ -397,7 +396,7 @@ async function deleteResults(items) {
 
 async function useAsReference(r) {
   try {
-    const dataUrl = r.dataUrl || (await invoke("read_output_image", { path: r.path }));
+    const dataUrl = r.dataUrl || (await api.call("read_output_image", { path: r.path }));
     r.dataUrl = dataUrl;
     await addRefFromDataUrl(dataUrl, r.filename.replace(/\.[^.]+$/, ""));
     toast("已设为参考图");
@@ -439,7 +438,7 @@ document.addEventListener("contextmenu", (e) => {
 function resultMenu(r) {
   return [
     { label: "删除（移到回收站）", danger: true, run: () => deleteResults([r]) },
-    { label: "在文件夹中显示", run: () => invoke("reveal_file", { path: r.path }) },
+    { label: "在文件夹中显示", run: () => api.call("reveal_file", { path: r.path }) },
     { label: "用作参考图", run: () => useAsReference(r) },
     {
       label: "复制提示词",
@@ -455,7 +454,7 @@ function resultMenu(r) {
 
 async function loadStars() {
   try {
-    state.stars = new Set(await invoke("stars_list"));
+    state.stars = new Set(await api.call("stars_list"));
   } catch {
     state.stars = new Set();
   }
@@ -470,7 +469,7 @@ async function toggleStar(r, btn) {
     btn.textContent = on ? "★" : "☆";
   }
   try {
-    await invoke("library_star", { path: r.path, starred: on });
+    await api.call("library_star", { path: r.path, starred: on });
     toast(on ? "已收藏" : "已取消收藏");
   } catch (e) {
     toast(String(e), true);
@@ -512,7 +511,7 @@ function renderResults() {
     reveal.className = "btn ghost small";
     reveal.title = "在文件夹中显示";
     reveal.textContent = "📁";
-    reveal.onclick = () => invoke("reveal_file", { path: r.path });
+    reveal.onclick = () => api.call("reveal_file", { path: r.path });
     meta.appendChild(reveal);
     const del = document.createElement("button");
     del.className = "btn ghost small";
@@ -555,7 +554,7 @@ async function showLightbox(r) {
   $("lightboxImg").src = r.dataUrl || "";
   if (!r.dataUrl) {
     try {
-      r.dataUrl = await invoke("read_output_image", { path: r.path });
+      r.dataUrl = await api.call("read_output_image", { path: r.path });
       if (lightboxItem === r) $("lightboxImg").src = r.dataUrl;
     } catch {}
   }
@@ -652,7 +651,7 @@ async function generate() {
   const req = currentReq();
   state.pendingLayout = null;
   try {
-    const res = await invoke("generate", { req, turbo: $("turbo").checked });
+    const res = await api.call("generate", { req, turbo: $("turbo").checked });
     const items = res.images.map((im) => ({
       path: im.path,
       filename: im.filename,
@@ -696,7 +695,7 @@ async function enhance() {
   btn.disabled = true;
   btn.textContent = "扩写中…";
   try {
-    const out = await invoke("enhance_prompt", {
+    const out = await api.call("enhance_prompt", {
       profile: p.id,
       mode: state.mode,
       prompt: text,
@@ -718,8 +717,8 @@ async function importWorkflow(file) {
   const text = await file.text();
   const name = file.name.replace(/\.json$/i, "").slice(0, 40);
   try {
-    const saved = await invoke("custom_save", { name, jsonText: text });
-    state.customs = await invoke("custom_list");
+    const saved = await api.call("custom_save", { name, jsonText: text });
+    state.customs = await api.call("custom_list");
     buildModelSelect();
     $("model").value = "custom:" + saved;
     applyProfileDefaults();
@@ -738,7 +737,7 @@ async function ensureReady(label = "生成") {
   for (let i = 0; i < 300; i++) {
     await new Promise((r) => setTimeout(r, 1000));
     try {
-      const st = await invoke("server_status");
+      const st = await api.call("server_status");
       if (st.healthy) {
         state.healthy = true;
         refreshStatus();
@@ -751,11 +750,11 @@ async function ensureReady(label = "生成") {
 }
 
 async function boot() {
-  state.profiles = await invoke("profiles");
-  state.customs = await invoke("custom_list");
-  state.layoutTpls = await invoke("layout_tpl_list").catch(() => []);
+  state.profiles = await api.call("profiles");
+  state.customs = await api.call("custom_list");
+  state.layoutTpls = await api.call("layout_tpl_list").catch(() => []);
 
-  state.settings = await invoke("settings_get");
+  state.settings = await api.call("settings_get");
   $("setRoot").value = state.settings.comfyRoot;
   $("setPort").value = state.settings.port;
   $("setAutoStart").checked = state.settings.autoStart;
@@ -771,7 +770,7 @@ async function boot() {
   $("simpleQuality").value = "std";
   $("simpleRatio").value = "1:1";
   await loadStars();
-  state.models = await invoke("models_list");
+  state.models = await api.call("models_list");
   } catch {
     state.models = { loras: [] };
   }
@@ -780,7 +779,7 @@ async function boot() {
     state.models.loras.map((l) => `<option value="${l}">${l}</option>`).join("");
 
   try {
-    const hist = await invoke("history_list");
+    const hist = await api.call("history_list");
     state.results = flattenHistory(hist);
   } catch {}
   renderResults();
@@ -839,7 +838,7 @@ $("model").onchange = () => {
 // Workflows can also be dropped into <config>/workflows by hand: refresh on focus.
 $("model").onfocus = async () => {
   try {
-    const list = await invoke("custom_list");
+    const list = await api.call("custom_list");
     if (list.join("|") !== state.customs.join("|")) {
       state.customs = list;
       buildModelSelect();
@@ -889,7 +888,7 @@ $("lora").onchange = () => {
 
 $("btnGenerate").onclick = generate;
 $("btnCancel").onclick = async () => {
-  await invoke("job_cancel");
+  await api.call("job_cancel");
   toast("已请求取消");
 };
 
@@ -901,7 +900,7 @@ $("btnTranslateNeg").onclick = async () => {
   btn.disabled = true;
   btn.textContent = "翻译中…";
   try {
-    const out = await invoke("translate_text", { text });
+    const out = await api.call("translate_text", { text });
     $("negative").value = String(out).trim();
   } catch (e) {
     toast(String(e), true);
@@ -961,10 +960,10 @@ $("lightboxClose").onclick = () => ($("lightbox").hidden = true);
 $("lightbox").onclick = (e) => {
   if (e.target.id === "lightbox") $("lightbox").hidden = true;
 };
-$("lightboxReveal").onclick = () => lightboxItem && invoke("reveal_file", { path: lightboxItem.path });
+$("lightboxReveal").onclick = () => lightboxItem && api.call("reveal_file", { path: lightboxItem.path });
 $("lightboxRef").onclick = async () => {
   if (!lightboxItem) return;
-  const dataUrl = lightboxItem.dataUrl || (await invoke("read_output_image", { path: lightboxItem.path }));
+  const dataUrl = lightboxItem.dataUrl || (await api.call("read_output_image", { path: lightboxItem.path }));
   await addRefFromDataUrl(dataUrl, lightboxItem.filename.replace(/\.[^.]+$/, ""));
   $("lightbox").hidden = true;
 };
@@ -976,7 +975,7 @@ $("btnStart").onclick = async () => {
   toast("正在启动 ComfyUI…");
   refreshStatus();
   try {
-    await invoke("server_start");
+    await api.call("server_start");
     toast("ComfyUI 已就绪");
   } catch (e) {
     toast(String(e), true);
@@ -987,7 +986,7 @@ $("btnStart").onclick = async () => {
 };
 $("btnStop").onclick = async () => {
   try {
-    await invoke("server_stop");
+    await api.call("server_stop");
     toast("已停止");
   } catch (e) {
     toast(String(e), true);
@@ -996,11 +995,11 @@ $("btnStop").onclick = async () => {
 };
 $("btnOpenOut").onclick = async () => {
   const root = state.settings.comfyRoot.replace(/[\\/]+$/, "");
-  await invoke("open_folder", { path: `${root}\\ComfyUI\\output` });
+  await api.call("open_folder", { path: `${root}\\ComfyUI\\output` });
 };
 $("btnClearHistory").onclick = async () => {
   if (!confirm("清空历史记录？（只删列表，不删图片文件）")) return;
-  await invoke("history_clear");
+  await api.call("history_clear");
   state.results = [];
   renderResults();
   toast("历史已清空");
@@ -1018,8 +1017,8 @@ $("btnSettingsSave").onclick = async () => {
     freeEnhance: $("setFreeEnhance").checked,
   };
   try {
-    await invoke("settings_set", { settings: next });
-    state.settings = await invoke("settings_get");
+    await api.call("settings_set", { settings: next });
+    state.settings = await api.call("settings_get");
     $("settingsModal").hidden = true;
     toast("已保存");
     refreshStatus();
@@ -1120,7 +1119,7 @@ async function loadLibImage(img) {
     return;
   }
   try {
-    const url = await invoke("read_output_image", { path });
+    const url = await api.call("read_output_image", { path });
     libUrlCache.set(path, url);
     img.src = url;
   } catch {
@@ -1138,13 +1137,13 @@ async function openLibrary() {
 async function loadLibrary() {
   $("libGrid").innerHTML = '<div class="lib-empty">扫描中…</div>';
   try {
-    libItems = await invoke("library_scan");
+    libItems = await api.call("library_scan");
   } catch (e) {
     libItems = [];
     toast(String(e), true);
   }
   try {
-    const hist = await invoke("history_list");
+    const hist = await api.call("history_list");
     libPrompts = new Map();
     for (const h of hist) for (const im of h.images || []) libPrompts.set(im.path, h.prompt || "");
   } catch {
@@ -1220,7 +1219,7 @@ function renderLibrary() {
     d.querySelector(".li-star").onclick = async (e) => {
       e.stopPropagation();
       it.starred = !it.starred;
-      await invoke("library_star", { path: it.path, starred: it.starred });
+      await api.call("library_star", { path: it.path, starred: it.starred });
       e.target.className = "li-star" + (it.starred ? "" : " off");
     };
     img.onclick = () => openViewer(list, list.indexOf(it));
@@ -1244,7 +1243,7 @@ async function deleteSelected() {
   if (!libSel.size) return;
   if (!confirm(`删除选中的 ${libSel.size} 张？\n会移到 output\\_comfyshell_trash\\，可手动恢复`)) return;
   try {
-    const n = await invoke("library_delete", { paths: [...libSel] });
+    const n = await api.call("library_delete", { paths: [...libSel] });
     toast(`已移走 ${n} 张`);
     await loadLibrary();
   } catch (e) {
@@ -1260,7 +1259,7 @@ let cmpPan = { x: 0, y: 0 };
 
 async function libUrl(path) {
   if (libUrlCache.has(path)) return libUrlCache.get(path);
-  const url = await invoke("read_output_image", { path });
+  const url = await api.call("read_output_image", { path });
   libUrlCache.set(path, url);
   return url;
 }
@@ -1311,7 +1310,7 @@ $("btnQueueAdd").onclick = queueAdd;
 $("btnQueueRun").onclick = queueRun;
 $("btnQueueStop").onclick = () => {
   queue.stop = true;
-  invoke("job_cancel");
+  api.call("job_cancel");
   toast("队列将在当前这张结束后停止");
 };
 renderQueue();
@@ -1401,7 +1400,7 @@ async function runBatchEdit() {
     if (batchEdit.stop) break;
     try {
       const dataUrl = await libUrl(it.path);
-      const name = await invoke("save_ref_image", { name: it.filename, dataUrl });
+      const name = await api.call("save_ref_image", { name: it.filename, dataUrl });
       state.refs = [name];
       thumbCache.set(name, dataUrl);
       renderRefs();
@@ -1530,10 +1529,10 @@ async function exportCompare() {
 
     const dataUrl = canvas.toDataURL("image/png");
     const stamp = new Date().toISOString().replace(/[:.]/g, "-").slice(0, 19);
-    const path = await invoke("save_export", { name: `compare_${stamp}.png`, dataUrl });
+    const path = await api.call("save_export", { name: `compare_${stamp}.png`, dataUrl });
     toast(`已导出：${path}`);
     libUrlCache.set(path, dataUrl);
-    libItems = await invoke("library_scan");
+    libItems = await api.call("library_scan");
   } catch (e) {
     toast(String(e), true);
   }
@@ -1545,7 +1544,7 @@ $("libEdit").onclick = openBatchEdit;
 $("batchEditCancel").onclick = () => {
   if (batchEdit.running) {
     batchEdit.stop = true;
-    invoke("job_cancel");
+    api.call("job_cancel");
     return;
   }
   $("batchEditModal").hidden = true;
@@ -1571,7 +1570,7 @@ async function openViewer(list, idx) {
 
 async function loadUpscaleModels() {
   try {
-    const list = await invoke("upscale_models_list");
+    const list = await api.call("upscale_models_list");
     const sel = $("vwUpModel");
     const cur = sel.value;
     sel.innerHTML =
@@ -1617,7 +1616,7 @@ async function viewerUpscale() {
   btn.disabled = true;
   btn.textContent = "超分中…";
   try {
-    const img = await invoke("upscale_image", { path: it.path, model: $("vwUpModel").value || null });
+    const img = await api.call("upscale_image", { path: it.path, model: $("vwUpModel").value || null });
     toast(`超分完成：${img.width}×${img.height}`);
     await loadLibrary();
     const list = sortedLibrary();
@@ -1647,7 +1646,7 @@ async function translateSearch() {
   btn.disabled = true;
   btn.textContent = "翻译中…";
   try {
-    const en = await invoke("translate_text", { text: q });
+    const en = await api.call("translate_text", { text: q });
     libAltQuery = en.trim();
     $("libAltText").textContent = libAltQuery;
     $("libAltChip").hidden = false;
@@ -1675,7 +1674,7 @@ $("vwFit").onclick = () => {
 $("vwUpscale").onclick = viewerUpscale;
 $("vwReveal").onclick = () => {
   const it = viewer.list[viewer.idx];
-  if (it) invoke("reveal_file", { path: it.path });
+  if (it) api.call("reveal_file", { path: it.path });
 };
 $("vwRef").onclick = async () => {
   const it = viewer.list[viewer.idx];
@@ -1899,14 +1898,14 @@ async function runInpaint() {
   let refImageDataUrl = null;
   if ($("inpaintUseRef").checked && state.refs.length) {
     try {
-      refImageDataUrl = await invoke("read_input_image", { name: state.refs[0] });
+      refImageDataUrl = await api.call("read_input_image", { name: state.refs[0] });
     } catch {}
   }
   const btn = $("inpaintGo");
   btn.disabled = true;
   btn.textContent = "重绘中…";
   try {
-    const res = await invoke("inpaint_image", {
+    const res = await api.call("inpaint_image", {
       req: {
         profile: target.id,
         prompt,
@@ -1998,7 +1997,7 @@ window.addEventListener("resize", () => {
 
 async function loadLibUpscaleModels() {
   try {
-    const list = await invoke("upscale_models_list");
+    const list = await api.call("upscale_models_list");
     const sel = $("libUpModel");
     sel.innerHTML =
       `<option value="__seedvr2__">SeedVR2 3B · 4×</option>` +
@@ -2017,7 +2016,7 @@ async function batchUpscale() {
   for (const it of picked) {
     try {
       toast(`批量超分 ${done + 1}/${picked.length}…`);
-      await invoke("upscale_image", { path: it.path, model });
+      await api.call("upscale_image", { path: it.path, model });
       done++;
     } catch (e) {
       toast(String(e), true);
@@ -2043,8 +2042,8 @@ async function externalUpscale(files) {
         r.onload = () => res(r.result);
         r.readAsDataURL(f);
       });
-      const name = await invoke("save_ref_image", { name: f.name, dataUrl });
-      await invoke("upscale_input", { name, model });
+      const name = await api.call("save_ref_image", { name: f.name, dataUrl });
+      await api.call("upscale_input", { name, model });
       done++;
     } catch (e) {
       toast(`${f.name}: ${e}`, true);
@@ -2219,8 +2218,8 @@ async function trainingStart() {
         dtype: $("trainDtype").value,
         restart: $("trainRestart").checked,
       };
-      res = await invoke(useKohya ? "train_kohya_files" : "train_lora_files", { req: filesPayload });
-      res = await invoke("train_lora", {
+      res = await api.call(useKohya ? "train_kohya_files" : "train_lora_files", { req: filesPayload });
+      res = await api.call("train_lora", {
         req: {
           name,
           base,
@@ -2250,7 +2249,7 @@ async function trainingStart() {
       });
     }
     // register in the production list and switch to it
-    state.models = await invoke("models_list");
+    state.models = await api.call("models_list");
     const loraSel = $("lora");
     loraSel.innerHTML =
       `<option value="">（无）</option>` +
@@ -2276,7 +2275,7 @@ async function trainingStart() {
       const img = document.createElement("img");
       img.alt = "eval";
       grid.appendChild(img);
-      invoke("read_output_image", { path }).then((url) => (img.src = url)).catch(() => {});
+      api.call("read_output_image", { path }).then((url) => (img.src = url)).catch(() => {});
     }
     if (res.avoid) toast(`建议负面：${res.avoid}`);
     $("trainGo").hidden = true;
@@ -2532,7 +2531,7 @@ $("assistRun").onclick = async () => {
   $("assistState").textContent = "思考中…";
   $("assistSteps").innerHTML = "";
   try {
-    const res = await invoke("assist", { request, image: state.refs[0] || null });
+    const res = await api.call("assist", { request, image: state.refs[0] || null });
     const box = $("assistSteps");
     for (const s of res.steps || []) {
       const d = document.createElement("div");
@@ -2597,7 +2596,7 @@ $("layoutPreset").onchange = async () => {
   if (key.startsWith("tpl:")) {
     const name = key.slice(4);
     try {
-      const items = await invoke("layout_tpl_load", { name });
+      const items = await api.call("layout_tpl_load", { name });
       layoutItems = items.map((x) => ({ ...x, bbox: [...x.bbox] }));
       layoutSel = 0;
       $("layoutTplName").value = name;
@@ -2632,7 +2631,7 @@ async function runLayoutDetect(imageName, previewUrl) {
   btn.disabled = true;
   btn.textContent = "识别中…";
   try {
-    const items = await invoke("layout_detect", { image: imageName });
+    const items = await api.call("layout_detect", { image: imageName });
     layoutItems = items.map((x) => ({ ...x, bbox: [...x.bbox] }));
     layoutSel = layoutItems.length ? 0 : -1;
     if (previewUrl) setLayoutBg(previewUrl);
@@ -2653,7 +2652,7 @@ $("layoutImg").onchange = async () => {
   if (!file) return;
   try {
     const dataUrl = await readFileDataUrl(file);
-    const name = await invoke("save_ref_image", { name: file.name || "layout_ref.png", dataUrl });
+    const name = await api.call("save_ref_image", { name: file.name || "layout_ref.png", dataUrl });
     await runLayoutDetect(name, dataUrl);
   } catch (e) {
     toast(String(e), true);
@@ -2664,7 +2663,7 @@ $("layoutBgClear").onclick = () => setLayoutBg("");
 // 自定义模板：文件落在 <config>\layouts\<name>.json，一模板一文件，可直接拷给别人。
 async function refreshLayoutTpls() {
   try {
-    state.layoutTpls = await invoke("layout_tpl_list");
+    state.layoutTpls = await api.call("layout_tpl_list");
   } catch (e) {
     state.layoutTpls = [];
   }
@@ -2691,7 +2690,7 @@ $("layoutTplSave").onclick = async () => {
   if (!layoutItems.length) return toast("模板里还没有元素", true);
   const existed = state.layoutTpls.includes(name);
   try {
-    const saved = await invoke("layout_tpl_save", {
+    const saved = await api.call("layout_tpl_save", {
       name,
       items: JSON.stringify(layoutItems),
     });
@@ -2710,7 +2709,7 @@ $("layoutTplDel").onclick = async () => {
   const name = v.slice(4);
   if (!confirm(`删除模板「${name}」？\n只删模板文件，不动任何图片。`)) return;
   try {
-    await invoke("layout_tpl_delete", { name });
+    await api.call("layout_tpl_delete", { name });
     await refreshLayoutTpls();
     $("layoutPreset").value = "";
     toast(`已删除模板：${name}`);
@@ -2975,8 +2974,8 @@ async function runAnalyze() {
   btn.disabled = true;
   $("anaState").textContent = "解析中…（首次加载视觉模型约 20–60 秒）";
   try {
-    const name = await invoke("save_ref_image", { name: "ana_input.png", dataUrl: anaDataUrl });
-    const raw = await invoke("analyze_image", { image: name, twoPass: $("anaTwoPass").checked });
+    const name = await api.call("save_ref_image", { name: "ana_input.png", dataUrl: anaDataUrl });
+    const raw = await api.call("analyze_image", { image: name, twoPass: $("anaTwoPass").checked });
     $("anaRaw").value = raw;
     let data = {};
     try {
@@ -3036,7 +3035,7 @@ const poseCache = new Map();
 async function openPoses() {
   if (!poseCatalog) {
     try {
-      poseCatalog = JSON.parse(await invoke("poses_catalog"));
+      poseCatalog = JSON.parse(await api.call("poses_catalog"));
     } catch (e) {
       toast(String(e), true);
       return;
@@ -3110,7 +3109,7 @@ function renderPoses() {
       try {
         let url = poseCache.get(file);
         if (!url) {
-          url = await invoke("read_input_image", { name: `shisei/line/${file}` });
+          url = await api.call("read_input_image", { name: `shisei/line/${file}` });
           poseCache.set(file, url);
         }
         await addRefFromDataUrl(url, `pose_${p.id}_${angle}`);
@@ -3133,7 +3132,7 @@ function lazyLoadPoses() {
         const img = en.target;
         const file = img.dataset.file;
         if (!file || img.src) continue;
-        invoke("read_input_image", { name: `shisei/line/${file}` })
+        api.call("read_input_image", { name: `shisei/line/${file}` })
           .then((url) => {
             img.src = url;
             poseCache.set(file, url);
@@ -3272,7 +3271,7 @@ $("annTranslate").onclick = async () => {
   btn.textContent = "翻译中…";
   try {
     const text = fields.map((f) => f.value.trim()).join("\n");
-    const out = await invoke("translate_text", { text });
+    const out = await api.call("translate_text", { text });
     const lines = String(out).split("\n").map((s) => s.trim()).filter(Boolean);
     if (lines.length === fields.length) {
       fields.forEach((f, i) => (f.value = lines[i]));
@@ -3280,7 +3279,7 @@ $("annTranslate").onclick = async () => {
       // the model merged lines: translate one by one instead
       for (const f of fields) {
         try {
-          const one = await invoke("translate_text", { text: f.value.trim() });
+          const one = await api.call("translate_text", { text: f.value.trim() });
           f.value = String(one).trim();
         } catch {}
       }
@@ -3307,7 +3306,7 @@ $("storyGo").onclick = async () => {
   btn.disabled = true;
   btn.textContent = "拆分中…";
   try {
-    const panels = await invoke("story_split", {
+    const panels = await api.call("story_split", {
       text,
       maxPanels: Number($("storyMax").value) || 12,
     });
@@ -3343,9 +3342,9 @@ $("btnUiMode").onclick = async () => {
   const simple = !document.body.classList.contains("mode-simple");
   applyUiMode(simple);
   try {
-    const s = await invoke("settings_get");
+    const s = await api.call("settings_get");
     s.simpleUi = simple;
-    await invoke("settings_set", { settings: s });
+    await api.call("settings_set", { settings: s });
     state.settings = s;
   } catch {}
 };

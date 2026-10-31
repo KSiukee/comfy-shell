@@ -98,3 +98,22 @@ pub fn substitute(
         .replace("{{cfg}}", &cfg.to_string());
     serde_json::from_str(&text).unwrap_or_else(|_| graph.clone())
 }
+
+#[cfg(test)]
+mod tests {
+    use super::safe_name;
+
+    #[test]
+    fn keeps_cjk_and_replaces_forbidden() {
+        assert_eq!(safe_name("海报:双十一?"), "海报_双十一_");
+        assert_eq!(safe_name("a/b\\c"), "a_b_c");
+    }
+
+    #[test]
+    fn trims_and_caps_length() {
+        assert_eq!(safe_name("  a.b.  "), "a.b");
+        assert_eq!(safe_name(&"x".repeat(80)).len(), 60);
+        assert_eq!(safe_name("   "), "");
+    }
+}
+

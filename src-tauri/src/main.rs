@@ -7,87 +7,14 @@ mod history;
 mod layouts;
 mod library;
 mod server;
+mod state;
 
 use serde::{Deserialize, Serialize};
 use serde_json::json;
 use std::path::PathBuf;
 use std::sync::Mutex;
+use state::{cfg_dir, load_settings, write_settings, true_b, AppState, Settings};
 use tauri::{Emitter, Manager, State};
-
-// ---------------------------------------------------------------------------
-// Settings
-// ---------------------------------------------------------------------------
-
-#[derive(Clone, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase", default)]
-struct Settings {
-    comfy_root: String,
-    port: u16,
-    auto_start: bool,
-    stop_on_exit: bool,
-    /// skip the official PE and rewrite prompts with the local uncensored model
-    #[serde(default)]
-    free_enhance: bool,
-    /// simple UI (plain-language controls) vs pro UI
-    #[serde(default = "true_b")]
-    simple_ui: bool,
-    #[serde(default = "default_kohya_python")]
-    kohya_python: String,
-    #[serde(default = "default_kohya_dir")]
-    kohya_dir: String,
-}
-
-fn default_kohya_python() -> String {
-    r"D:\deepseek-files\ai-tools\sdvenv\Scripts\python.exe".to_string()
-}
-
-fn default_kohya_dir() -> String {
-    r"D:\deepseek-files\ai-tools\sd-scripts".to_string()
-}
-
-impl Default for Settings {
-    fn default() -> Self {
-        Self {
-            comfy_root: r"D:\deepseek-files\ai-tools\ComfyUI_windows_portable".to_string(),
-            port: 8188,
-            auto_start: true,
-            stop_on_exit: false,
-            free_enhance: false,
-            simple_ui: true,
-            kohya_python: default_kohya_python(),
-            kohya_dir: default_kohya_dir(),
-        }
-    }
-}
-
-fn cfg_dir(app: &tauri::AppHandle) -> PathBuf {
-    let dir = app
-        .path()
-        .app_config_dir()
-        .unwrap_or_else(|_| PathBuf::from("."));
-    let _ = std::fs::create_dir_all(&dir);
-    dir
-}
-
-fn load_settings(app: &tauri::AppHandle) -> Settings {
-    let p = cfg_dir(app).join("settings.json");
-    std::fs::read_to_string(p)
-        .ok()
-        .and_then(|t| serde_json::from_str(&t).ok())
-        .unwrap_or_default()
-}
-
-fn write_settings(app: &tauri::AppHandle, s: &Settings) -> Result<(), String> {
-    let p = cfg_dir(app).join("settings.json");
-    let text = serde_json::to_string_pretty(s).map_err(|e| e.to_string())?;
-    std::fs::write(p, text).map_err(|e| e.to_string())
-}
-
-struct AppState {
-    child: Mutex<Option<std::process::Child>>,
-    settings: Mutex<Settings>,
-    cancel: Mutex<bool>,
-}
 
 // ---------------------------------------------------------------------------
 // Status helpers
@@ -1037,9 +964,6 @@ fn one_u32() -> u32 {
 }
 fn three_u32() -> u32 {
     3
-}
-fn true_b() -> bool {
-    true
 }
 fn bf16() -> String {
     "bf16".to_string()

@@ -102,3 +102,51 @@ pub fn delete(cfg: &Path, name: &str) -> Result<(), String> {
     }
     std::fs::remove_file(p).map_err(|e| e.to_string())
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use serde_json::json;
+    use std::path::PathBuf;
+
+    fn temp_cfg(tag: &str) -> PathBuf {
+        std::env::temp_dir().join(format!("cs_layouts_{tag}_{}", std::process::id()))
+    }
+
+    #[test]
+    fn accepts_editor_items() {
+        let items = json!([
+            {"type": "text", "desc": "headline", "text": "SALE", "bbox": [0.1, 0.1, 0.8, 0.2]},
+            {"type": "object", "desc": "cup", "bbox": [0.5, 0.5, 0.2, 0.2]},
+        ]);
+        assert!(check_items(&items).is_ok());
+    }
+
+    #[test]
+    fn rejects_bad_items() {
+        assert!(check_items(&json!({})).is_err());
+        assert!(check_items(&json!([])).is_err());
+        assert!(check_items(&json!([{"type": "text", "desc": "x", "bbox": [0, 0, 1, 1]}])).is_err());
+        assert!(check_items(&json!([{"type": "object", "desc": "x", "bbox": [0, 0, 2, 1]}])).is_err());
+        assert!(check_items(&json!([{"type": "object", "desc": "x", "bbox": [0, 0, 0, 1]}])).is_err());
+        assert!(check_items(&json!([{"type": "object", "bbox": [0, 0, 1, 1]}])).is_err());
+    }
+
+    #[test]
+    fn save_load_delete_roundtrip() {
+        let cfg = temp_cfg("roundtrip");
+        let _ = std::fs::remove_dir_all(&cfg);
+        let items = json!([
+            {"type": "object", "desc": "cup", "bbox": [0.5, 0.5, 0.2, 0.2]},
+        ]);
+        let name = save(&cfg, "夜间/海报", &items.to_string()).unwrap();
+        assert_eq!(name, "夜间_海报");
+        assert_eq!(list(&cfg), vec![name.clone()]);
+        let loaded = load(&cfg, &name).unwrap();
+        assert_eq!(loaded.as_array().unwrap().len(), 1);
+        delete(&cfg, &name).unwrap();
+        assert!(load(&cfg, &name).is_err());
+        let _ = std::fs::remove_dir_all(&cfg);
+    }
+}
+
