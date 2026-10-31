@@ -7,6 +7,7 @@ mod fsutil;
 mod history;
 mod layouts;
 mod library;
+mod project;
 mod server;
 mod single_instance;
 mod state;
@@ -540,6 +541,58 @@ fn layout_tpl_save(app: tauri::AppHandle, name: String, items: String) -> Result
 #[tauri::command]
 fn layout_tpl_delete(app: tauri::AppHandle, name: String) -> Result<(), String> {
     layouts::delete(&cfg_dir(&app), &name)
+}
+
+// ---------------------------------------------------------------------------
+// Projects（一个文件夹一条记录，删除进回收站）
+// ---------------------------------------------------------------------------
+
+#[tauri::command]
+fn project_list(app: tauri::AppHandle, include_hidden: Option<bool>) -> Vec<project::Project> {
+    project::list(&cfg_dir(&app), include_hidden.unwrap_or(false))
+}
+
+#[tauri::command]
+fn project_create(app: tauri::AppHandle, name: String) -> Result<project::Project, String> {
+    project::create(&cfg_dir(&app), &name)
+}
+
+#[tauri::command]
+fn project_rename(app: tauri::AppHandle, id: String, name: String) -> Result<project::Project, String> {
+    project::rename(&cfg_dir(&app), &id, &name)
+}
+
+#[tauri::command]
+fn project_set_active(
+    app: tauri::AppHandle,
+    id: Option<String>,
+) -> Result<Vec<project::Project>, String> {
+    project::set_active(&cfg_dir(&app), id.as_deref())
+}
+
+#[tauri::command]
+fn project_set_hidden(app: tauri::AppHandle, id: String, hidden: bool) -> Result<project::Project, String> {
+    project::set_hidden(&cfg_dir(&app), &id, hidden)
+}
+
+#[tauri::command]
+fn project_delete(app: tauri::AppHandle, id: String) -> Result<(), String> {
+    project::delete(&cfg_dir(&app), &id)
+}
+
+#[tauri::command]
+fn project_trash(app: tauri::AppHandle) -> Vec<project::TrashItem> {
+    project::trash(&cfg_dir(&app))
+}
+
+#[tauri::command]
+fn project_restore(app: tauri::AppHandle, dir: String) -> Result<project::Project, String> {
+    project::restore(&cfg_dir(&app), &dir)
+}
+
+#[tauri::command]
+fn project_purge(app: tauri::AppHandle, dir: String) -> Result<(), String> {
+    project::purge(&cfg_dir(&app), &dir)
 }
 
 // ---------------------------------------------------------------------------
@@ -2121,6 +2174,15 @@ fn main() {
             layout_tpl_load,
             layout_tpl_save,
             layout_tpl_delete,
+            project_list,
+            project_create,
+            project_rename,
+            project_set_active,
+            project_set_hidden,
+            project_delete,
+            project_trash,
+            project_restore,
+            project_purge,
             library_scan,
             library_delete,
             delete_results,

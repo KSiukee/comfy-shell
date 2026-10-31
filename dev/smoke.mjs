@@ -86,6 +86,9 @@ try {
   check("主输入框在", (await evaluate("!!document.getElementById('prompt')")) === true);
   check("去AI感按钮在", (await evaluate("!!document.getElementById('btnDeAi')")) === true);
   check("排版模板下拉在", (await evaluate("!!document.getElementById('layoutPreset')")) === true);
+  check("projects.js 已加载", (await evaluate("typeof window.projectUI === 'object'")) === true);
+  const projects = await evaluate("api.call('project_list', { includeHidden: true })");
+  check("project_list 返回数组", Array.isArray(projects), `${Array.isArray(projects) ? projects.length : "?"} 个项目`);
 
   const settings = await evaluate("api.call('settings_get')");
   check("settings_get 返回对象", !!settings && typeof settings === "object", settings?.comfyRoot || "");

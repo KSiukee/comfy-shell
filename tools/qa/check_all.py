@@ -20,6 +20,7 @@
 from __future__ import annotations
 
 import argparse
+import glob
 import json
 import os
 import re
@@ -146,12 +147,13 @@ def layer_text() -> tuple[bool, str, int]:
 def layer_invoke() -> tuple[bool, str, int]:
     """新代码必须走 store.js；app.js 里再出现裸 invoke( 就是回潮。"""
     hits = []
-    for p in [os.path.join(ROOT, "web", "app.js")]:
+    files = [p for p in glob.glob(os.path.join(ROOT, "web", "*.js")) if os.path.basename(p) != "store.js"]
+    for p in files:
         for i, line in enumerate(read(p).split("\n"), 1):
             if re.search(r"\binvoke\(", line) and "api.call(" not in line:
                 hits.append(f"{rel(p)}:{i}")
     ok = not hits
-    return ok, ("0 处裸 invoke" if ok else f"{len(hits)} 处：" + ", ".join(hits[:5])), 1
+    return ok, ("0 处裸 invoke" if ok else f"{len(hits)} 处：" + ", ".join(hits[:5])), len(files)
 
 
 def layer_ratchet() -> tuple[bool, str, int]:
@@ -174,13 +176,13 @@ def layer_ratchet() -> tuple[bool, str, int]:
 
 
 def layer_js() -> tuple[bool, str, int]:
-    files = ["web/app.js", "web/store.js", "dev/smoke.mjs"]
+    files = ["web/app.js", "web/store.js", "web/projects.js", "dev/smoke.mjs"]
     bad = []
     for p in files:
         code, out = run(["node", "--check", p])
         if code != 0:
             bad.append(f"{p}: {out.strip()[:120]}")
-    return not bad, ("3 个 JS 语法通过" if not bad else "；".join(bad)), len(files)
+    return not bad, (f"{len(files)} 个 JS 语法通过" if not bad else "；".join(bad)), len(files)
 
 
 def layer_rust() -> tuple[bool, str, int]:

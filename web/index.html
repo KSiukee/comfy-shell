@@ -34,6 +34,18 @@
     </div>
   </header>
 
+  <div class="projectbar" id="projectbar">
+    <span class="muted" style="font-size:12px">项目</span>
+    <select id="projSel" title="切换开工项目"></select>
+    <button class="btn small ghost" id="projNew" title="新建项目（自动开工）">＋ 新建</button>
+    <button class="btn small ghost" id="projRename" title="只改显示名，不动图片目录">重命名</button>
+    <button class="btn small ghost" id="projHide" title="隐藏只是不显示，文件仍是明文">隐藏</button>
+    <button class="btn small ghost" id="projDelete" title="移到回收站，可恢复">删除</button>
+    <button class="btn small ghost" id="projTrashBtn" title="回收站">回收站</button>
+    <span class="spacer"></span>
+    <label class="check" style="font-size:12px"><input type="checkbox" id="projShowHidden" /> 显示隐藏</label>
+  </div>
+
   <main class="layout">
     <aside class="panel">
       <div class="field">
@@ -727,10 +739,33 @@
     </div>
   </div>
 
+  <div class="modal" id="projModal" hidden>
+    <div class="modal-card" style="width: 440px">
+      <h3 id="projModalTitle">新建项目</h3>
+      <div class="hint" id="projModalHint">新建后会自动开工；改名只改显示名，不动图片目录。</div>
+      <input id="projNameInput" placeholder="项目名（可中文，最多 60 字）" />
+      <div class="row tight" style="justify-content:flex-end; margin-top:12px">
+        <button class="btn small ghost" id="projModalCancel">取消</button>
+        <button class="btn small primary" id="projModalOk">确定</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal" id="projTrashModal" hidden>
+    <div class="modal-card" style="width: 640px">
+      <h3>项目回收站 <span class="muted" style="font-size:12px">删除的项目在这里，可恢复或永久删除</span></h3>
+      <div id="projTrashList" style="display:flex;flex-direction:column;gap:8px;max-height:420px;overflow:auto"></div>
+      <div class="row tight" style="justify-content:flex-end; margin-top:12px">
+        <button class="btn small ghost" id="projTrashClose">关闭</button>
+      </div>
+    </div>
+  </div>
+
   <div class="toast" id="toast" hidden></div>
 
   <script src="store.js"></script>
   <script src="app.js"></script>
+  <script src="projects.js"></script>
 </body>
 </html>
 
