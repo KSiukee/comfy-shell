@@ -80,6 +80,14 @@
         </div>
       </div>
 
+      <div class="field" id="wfParamsField" hidden>
+        <label>工作流参数 <span class="muted" id="wfParamsHint" style="font-size:11px"></span></label>
+        <div id="wfParams" class="wf-params"></div>
+        <div class="row tight" style="margin-top:6px">
+          <button class="btn small ghost" id="wfParamsReset">恢复默认</button>
+        </div>
+      </div>
+
       <div class="tabs" id="modeTabs">
         <button class="tab active" data-mode="t2i">生图</button>
         <button class="tab" data-mode="edit">改图</button>
@@ -974,6 +982,7 @@
   <script src="store.js"></script>
   <script src="app.js"></script>
   <script src="results.js"></script>
+  <script src="workflowparams.js"></script>
   <script src="promptfx.js"></script>
   <script src="stylepick.js"></script>
   <script src="promptlint.js"></script>

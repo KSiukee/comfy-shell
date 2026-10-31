@@ -697,6 +697,13 @@ body.mode-pro .simple-only { display: none !important; }
 .shot-pick-row span:nth-child(2) { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 12.5px; }
 .shot-pick-row .mono { flex: 0 0 auto; font-size: 11px; }
 
+/* 自定义工作流参数表单 */
+.wf-params { display: flex; flex-direction: column; gap: 6px; }
+.wf-param { display: flex; align-items: center; gap: 8px; }
+.wf-param label { flex: 1 1 auto; min-width: 0; font-size: 11.5px; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.wf-param input[type="number"], .wf-param select { flex: 0 0 108px; width: 108px; padding: 5px 7px; font-size: 12px; }
+.wf-param input[type="checkbox"] { flex: 0 0 auto; width: 16px; height: 16px; }
+
 /* 使用说明（应用内 Markdown） */
 .help-card { width: 780px; }
 .help-body { max-height: 64vh; overflow-y: auto; padding-right: 6px; font-size: 13px; line-height: 1.68; }

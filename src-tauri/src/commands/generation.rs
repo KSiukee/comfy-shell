@@ -110,9 +110,13 @@ pub async fn generate(app: tauri::AppHandle, mut req: api::GenReq, turbo: bool) 
         let graph = if let Some(name) = &custom_name {
             let base = custom::load(&cfg, name)?;
             let seed = api::pick_seed(req.seed);
-            custom::substitute(
+            let mut g = custom::substitute(
                 &base, &req.prompt, &req.negative, seed, req.width, req.height, req.steps, req.cfg,
-            )
+            );
+            if let Some(ov) = &req.wf_params {
+                custom::apply_overrides(&mut g, ov);
+            }
+            g
         } else {
             api::build_graph(&req, turbo)?
         };

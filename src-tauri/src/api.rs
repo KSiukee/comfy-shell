@@ -145,6 +145,9 @@ pub struct GenReq {
     pub slg_layers: String,
     #[serde(default)]
     pub layout: Option<String>,
+    /// 自定义工作流的参数覆盖：键 `节点id|输入名`
+    #[serde(default)]
+    pub wf_params: Option<std::collections::BTreeMap<String, serde_json::Value>>,
     /// active project id: save under `output/projects/<id>/`
     #[serde(default)]
     pub project: Option<String>,

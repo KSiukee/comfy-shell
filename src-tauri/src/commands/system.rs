@@ -307,6 +307,13 @@ pub fn custom_delete(app: tauri::AppHandle, name: String) -> Result<(), String> 
     custom::delete(&cfg_dir(&app), &name)
 }
 
+/// 从自定义工作流推断可调参数（给生成页画表单用）。
+#[tauri::command]
+pub fn custom_params(app: tauri::AppHandle, name: String) -> Result<Vec<custom::Param>, String> {
+    let graph = custom::load(&cfg_dir(&app), &name)?;
+    Ok(custom::infer_params(&graph))
+}
+
 // ---------------------------------------------------------------------------
 // Saved MOSS layout templates
 // ---------------------------------------------------------------------------

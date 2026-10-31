@@ -139,6 +139,7 @@ fn main() {
             commands::system::custom_list,
             commands::system::custom_save,
             commands::system::custom_delete,
+            commands::system::custom_params,
             commands::system::layout_tpl_list,
             commands::system::layout_tpl_load,
             commands::system::layout_tpl_save,

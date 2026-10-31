@@ -163,6 +163,7 @@ pub fn train_run(
                 slg: false,
                 slg_layers: "22".to_string(),
                 layout: None,
+                wf_params: None,
                 project: None,
                 staging: false,
                 version_parent: None,
