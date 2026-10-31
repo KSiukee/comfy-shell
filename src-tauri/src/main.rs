@@ -421,6 +421,10 @@ fn push_history(
 
 #[tauri::command]
 async fn generate(app: tauri::AppHandle, req: api::GenReq, turbo: bool) -> Result<GenResp, String> {
+    // 调试构建只许在 `_test` 里生成，别拿真实项目做调试。
+    if cfg!(debug_assertions) && req.project.as_deref() != Some("_test") {
+        return Err("调试构建只能在「测试项目」里生成（先在项目栏选「测试项目」）".into());
+    }
     // Long-running: submit, poll for up to 30 minutes, read images back.
     let handle = app.clone();
     tauri::async_runtime::spawn_blocking(move || -> Result<GenResp, String> {
@@ -2167,6 +2171,13 @@ fn job_cancel(state: State<AppState>) {
 // ---------------------------------------------------------------------------
 
 fn main() {
+    // release 不认调试端口参数：否则任何人都能连上 CDP 把私密项目读出来。
+    #[cfg(not(debug_assertions))]
+    {
+        std::env::remove_var("WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS");
+        std::env::remove_var("WEBVIEW2_WAIT_FOR_SCRIPT_DEBUGGER");
+    }
+
     // 同一份数据只许一个进程写：第二个实例拉一下前台信号就退出。
     let _instance = match single_instance::acquire_single() {
         Ok(Some(guard)) => guard,
@@ -2186,6 +2197,10 @@ fn main() {
             let handle = app.handle().clone();
             single_instance::spawn_focus_listener(focus_event, handle.clone());
             let cfg = cfg_dir(&handle);
+            #[cfg(debug_assertions)]
+            {
+                let _ = project::ensure_test(&cfg);
+            }
             fsutil::cleanup_parts(&cfg);
             fsutil::cleanup_parts(&cfg.join("workflows"));
             fsutil::cleanup_parts(&cfg.join("layouts"));

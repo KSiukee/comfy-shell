@@ -199,7 +199,12 @@ def layer_rust() -> tuple[bool, str, int]:
 
 
 def layer_smoke() -> tuple[bool, str, int]:
-    code, out = run(["node", "dev/smoke.mjs"])
+    # release 已经禁掉调试端口，冒烟必须跑 debug 构建
+    code, out = run(["cargo", "build"], cwd=os.path.join(ROOT, "src-tauri"))
+    if code != 0:
+        return False, "cargo build(debug) 失败：" + out.strip()[-300:], 0
+    exe = os.path.join(ROOT, "src-tauri", "target", "debug", "comfy-shell.exe")
+    code, out = run(["node", "dev/smoke.mjs", exe])
     passed, total = parse_smoke(out)
     floor = floors()["min_smoke_checks"]
     ok = code == 0 and total >= floor and passed == total

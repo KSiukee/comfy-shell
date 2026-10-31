@@ -6,7 +6,7 @@ import { existsSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 
 const port = 9223;
-const exe = process.argv[2] || fileURLToPath(new URL("../src-tauri/target/release/comfy-shell.exe", import.meta.url));
+const exe = process.argv[2] || fileURLToPath(new URL("../src-tauri/target/debug/comfy-shell.exe", import.meta.url));
 if (!existsSync(exe)) {
   console.error("找不到 exe:", exe, "\n先构建：cd src-tauri; cargo tauri build --no-bundle");
   process.exit(2);
@@ -93,6 +93,7 @@ try {
   check("锁定区按钮在", (await evaluate("!!document.getElementById('vaultBtn')")) === true);
   const projects = await evaluate("api.call('project_list', { includeHidden: true })");
   check("project_list 返回数组", Array.isArray(projects), `${Array.isArray(projects) ? projects.length : "?"} 个项目`);
+  check("测试项目 _test 在", Array.isArray(projects) && projects.some((p) => p.id === "_test"));
 
   const settings = await evaluate("api.call('settings_get')");
   check("settings_get 返回对象", !!settings && typeof settings === "object", settings?.comfyRoot || "");
