@@ -64,6 +64,7 @@ MOSS 的 **SLG** 用 ComfyUI 通用 `SkipLayerGuidanceDiT`（`single_layers=22, 
 - 资源位置：`ComfyUI\input\shisei\{line,photo,catalog.json}`
 - 多 pack：`ComfyUI/input/pose_packs/<id>/{pack.json,catalog.json,line|images}`；旧 `input/shisei` 自动作为 legacy pack，UI 里可切包
 - 第三方库适配：`python tools/pose_pack_adapter.py --selftest` / 用法见 `docs/姿势库-pack适配.md`
+- 已接 ai-pose 中文包：288 组（本地 junction；图片/数据非 MIT，仅本机非商用）
 - 壳里点「参考图 → 🕺 姿势库」，可搜索、按类别筛选、切换机位
 - **点卡片** = 该姿势白模加入参考图；卡片「**填**」= 英文姿势描述填进提示词；「**词**」= 复制描述
 - 白模只负责“怎么站”，角色长相仍由你的提示词 / 参考图决定

@@ -28,6 +28,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import re
 import shutil
 import sys
@@ -76,7 +77,17 @@ def records_of(data):
     return []
 
 
-def find_metadata(src: Path) -> tuple[Path | None, list]:
+def find_metadata(src: Path, prefer: tuple[str, ...] | None = None) -> tuple[Path | None, list]:
+    if prefer:
+        for name in prefer:
+            for p in sorted(src.rglob(name)):
+                try:
+                    data = json.loads(p.read_text(encoding="utf-8", errors="ignore"))
+                except Exception:
+                    continue
+                recs = records_of(data)
+                if recs:
+                    return p, recs
     best: tuple[int, Path | None, list] = (0, None, [])
     for p in sorted(src.rglob("*.json")):
         if p.stat().st_size > 80 * 1024 * 1024:
@@ -96,6 +107,116 @@ def pick(d: dict, *keys, default=""):
         if k in d and d[k] not in (None, "", []):
             return d[k]
     return default
+
+
+
+
+AI_ANGLES = {
+    "正面": "front", "侧面": "side", "斜侧": "diag", "俯视": "above", "仰视": "below",
+    "上から": "above", "下から": "below",
+}
+AI_SYSTEMS = {
+    "上半身单人": "upper",
+    "全身单人・性感系": "full_sexy",
+    "全身单人・标准系": "full_std",
+    "双人缠绵": "duo",
+}
+
+
+def lexical_abs(p) -> Path:
+    """不解析 junction/软链接的绝对路径，保证还能相对 input 计算。"""
+    return Path(os.path.abspath(str(p)))
+
+
+def rel_to_input(p: Path, input_root: Path) -> str | None:
+    try:
+        return lexical_abs(p).relative_to(lexical_abs(input_root)).as_posix()
+    except ValueError:
+        return None
+
+
+def is_ai_pose(records: list) -> bool:
+    return any(("姿势编号" in r or "ポーズ番号" in r) for r in records)
+
+
+def ai_pose_convert(src: Path, input_root: Path, records: list, out: Path, copy_images: bool):
+    """ai-pose-gallery-zh：一行一个机位，按 体系+编号 聚合成一组。"""
+    groups: dict[tuple[str, str], list] = {}
+    for rec in records:
+        system = str(pick(rec, "体系", "系統", default=""))
+        num = str(pick(rec, "姿势编号", "ポーズ番号", default=""))
+        if not num:
+            continue
+        groups.setdefault((system, num), []).append(rec)
+
+    poses = []
+    copied = 0
+    for (system, num), recs in groups.items():
+        first = recs[0]
+        name = str(pick(first, "姿势名称", "ポーズ名", default=num))
+        cls = str(pick(first, "分类", "分類", default=system))
+        views: dict[str, str] = {}
+        thumbs: dict[str, str] = {}
+        for rec in recs:
+            angle = AI_ANGLES.get(str(pick(rec, "角度", "アングル", default="")))
+            if not angle:
+                continue
+            raw = str(pick(rec, "原图", "原寸", default=""))
+            if not raw:
+                continue
+            p = lexical_abs(src / raw)
+            if not p.is_file():
+                continue
+            if copy_images:
+                d = out / "line"
+                d.mkdir(parents=True, exist_ok=True)
+                dest = d / p.name
+                if not dest.exists():
+                    shutil.copy2(p, dest)
+                    copied += 1
+                views[angle] = p.name
+            else:
+                rel = rel_to_input(p, input_root)
+                if rel:
+                    views[angle] = rel
+            thumb_raw = str(pick(rec, "缩略图", "サムネ", default=""))
+            if thumb_raw and not copy_images:
+                tp = lexical_abs(src / thumb_raw)
+                trel = rel_to_input(tp, input_root) if tp.is_file() else None
+                if trel:
+                    thumbs[angle] = trel
+        if not views:
+            continue
+        slug = AI_SYSTEMS.get(system) or re.sub(r"[^a-z0-9]+", "_", system.lower()).strip("_") or "pose"
+        item = {
+            "id": f"{slug}_{num}",
+            "name_cn": name,
+            "name_en": f"{slug}_{num}",
+            "class_cn": cls,
+            "desc_en": name,
+            "views": views,
+        }
+        if thumbs:
+            item["thumbs"] = thumbs
+        poses.append(item)
+    return poses, copied
+
+
+def write_pack(out: Path, pack_name: str, poses: list, copied: int, dry_run: bool):
+    if dry_run:
+        print(f"[dry-run] 姿势：{len(poses)}，图片：{sum(len(p['views']) for p in poses)}（未写盘）")
+        return
+    out.mkdir(parents=True, exist_ok=True)
+    (out / "pack.json").write_text(
+        json.dumps({"name": pack_name}, ensure_ascii=False, indent=2) + "\n", encoding="utf-8"
+    )
+    (out / "catalog.json").write_text(
+        json.dumps(poses, ensure_ascii=False, indent=2) + "\n", encoding="utf-8"
+    )
+    print(f"写出：{out}")
+    print(f"姿势：{len(poses)}，视图：{sum(len(p['views']) for p in poses)}，复制图片：{copied}")
+    if not copied:
+        print("提示：catalog 里是相对 ComfyUI/input 的图片路径；源必须留在 input 下。")
 
 
 def image_files(src: Path) -> list[Path]:
@@ -124,13 +245,21 @@ def view_sources(record: dict):
     return out
 
 
-def convert(src: Path, out: Path, input_root: Path, pack_name: str, copy_images: bool, dry_run: bool):
-    meta_path, records = find_metadata(src)
+def convert(src: Path, out: Path, input_root: Path, pack_name: str, copy_images: bool, dry_run: bool, profile: str = "auto"):
+    prefer = ("pose-zh.json", "pose.json") if profile in ("auto", "ai-pose") else None
+    meta_path, records = find_metadata(src, prefer)
     if not records:
         # 没有元数据：按文件名兜底
         records = []
         for p in image_files(src):
             records.append({"id": p.stem, "name_cn": p.stem, "views": {"auto": p.name}})
+
+    if profile in ("auto", "ai-pose") and is_ai_pose(records):
+        poses, copied = ai_pose_convert(src, input_root, records, out, copy_images)
+        if dry_run:
+            print(f"[dry-run] 元数据：{meta_path}")
+        write_pack(out, pack_name, poses, copied, dry_run)
+        return poses
 
     files = image_files(src)
     by_name = {p.name.lower(): p for p in files}
@@ -154,12 +283,12 @@ def convert(src: Path, out: Path, input_root: Path, pack_name: str, copy_images:
                 continue
             p = Path(raw)
             if not p.is_absolute():
-                p = (src / raw).resolve()
+                p = lexical_abs(src / raw)
             if not p.is_file():
                 p = by_name.get(Path(raw).name.lower()) or by_stem.get(Path(raw).stem.lower())
             if not p or not Path(p).is_file():
                 continue
-            p = Path(p).resolve()
+            p = lexical_abs(p)
             used.add(p)
             if copy_images:
                 dest_dir = out / "line"
@@ -172,7 +301,7 @@ def convert(src: Path, out: Path, input_root: Path, pack_name: str, copy_images:
                 views.setdefault(angle or "front", p.name)
             else:
                 try:
-                    rel = p.relative_to(input_root.resolve())
+                    rel = p.relative_to(lexical_abs(input_root))
                 except ValueError:
                     continue
                 views.setdefault(angle or "front", rel.as_posix())
@@ -195,7 +324,7 @@ def convert(src: Path, out: Path, input_root: Path, pack_name: str, copy_images:
                         views.setdefault(angle, p.name)
                     else:
                         try:
-                            views.setdefault(angle, p.resolve().relative_to(input_root.resolve()).as_posix())
+                            views.setdefault(angle, p.relative_to(lexical_abs(input_root)).as_posix())
                         except ValueError:
                             pass
         if not views:
@@ -209,19 +338,9 @@ def convert(src: Path, out: Path, input_root: Path, pack_name: str, copy_images:
             "views": views,
         })
 
-    if dry_run:
-        print(f"[dry-run] 元数据：{meta_path or '无（按文件名）'}")
-        print(f"[dry-run] 姿势：{len(poses)}，图片：{sum(len(p['views']) for p in poses)}（未写盘）")
-        return poses
-
-    out.mkdir(parents=True, exist_ok=True)
-    (out / "pack.json").write_text(json.dumps({"name": pack_name}, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
-    (out / "catalog.json").write_text(json.dumps(poses, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
-    print(f"元数据：{meta_path or '无（按文件名）'}")
-    print(f"写出：{out}")
-    print(f"姿势：{len(poses)}，视图：{sum(len(p['views']) for p in poses)}，复制图片：{copied}")
-    if not copy_images:
-        print("提示：catalog 里是相对 ComfyUI/input 的图片路径；源必须留在 input 下。")
+    if not dry_run:
+        print(f"元数据：{meta_path or '无（按文件名）'}")
+    write_pack(out, pack_name, poses, copied, dry_run)
     return poses
 
 
@@ -240,7 +359,7 @@ def selftest():
             {"id": "P2", "name": "站姿", "images": [{"view": "front", "file": "images/P2_1.webp"}]},
         ], ensure_ascii=False), encoding="utf-8")
         out = input_root / "pose_packs" / "test"
-        poses = convert(src, out, input_root, "测试包", copy_images=False, dry_run=False)
+        poses = convert(src, out, input_root, "测试包", copy_images=False, dry_run=False, profile="generic")
         assert len(poses) == 2, poses
         assert poses[0]["views"]["front"] == "ai-src/images/P1_front.webp"
         assert poses[1]["views"]["front"] == "ai-src/images/P2_1.webp"
@@ -256,6 +375,7 @@ def main():
     ap.add_argument("--name", default="", help="显示名；默认用目录名")
     ap.add_argument("--copy", action="store_true", help="把图片复制到 <out>/line（源在 input 外时必须）")
     ap.add_argument("--dry-run", action="store_true")
+    ap.add_argument("--profile", choices=["auto", "generic", "ai-pose"], default="auto")
     ap.add_argument("--selftest", action="store_true")
     args = ap.parse_args()
 
@@ -265,9 +385,9 @@ def main():
     if not args.src or not args.out:
         ap.error("需要 --src 和 --out（或 --selftest）")
 
-    src = args.src.resolve()
-    out = args.out.resolve()
-    input_root = args.input_root.resolve() if args.input_root else out.parent.parent
+    src = lexical_abs(args.src)
+    out = lexical_abs(args.out)
+    input_root = lexical_abs(args.input_root) if args.input_root else out.parent.parent
     if not src.is_dir():
         print(f"源目录不存在：{src}", file=sys.stderr)
         sys.exit(1)
@@ -278,7 +398,7 @@ def main():
             print("源不在 ComfyUI/input 下：请加 --copy，或把库放到 input 里再跑。", file=sys.stderr)
             sys.exit(1)
     name = args.name or out.name
-    convert(src, out, input_root, name, args.copy, args.dry_run)
+    convert(src, out, input_root, name, args.copy, args.dry_run, args.profile)
 
 
 if __name__ == "__main__":

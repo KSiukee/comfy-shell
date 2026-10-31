@@ -216,9 +216,10 @@ function renderPoses() {
   for (const p of list.slice(0, end)) {
     const file = poseView(p, angle);
     if (!file) continue;
+    const thumb = (p.thumbs || {})[angle] || file;
     const d = document.createElement("div");
     d.className = "pose-card";
-    d.innerHTML = `<img data-file="${file}" alt="${p.id}"><div class="pc-name">${p.id} · ${p.name_cn || p.name_en || ""}</div><span class="pc-word" title="复制英文描述">词</span><span class="pc-word pc-fill" title="把英文描述填进提示词">填</span>`;
+    d.innerHTML = `<img data-file="${thumb}" alt="${p.id}"><div class="pc-name">${p.id} · ${p.name_cn || p.name_en || ""}</div><span class="pc-word" title="复制英文描述">词</span><span class="pc-word pc-fill" title="把英文描述填进提示词">填</span>`;
     const img = d.querySelector("img");
     img.onerror = () => d.remove();
     d.querySelector(".pc-fill").onclick = (e) => {
