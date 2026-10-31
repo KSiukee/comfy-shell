@@ -12,6 +12,7 @@ mod server;
 mod single_instance;
 mod state;
 mod vault;
+mod vault_ops;
 
 use serde::{Deserialize, Serialize};
 use serde_json::json;
@@ -420,11 +421,27 @@ fn push_history(
 }
 
 #[tauri::command]
-async fn generate(app: tauri::AppHandle, req: api::GenReq, turbo: bool) -> Result<GenResp, String> {
+async fn generate(app: tauri::AppHandle, mut req: api::GenReq, turbo: bool) -> Result<GenResp, String> {
     // 调试构建只许在 `_test` 里生成，别拿真实项目做调试。
     if cfg!(debug_assertions) && req.project.as_deref() != Some("_test") {
         return Err("调试构建只能在「测试项目」里生成（先在项目栏选「测试项目」）".into());
     }
+    // 私密项目：先落 staging，任务结束后用任务开始时拿到的密钥封存。
+    let cfg0 = cfg_dir(&app);
+    let private = req.project.as_deref().and_then(|id| {
+        if vault::is_private(&cfg0, id) {
+            Some(id.to_string())
+        } else {
+            None
+        }
+    });
+    let priv_key = if let Some(id) = &private {
+        let key = vault::key_clone().ok_or("锁定区没解锁")?;
+        req.staging = true;
+        Some((id.clone(), key))
+    } else {
+        None
+    };
     // Long-running: submit, poll for up to 30 minutes, read images back.
     let handle = app.clone();
     tauri::async_runtime::spawn_blocking(move || -> Result<GenResp, String> {
@@ -461,7 +478,7 @@ async fn generate(app: tauri::AppHandle, req: api::GenReq, turbo: bool) -> Resul
         };
 
         let app2 = handle.clone();
-        let out = api::run_job(port, &root, graph, 1800, move |p| {
+        let mut out = api::run_job(port, &root, graph, 1800, move |p| {
             let _ = app2.emit(
                 "gen-progress",
                 json!({
@@ -473,10 +490,25 @@ async fn generate(app: tauri::AppHandle, req: api::GenReq, turbo: bool) -> Resul
             );
         })?;
 
-        let id = push_history(
-            &handle, &req.profile, &label, &req.mode, &req.prompt, &req.negative,
-            req.width, req.height, req.steps, req.cfg, req.seed, &out,
-        );
+        let id = if let Some((pid, key)) = &priv_key {
+            let paths: Vec<String> = out.images.iter().map(|i| i.path.clone()).collect();
+            let sealed = vault::seal_paths(&cfg, pid, &paths, key)?;
+            for (img, url) in out.images.iter_mut().zip(sealed) {
+                img.path = url;
+            }
+            let staging = std::path::Path::new(&root)
+                .join("ComfyUI")
+                .join("output")
+                .join("_private_staging")
+                .join(pid);
+            let _ = std::fs::remove_dir_all(staging);
+            String::new()
+        } else {
+            push_history(
+                &handle, &req.profile, &label, &req.mode, &req.prompt, &req.negative,
+                req.width, req.height, req.steps, req.cfg, req.seed, &out,
+            )
+        };
 
         Ok(GenResp {
             out,
@@ -570,8 +602,23 @@ fn layout_tpl_delete(app: tauri::AppHandle, name: String) -> Result<(), String> 
 // ---------------------------------------------------------------------------
 
 #[tauri::command]
+fn merged_projects(cfg: &std::path::Path, include_hidden: bool) -> Vec<project::Project> {
+    let mut list = project::list(cfg, include_hidden);
+    if vault::is_unlocked() {
+        list.extend(vault::list(cfg));
+    }
+    list.sort_by(|a, b| {
+        b.active
+            .cmp(&a.active)
+            .then(b.last_opened_at.cmp(&a.last_opened_at))
+            .then(a.name.cmp(&b.name))
+    });
+    list
+}
+
+#[tauri::command]
 fn project_list(app: tauri::AppHandle, include_hidden: Option<bool>) -> Vec<project::Project> {
-    project::list(&cfg_dir(&app), include_hidden.unwrap_or(false))
+    merged_projects(&cfg_dir(&app), include_hidden.unwrap_or(false))
 }
 
 #[tauri::command]
@@ -589,7 +636,21 @@ fn project_set_active(
     app: tauri::AppHandle,
     id: Option<String>,
 ) -> Result<Vec<project::Project>, String> {
-    project::set_active(&cfg_dir(&app), id.as_deref())
+    let cfg = cfg_dir(&app);
+    let target_private = id
+        .as_deref()
+        .map(|x| vault::is_private(&cfg, x))
+        .unwrap_or(false);
+    if target_private {
+        vault::set_active(&cfg, id.as_deref())?;
+        project::set_active(&cfg, None)?;
+    } else {
+        project::set_active(&cfg, id.as_deref())?;
+        if vault::is_unlocked() {
+            let _ = vault::set_active(&cfg, None);
+        }
+    }
+    Ok(merged_projects(&cfg, false))
 }
 
 #[tauri::command]
@@ -662,6 +723,14 @@ fn project_unprivate(
     id: String,
 ) -> Result<project::Project, String> {
     vault::unprivate(&cfg_dir(&app), &output_dir(&state), &id)
+}
+
+#[tauri::command]
+fn project_private_delete(app: tauri::AppHandle, id: String) -> Result<(), String> {
+    if !vault::is_unlocked() {
+        return Err("锁定区没解锁".into());
+    }
+    vault::delete(&cfg_dir(&app), &id)
 }
 
 // ---------------------------------------------------------------------------
@@ -1575,6 +1644,7 @@ fn train_run(
                 slg_layers: "22".to_string(),
                 layout: None,
                 project: None,
+                staging: false,
             };
             if let Ok(graph) = api::build_graph(&req, false) {
                 if let Ok(out) = api::run_job(port, &root, graph, 600, |_| {}) {
@@ -2216,6 +2286,12 @@ fn main() {
                 settings: Mutex::new(settings.clone()),
                 cancel: Mutex::new(false),
             });
+            // 私密封存没走完的残留只能是明文：启动直接清掉（宁可丢，不泄漏）。
+            let staging = std::path::PathBuf::from(&settings.comfy_root)
+                .join("ComfyUI")
+                .join("output")
+                .join("_private_staging");
+            let _ = std::fs::remove_dir_all(staging);
 
             // Silent auto-start in the background: the window shows up immediately.
             if settings.auto_start {
@@ -2277,6 +2353,7 @@ fn main() {
             project_make_private,
             project_private_list,
             project_unprivate,
+            project_private_delete,
             library_scan,
             library_delete,
             delete_results,

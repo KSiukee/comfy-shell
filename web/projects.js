@@ -40,7 +40,7 @@ async function projRefresh(selectId) {
   for (const p of list) {
     const o = document.createElement("option");
     o.value = p.id;
-    o.textContent = `${p.hidden ? "（隐藏）" : ""}${p.name}${p.active ? " · 开工" : ""}`;
+    o.textContent = `${p.private ? "🔒 " : ""}${p.hidden ? "（隐藏）" : ""}${p.name}${p.active ? " · 开工" : ""}`;
     sel.appendChild(o);
   }
 
@@ -76,7 +76,9 @@ function closeProjModal() {
 
 $("projNew").onclick = () => openProjModal("create");
 $("projRename").onclick = () => {
-  if (!projCurrent()) return toast("先选一个项目", true);
+  const p = projCurrent();
+  if (!p) return toast("先选一个项目", true);
+  if (p.private) return toast("私密项目请在锁定区里操作（或先移出隐私区）", true);
   openProjModal("rename");
 };
 $("projModalCancel").onclick = closeProjModal;
@@ -124,6 +126,7 @@ $("projSel").onchange = async () => {
 $("projHide").onclick = async () => {
   const p = projCurrent();
   if (!p) return toast("先选一个项目", true);
+  if (p.private) return toast("私密项目请在锁定区里操作（或先移出隐私区）", true);
   try {
     if (!p.hidden && p.active) await api.call("project_set_active", { id: null });
     const updated = await api.call("project_set_hidden", { id: p.id, hidden: !p.hidden });
@@ -137,6 +140,7 @@ $("projHide").onclick = async () => {
 $("projDelete").onclick = async () => {
   const p = projCurrent();
   if (!p) return toast("先选一个项目", true);
+  if (p.private) return toast("私密项目请在锁定区里删除（或先移出隐私区）", true);
   if (!confirm(`把「${p.name}」放进回收站？\n项目目录会移过去，可以在回收站恢复。`)) return;
   try {
     await api.call("project_delete", { id: p.id });

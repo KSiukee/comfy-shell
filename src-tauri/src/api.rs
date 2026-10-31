@@ -148,14 +148,21 @@ pub struct GenReq {
     /// active project id: save under `output/projects/<id>/`
     #[serde(default)]
     pub project: Option<String>,
+    /// 私密项目：先写 `_private_staging/`，任务结束后由壳加密封存
+    #[serde(default)]
+    pub staging: bool,
 }
 
 /// SaveImage prefix. Project ids are single path components; anything odd falls
 /// back to the flat output root (never escape the output folder).
-fn save_prefix(project: Option<&str>, base: &str) -> String {
+fn save_prefix(project: Option<&str>, staging: bool, base: &str) -> String {
     match project {
         Some(id) if !id.is_empty() && !id.contains(['/', '\\']) && id != "." && id != ".." => {
-            format!("projects/{id}/{base}")
+            if staging {
+                format!("_private_staging/{id}/{base}")
+            } else {
+                format!("projects/{id}/{base}")
+            }
         }
         _ => base.to_string(),
     }
@@ -509,7 +516,7 @@ pub fn build_graph(req: &GenReq, turbo: bool) -> Result<Value, String> {
             "sampler_name": p.sampler, "scheduler": "simple", "denoise": 1.0}}),
     );
     g.insert("9".into(), json!({"class_type": "VAEDecode", "inputs": {"samples": ["8", 0], "vae": ["4", 0]}}));
-    let prefix = save_prefix(req.project.as_deref(), "comfyshell");
+    let prefix = save_prefix(req.project.as_deref(), req.staging, "comfyshell");
     g.insert(
         "10".into(),
         json!({"class_type": "SaveImage", "inputs": {"images": ["9", 0], "filename_prefix": prefix}}),

@@ -38,11 +38,12 @@ fn dir_nanos(p: &Path) -> u64 {
 fn tree_key(output: &Path) -> u64 {
     let trash = output.join("_comfyshell_trash");
     let fav = output.join("_favorites");
+    let staging = output.join("_private_staging");
     let mut stack = vec![output.to_path_buf()];
     let mut acc = 0u64;
     let mut dirs = 0u64;
     while let Some(dir) = stack.pop() {
-        if dir == trash || dir == fav {
+        if dir == trash || dir == fav || dir == staging {
             continue;
         }
         acc ^= dir_nanos(&dir).rotate_left((dirs % 63) as u32);
@@ -238,9 +239,10 @@ fn scan_uncached(cfg: &Path, output: &Path, cap: usize) -> Vec<LibItem> {
     let mut stack = vec![output.to_path_buf()];
     let trash = output.join("_comfyshell_trash");
     let fav = output.join("_favorites");
+    let staging = output.join("_private_staging");
 
     while let Some(dir) = stack.pop() {
-        if dir == trash || dir == fav {
+        if dir == trash || dir == fav || dir == staging {
             continue;
         }
         let rd = match std::fs::read_dir(&dir) {

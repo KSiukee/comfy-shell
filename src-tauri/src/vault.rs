@@ -20,22 +20,22 @@ use crate::project::Project;
 const MAGIC: &[u8; 4] = b"VLT1";
 const SALT_LEN: usize = 16;
 const NONCE_LEN: usize = 24;
-const KEY_LEN: usize = 32;
+pub(crate) const KEY_LEN: usize = 32;
 const KDF_MEM_KIB: u32 = 64 * 1024;
 const KDF_ITERS: u32 = 3;
 
 static SESSION: Mutex<Option<[u8; KEY_LEN]>> = Mutex::new(None);
 
-fn vault_dir(cfg: &Path) -> PathBuf {
+pub(crate) fn vault_dir(cfg: &Path) -> PathBuf {
     cfg.join("vault")
 }
 fn key_path(cfg: &Path) -> PathBuf {
     vault_dir(cfg).join("key.bin")
 }
-fn meta_path(cfg: &Path, id: &str) -> PathBuf {
+pub(crate) fn meta_path(cfg: &Path, id: &str) -> PathBuf {
     vault_dir(cfg).join(format!("{id}.enc"))
 }
-fn images_dir(cfg: &Path, id: &str) -> PathBuf {
+pub(crate) fn images_dir(cfg: &Path, id: &str) -> PathBuf {
     vault_dir(cfg).join(id)
 }
 
@@ -52,12 +52,12 @@ pub struct VaultImage {
 }
 
 #[derive(Serialize, Deserialize)]
-struct VaultData {
-    project: Project,
-    images: Vec<VaultImage>,
+pub(crate) struct VaultData {
+    pub project: Project,
+    pub images: Vec<VaultImage>,
 }
 
-fn safe_id(s: &str) -> Result<(), String> {
+pub(crate) fn safe_id(s: &str) -> Result<(), String> {
     if s.is_empty() || s.contains(['\\', '/']) || s == "." || s == ".." {
         return Err("非法的项目 id".into());
     }
@@ -74,7 +74,7 @@ fn derive(pass: &str, salt: &[u8]) -> Result<[u8; KEY_LEN], String> {
     Ok(out)
 }
 
-fn seal(key: &[u8; KEY_LEN], plain: &[u8]) -> Result<Vec<u8>, String> {
+pub(crate) fn seal(key: &[u8; KEY_LEN], plain: &[u8]) -> Result<Vec<u8>, String> {
     let cipher = XChaCha20Poly1305::new_from_slice(key).map_err(|e| e.to_string())?;
     let mut nonce = [0u8; NONCE_LEN];
     rand::thread_rng().fill_bytes(&mut nonce);
@@ -164,7 +164,16 @@ pub fn lock() {
     }
 }
 
-fn session_key() -> Result<[u8; KEY_LEN], String> {
+pub(crate) fn key_clone() -> Option<[u8; KEY_LEN]> {
+    SESSION.lock().ok().and_then(|g| *g)
+}
+
+/// 项目是否在锁定区里（不需要解锁也能判断，只查文件名）。
+pub fn is_private(cfg: &Path, id: &str) -> bool {
+    meta_path(cfg, id).is_file()
+}
+
+pub(crate) fn session_key() -> Result<[u8; KEY_LEN], String> {
     SESSION
         .lock()
         .ok()
@@ -176,13 +185,13 @@ pub fn is_unlocked() -> bool {
     SESSION.lock().map(|g| g.is_some()).unwrap_or(false)
 }
 
-fn write_meta(cfg: &Path, data: &VaultData, key: &[u8; KEY_LEN]) -> Result<(), String> {
+pub(crate) fn write_meta(cfg: &Path, data: &VaultData, key: &[u8; KEY_LEN]) -> Result<(), String> {
     let text = serde_json::to_string(data).map_err(|e| e.to_string())?;
     let sealed = seal(key, text.as_bytes())?;
     crate::fsutil::atomic_write(&meta_path(cfg, &data.project.id), &sealed)
 }
 
-fn read_meta(cfg: &Path, id: &str, key: &[u8; KEY_LEN]) -> Result<VaultData, String> {
+pub(crate) fn read_meta(cfg: &Path, id: &str, key: &[u8; KEY_LEN]) -> Result<VaultData, String> {
     let raw = std::fs::read(meta_path(cfg, id)).map_err(|e| format!("读取私密项目失败：{e}"))?;
     let plain = open(key, &raw)?;
     serde_json::from_slice(&plain).map_err(|e| format!("解析私密项目失败：{e}"))
@@ -327,7 +336,7 @@ pub fn set_star(cfg: &Path, id: &str, name: &str, on: bool) -> Result<(), String
     write_meta(cfg, &data, &key)
 }
 
-fn now_ms() -> u64 {
+pub(crate) fn now_ms() -> u64 {
     std::time::SystemTime::now()
         .duration_since(std::time::UNIX_EPOCH)
         .map(|d| d.as_millis() as u64)
@@ -385,3 +394,5 @@ pub fn lib_items(cfg: &Path) -> Vec<crate::library::LibItem> {
 #[cfg(test)]
 #[path = "vault_tests.rs"]
 mod tests;
+
+pub use crate::vault_ops::{delete, seal_paths, set_active};

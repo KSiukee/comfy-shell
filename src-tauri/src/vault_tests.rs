@@ -1,6 +1,9 @@
 // 锁定区模块的测试（拆出来，别把 vault.rs 顶过 400 行）。
 use super::*;
 
+// 这些用例共用进程内的会话密钥，必须串行跑。
+static SESSION_TEST: std::sync::Mutex<()> = std::sync::Mutex::new(());
+
     use super::*;
 
     fn tmpcfg(tag: &str) -> PathBuf {
@@ -30,6 +33,7 @@ use super::*;
 
 #[test]
 fn make_private_star_and_unprivate_roundtrip() {
+    let _guard = SESSION_TEST.lock().unwrap();
     let cfg = tmpcfg("roundtrip");
     let out = tmpcfg("roundtrip_out");
     let _ = std::fs::remove_dir_all(&cfg);
@@ -53,6 +57,35 @@ fn make_private_star_and_unprivate_roundtrip() {
     let u = unprivate(&cfg, &out, &p.id).unwrap();
     assert!(!u.private);
     assert!(dir.join("a.png").exists(), "移出后图片要回来");
+    lock();
+    let _ = std::fs::remove_dir_all(&cfg);
+    let _ = std::fs::remove_dir_all(&out);
+}
+
+#[test]
+fn seal_paths_encrypts_and_removes_plaintext() {
+    let _guard = SESSION_TEST.lock().unwrap();
+    let cfg = tmpcfg("seal");
+    let out = tmpcfg("seal_out");
+    let _ = std::fs::remove_dir_all(&cfg);
+    let _ = std::fs::remove_dir_all(&out);
+    let p = crate::project::create(&cfg, "封存测试").unwrap();
+    setup(&cfg, "test1234").unwrap();
+    make_private(&cfg, &out, &p.id).unwrap();
+
+    std::fs::create_dir_all(&out).unwrap();
+    let src = out.join("generated.png");
+    std::fs::write(&src, b"generated-bytes").unwrap();
+    let key = key_clone().expect("unlocked");
+    let urls = seal_paths(&cfg, &p.id, &[src.to_string_lossy().to_string()], &key).unwrap();
+    assert_eq!(urls.len(), 1);
+    assert!(urls[0].starts_with(&format!("vault://{}/", p.id)));
+    assert!(!src.exists(), "封存后明文必须删掉");
+    assert_eq!(lib_items(&cfg).len(), 1);
+    assert_eq!(read_image(&cfg, &p.id, "generated.png").unwrap(), b"generated-bytes");
+
+    unprivate(&cfg, &out, &p.id).unwrap();
+    assert!(out.join("projects").join(&p.id).join("generated.png").exists());
     lock();
     let _ = std::fs::remove_dir_all(&cfg);
     let _ = std::fs::remove_dir_all(&out);

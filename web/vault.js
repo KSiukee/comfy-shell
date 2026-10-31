@@ -207,7 +207,20 @@ async function renderVaultPane() {
         toast(String(e), true);
       }
     };
-    row.append(name, out);
+    const del = vEl("button", "删除", "btn small ghost");
+    del.onclick = async () => {
+      if (!confirm(`永久删除私密项目「${p.name}」？不可恢复。`)) return;
+      try {
+        await api.call("project_private_delete", { id: p.id });
+        await vaultRefreshStatus();
+        await projRefresh("");
+        await renderVaultPane();
+        toast("已永久删除");
+      } catch (e) {
+        toast(String(e), true);
+      }
+    };
+    row.append(name, out, del);
     pane.appendChild(row);
   }
 
