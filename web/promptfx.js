@@ -5,6 +5,7 @@ const STYLE_KEY = "cs.styleName";
 const MAX_ARRAY_JOBS = 8;
 let stylePacks = [];
 let wildcardMap = {};
+let styleName = localStorage.getItem(STYLE_KEY) || "";
 
 // ---------------------------------------------------------------- 读取
 
@@ -14,18 +15,21 @@ async function loadStylePacks() {
   } catch {
     stylePacks = [];
   }
-  const sel = $("styleSel");
-  if (!sel) return;
-  const want = localStorage.getItem(STYLE_KEY) || "";
-  sel.innerHTML = "";
-  sel.appendChild(new Option("（不套风格）", ""));
-  stylePacks.forEach((s, i) => {
-    const opt = new Option(s.zh ? s.zh : s.name, String(i));
-    if (s.zh && s.zh !== s.name) opt.title = s.name;
-    sel.appendChild(opt);
-  });
-  const hit = stylePacks.findIndex((s) => s.name === want);
-  if (hit >= 0) sel.value = String(hit);
+  if (styleName && !stylePacks.some((s) => s.name === styleName)) styleName = "";
+  if (typeof stylePickRefresh === "function") stylePickRefresh();
+  updateFxHint();
+}
+
+/** 当前选中的风格（没有就 null）；选择器在 stylepick.js 里画。 */
+function currentStyle() {
+  if (!styleName) return null;
+  return stylePacks.find((s) => s.name === styleName) || null;
+}
+
+function setStyleName(name) {
+  styleName = name || "";
+  localStorage.setItem(STYLE_KEY, styleName);
+  if (typeof stylePickRefresh === "function") stylePickRefresh();
   updateFxHint();
 }
 
@@ -102,12 +106,6 @@ function expandWildcards(text, seed) {
     return list[idx];
   });
   return { text: out, used };
-}
-
-function currentStyle() {
-  const sel = $("styleSel");
-  if (!sel || sel.value === "") return null;
-  return stylePacks[Number(sel.value)] || null;
 }
 
 function applyStyle(prompt, negative) {
@@ -265,11 +263,6 @@ function updateFxHint() {
   el.title = bits.length ? jobs.map((j, i) => `#${i + 1} ${j.prompt}`).join("\n\n") : "";
 }
 
-$("styleSel").addEventListener("change", () => {
-  const s = currentStyle();
-  localStorage.setItem(STYLE_KEY, s ? s.name : "");
-  updateFxHint();
-});
 $("styleDirBtn").addEventListener("click", async () => {
   try {
     const dir = await api.call("style_pack_open");
@@ -292,7 +285,7 @@ $("styleFile").addEventListener("change", async () => {
       jsonText: text,
     });
     await loadStylePacks();
-    toast(`已导入 ${n} 个风格，下拉里挑一个`);
+    toast(`已导入 ${n} 个风格，点「风格」挑一个`);
   } catch (e) {
     toast(String(e), true);
   } finally {

@@ -100,7 +100,8 @@ try {
   check("版本 A/B 对比窗在", (await evaluate("!!document.getElementById('abModal')")) === true);
   const outOfRoot = await evaluate("api.call('image_meta', { path: 'D:/__nope__/zzz.png' })");
   check("image_meta 拒绝越界/不存在的路径", outOfRoot === null || outOfRoot === undefined, String(outOfRoot));
-  check("提示词风格下拉在", (await evaluate("!!document.getElementById('styleSel')")) === true);
+  check("提示词风格按钮在", (await evaluate("!!document.getElementById('stylePickBtn')")) === true);
+  check("提示词风格面板在", (await evaluate("!!document.getElementById('stylePop')")) === true);
   check("提示词辅助按钮在", (await evaluate("!!document.getElementById('phOpen')")) === true);
   check("提示词辅助卡片窗在", (await evaluate("!!document.getElementById('phModal')")) === true);
   const stylePacks = await evaluate("api.call('style_list')");

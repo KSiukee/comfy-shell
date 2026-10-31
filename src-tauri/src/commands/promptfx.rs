@@ -275,6 +275,61 @@ pub fn style_import(app: tauri::AppHandle, name: String, json_text: String) -> R
     Ok(n)
 }
 
+/// 把某个风格从它所在的文件里删掉；删空了就连文件一起删。
+/// 文件按我们的规范数组重写（name/zh/positive/negative），其余条目原样保留。
+pub fn delete_style_in(dir: &Path, name: &str) -> Result<bool, String> {
+    let target = name.trim();
+    let rd = match std::fs::read_dir(dir) {
+        Ok(r) => r,
+        Err(e) => return Err(e.to_string()),
+    };
+    for e in rd.flatten() {
+        let p = e.path();
+        if !is_ext(&p, "json") {
+            continue;
+        }
+        let text = match std::fs::read_to_string(&p) {
+            Ok(t) => t,
+            Err(_) => continue,
+        };
+        let v: serde_json::Value = match serde_json::from_str(&text) {
+            Ok(v) => v,
+            Err(_) => continue,
+        };
+        let stem = p.file_stem().and_then(|x| x.to_str()).unwrap_or("style").to_string();
+        let styles = styles_in_value(&v, &stem);
+        if !styles.iter().any(|s| s.name == target) {
+            continue;
+        }
+        let remain: Vec<Style> = styles.into_iter().filter(|s| s.name != target).collect();
+        if remain.is_empty() {
+            std::fs::remove_file(&p).map_err(|e| e.to_string())?;
+        } else {
+            let body: Vec<serde_json::Value> = remain
+                .iter()
+                .map(|s| {
+                    serde_json::json!({
+                        "name": s.name,
+                        "zh": s.zh,
+                        "positive": s.positive,
+                        "negative": s.negative
+                    })
+                })
+                .collect();
+            let out = serde_json::to_string_pretty(&body).map_err(|e| e.to_string())?;
+            crate::fsutil::atomic_write_str(&p, &out)?;
+        }
+        return Ok(true);
+    }
+    Ok(false)
+}
+
+#[tauri::command]
+pub fn style_delete(app: tauri::AppHandle, name: String) -> Result<bool, String> {
+    let dir = styles_dir(&crate::cfg_dir(&app));
+    delete_style_in(&dir, &name)
+}
+
 #[tauri::command]
 pub fn wildcard_map(app: tauri::AppHandle) -> BTreeMap<String, Vec<String>> {
     read_wildcards(&wildcards_dir(&crate::cfg_dir(&app)))

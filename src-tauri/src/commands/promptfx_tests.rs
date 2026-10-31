@@ -117,6 +117,30 @@ fn upstream_names_get_chinese_labels() {
 }
 
 #[test]
+fn delete_style_keeps_the_rest_and_drops_empty_files() {
+    let d = tmp("del");
+    let _ = std::fs::remove_dir_all(&d);
+    std::fs::create_dir_all(&d).unwrap();
+    std::fs::write(
+        d.join("pack.json"),
+        r#"[{"name":"a","prompt":"p {prompt}"},{"name":"b","prompt":"q {prompt}"}]"#,
+    )
+    .unwrap();
+    std::fs::write(d.join("solo.json"), r#"{"name":"solo","prompt":"s {prompt}"}"#).unwrap();
+
+    assert!(delete_style_in(&d, "a").unwrap());
+    let left = read_styles(&d);
+    assert!(!left.iter().any(|s| s.name == "a"));
+    assert!(left.iter().any(|s| s.name == "b"), "同文件里的其余条目要留着");
+    assert_eq!(left.iter().filter(|s| s.name == "b").count(), 1, "不能删重");
+
+    assert!(delete_style_in(&d, "solo").unwrap());
+    assert!(!d.join("solo.json").exists(), "删空的文件要一起删掉");
+    assert!(!delete_style_in(&d, "nope").unwrap(), "找不到就如实返回 false");
+    let _ = std::fs::remove_dir_all(&d);
+}
+
+#[test]
 fn seed_file_never_overwrites() {
     let d = tmp("seed");
     let _ = std::fs::remove_dir_all(&d);

@@ -206,6 +206,7 @@ fn main() {
             commands::system::reveal_file,
             commands::promptfx::style_list,
             commands::promptfx::style_import,
+            commands::promptfx::style_delete,
             commands::promptfx::wildcard_map,
             commands::promptfx::style_pack_open,
         ])

@@ -647,6 +647,38 @@ body.mode-pro .simple-only { display: none !important; }
 .fx-row select { width: auto; max-width: 220px; }
 .fx-hint { font-size: 11px; line-height: 1.5; margin-top: 5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
+/* 风格选择器：分组 + 收藏 + 删除 */
+.style-pop { border: 1px solid var(--line); border-radius: 12px; background: #0b0e14; padding: 8px; margin-top: 6px; }
+.style-pop-head { display: flex; gap: 6px; align-items: center; margin-bottom: 6px; }
+.style-pop-head input { flex: 1 1 auto; min-width: 0; }
+.style-chips { display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 6px; }
+.style-chip {
+  padding: 3px 9px; border-radius: 999px; border: 1px solid var(--line);
+  background: #121722; color: var(--muted); font-size: 11.5px; cursor: pointer;
+}
+.style-chip:hover { border-color: #3f4f78; color: var(--text); }
+.style-chip.on { border-color: var(--accent); color: var(--text); background: #1a2336; }
+.style-list { max-height: 250px; overflow-y: auto; display: flex; flex-direction: column; gap: 2px; }
+.style-row { display: flex; align-items: center; gap: 2px; border-radius: 8px; }
+.style-row:hover { background: #141a26; }
+.style-row.on { background: #18233a; }
+.style-main {
+  flex: 1 1 auto; min-width: 0; display: flex; align-items: baseline; gap: 8px;
+  padding: 5px 8px; border: 0; background: transparent; color: var(--text);
+  text-align: left; cursor: pointer; font: inherit; border-radius: 8px;
+}
+.style-main b { font-size: 12.5px; font-weight: 500; }
+.style-main .muted { font-size: 10.5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.style-icon {
+  flex: 0 0 auto; width: 26px; height: 24px; border: 0; border-radius: 6px;
+  background: transparent; color: #6b7488; cursor: pointer; font-size: 12px;
+}
+.style-icon:hover { background: #1c2434; color: var(--text); }
+.style-icon.on { color: #e8b84b; }
+.style-icon.danger { color: #e06464; width: 30px; }
+.style-empty { padding: 14px 8px; font-size: 11.5px; text-align: center; }
+.style-tip { font-size: 10.5px; margin-top: 6px; text-align: right; }
+
 /* 提示词辅助器（卡片页） */
 .ph-card { width: 640px; }
 .ph-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
