@@ -15,3 +15,9 @@ ComfyUI/
 
 # local state
 dev/__pycache__/
+
+# 内部资料不入库（照文字农场约定：docs/.codex/AGENTS 本机保留）
+docs/
+.codex/
+AGENTS.md
+
