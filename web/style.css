@@ -91,11 +91,12 @@ body.col-resizing { cursor: col-resize; user-select: none; }
 .stage { min-width: 0; min-height: 0; display: flex; flex-direction: column; }
 
 .stagebar {
-  height: 34px;
+  flex: 0 0 auto;
+  height: 44px;
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 0 16px;
+  gap: 12px;
+  padding: 0 18px;
   border-bottom: 1px solid var(--line);
 }
 /* 图区范围开关常驻在这一条上，所以整条不再随进度条隐藏 */
@@ -627,8 +628,8 @@ body.mode-pro .simple-only { display: none !important; }
   height: 40px;
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 0 18px;
+  gap: 6px;
+  padding: 0 16px;
   border-bottom: 1px solid var(--line);
   background: #0c0e13;
 }
