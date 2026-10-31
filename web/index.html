@@ -43,6 +43,7 @@
     <button class="btn small ghost" id="projDelete" title="移到回收站，可恢复">删除</button>
     <button class="btn small ghost" id="projTrashBtn" title="回收站">回收站</button>
     <button class="btn small ghost" id="vaultBtn" title="锁定区：加密的私密项目">🔒 锁定区</button>
+    <button class="btn small ghost" id="shotsBtn" title="镜头：一话 = 一组镜头">🎬 镜头</button>
     <span class="spacer"></span>
     <span class="muted" style="font-size:12px">大小</span>
     <input type="range" id="resSize" min="100" max="560" step="10" value="440" style="width:110px;flex:0 0 110px" title="结果图大小（双击复位）" />
@@ -429,6 +430,7 @@
       </div>
       <div class="modal-actions">
         <button class="btn ghost" id="storyCancel">取消</button>
+        <button class="btn" id="storyShots">存为镜头</button>
         <button class="btn primary" id="storyPush">推送到队列</button>
       </div>
     </div>
@@ -786,6 +788,16 @@
     </div>
   </div>
 
+  <div class="modal" id="shotsModal" hidden>
+    <div class="modal-card" style="width: 760px">
+      <h3>镜头 <span class="muted" style="font-size:12px">一话 = 一组镜头 · 单格可重画</span></h3>
+      <div id="shotsList" style="display:flex;flex-direction:column;gap:8px;max-height:56vh;overflow:auto"></div>
+      <div class="row tight" style="justify-content:flex-end;margin-top:12px">
+        <button class="btn small ghost" id="shotsClose">关闭</button>
+      </div>
+    </div>
+  </div>
+
   <div class="toast" id="toast" hidden></div>
 
   <script src="store.js"></script>
@@ -794,6 +806,7 @@
   <script src="vault.js"></script>
   <script src="layout.js"></script>
   <script src="data.js"></script>
+  <script src="shots.js"></script>
 </body>
 </html>
 

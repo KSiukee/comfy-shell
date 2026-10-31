@@ -10,6 +10,7 @@ mod layouts;
 mod library;
 mod project;
 mod server;
+mod shots;
 mod single_instance;
 mod state;
 mod vault;
@@ -783,6 +784,50 @@ fn project_import(
         &output_dir(&state),
         std::path::Path::new(&folder),
     )
+}
+
+// ---------------------------------------------------------------------------
+// 镜头（一话 = 一组镜头）
+// ---------------------------------------------------------------------------
+
+#[tauri::command]
+fn shots_list(app: tauri::AppHandle, project: String) -> Result<Vec<shots::Shot>, String> {
+    shots::list(&cfg_dir(&app), &project)
+}
+
+#[tauri::command]
+fn shots_add(
+    app: tauri::AppHandle,
+    project: String,
+    prompts: Vec<String>,
+    defaults: shots::ShotDefaults,
+) -> Result<Vec<shots::Shot>, String> {
+    shots::add_many(&cfg_dir(&app), &project, prompts, &defaults)
+}
+
+#[tauri::command]
+fn shot_add_image(
+    app: tauri::AppHandle,
+    project: String,
+    id: String,
+    path: String,
+) -> Result<shots::Shot, String> {
+    shots::add_image(&cfg_dir(&app), &project, &id, &path)
+}
+
+#[tauri::command]
+fn shot_set_layout(
+    app: tauri::AppHandle,
+    project: String,
+    id: String,
+    layout: Option<String>,
+) -> Result<shots::Shot, String> {
+    shots::set_layout(&cfg_dir(&app), &project, &id, layout)
+}
+
+#[tauri::command]
+fn shot_delete(app: tauri::AppHandle, project: String, id: String) -> Result<(), String> {
+    shots::delete(&cfg_dir(&app), &project, &id)
 }
 
 // ---------------------------------------------------------------------------
@@ -2455,6 +2500,11 @@ fn main() {
             backup_now,
             project_export,
             project_import,
+            shots_list,
+            shots_add,
+            shot_add_image,
+            shot_set_layout,
+            shot_delete,
             library_scan,
             library_delete,
             delete_results,
