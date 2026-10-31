@@ -1037,22 +1037,20 @@ document.addEventListener("keydown", (e) => {
 });
 
 
-$("btnQueueAdd").onclick = queueAdd;
-$("btnQueueRun").onclick = queueRun;
+$("btnQueueAdd").onclick = () => queueAdd();
+$("btnQueueRun").onclick = () => queueRun();
 $("btnQueueStop").onclick = () => {
   queue.stop = true;
   api.call("job_cancel");
   toast("队列将在当前这张结束后停止");
 };
-renderQueue();
-
-$("btnLibrary").onclick = openLibrary;
+$("btnLibrary").onclick = () => openLibrary();
 $("libClose").onclick = () => ($("library").hidden = true);
-$("libRefresh").onclick = loadLibrary;
-$("libSearch").oninput = renderLibrary;
-$("libStarOnly").onchange = renderLibrary;
-$("libSort").onchange = renderLibrary;
-$("libDelete").onclick = deleteSelected;
+$("libRefresh").onclick = () => loadLibrary();
+$("libSearch").oninput = () => renderLibrary();
+$("libStarOnly").onchange = () => renderLibrary();
+$("libSort").onchange = () => renderLibrary();
+$("libDelete").onclick = () => deleteSelected();
 $("libCompare").onclick = async () => {
   const picked = libItems.filter((i) => libSel.has(i.path));
   if (picked.length !== 2) return;
@@ -1074,11 +1072,9 @@ $("cmpZoom").oninput = () => {
   cmpZoom = Number($("cmpZoom").value);
   applyCmp();
 };
-bindPan("cmpA");
-bindPan("cmpB");
 
 
-$("libEdit").onclick = openBatchEdit;
+$("libEdit").onclick = () => openBatchEdit();
 $("batchEditCancel").onclick = () => {
   if (batchEdit.running) {
     batchEdit.stop = true;
@@ -1087,10 +1083,10 @@ $("batchEditCancel").onclick = () => {
   }
   $("batchEditModal").hidden = true;
 };
-$("batchEditStart").onclick = runBatchEdit;
+$("batchEditStart").onclick = () => runBatchEdit();
 
-$("btnSweepRun").onclick = runSweep;
-$("cmpExport").onclick = exportCompare;
+$("btnSweepRun").onclick = () => runSweep();
+$("cmpExport").onclick = () => exportCompare();
 
 
 
@@ -1104,7 +1100,7 @@ $("vwFit").onclick = () => {
   viewer.pan = { x: 0, y: 0 };
   applyViewer();
 };
-$("vwUpscale").onclick = viewerUpscale;
+$("vwUpscale").onclick = () => viewerUpscale();
 $("vwReveal").onclick = () => {
   const it = viewer.list[viewer.idx];
   if (it) api.call("reveal_file", { path: it.path });
@@ -1173,7 +1169,7 @@ document.addEventListener("keydown", (e) => {
   if (!$("library").hidden && e.key === "Escape") $("library").hidden = true;
 });
 
-$("libTranslate").onclick = translateSearch;
+$("libTranslate").onclick = () => translateSearch();
 $("libAltClear").onclick = () => {
   libAltQuery = "";
   $("libAltChip").hidden = true;

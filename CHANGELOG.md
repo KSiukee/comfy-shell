@@ -3,6 +3,10 @@
 > 本文件是补写的更新历史：最早十二个版本没有当时的发布记录，依据 `dev/test_*.py`、截图、README 旧版与代码痕迹重建，
 > 标注「推断」的条目细节可能有偏差；有发布记录之后为当时实测记录。
 
+## v0.58.1
+- 修复 v0.58 拆分后的事件顺序：拆出去的函数在 app.js wiring 时还没定义，导致图库/队列/训练等按钮没绑上；事件改成箭头延迟解析，`bindPan` / `renderQueue` 挪到 boot.js。
+- 棘轮把 app.js 压到 1334 行。
+
 ## v0.58.0
 - 前端拆分（#6）：`app.js` 3426 → **1338 行**；按域拆到 `library.js` / `batch.js` / `train.js` / `inpaint.js` / `layout-editor.js` / `tools.js` / `region.js`；`boot` 移到 `boot.js` 最后执行。
 - 行为不变；棘轮把 `app.js` 上限压到 1338（只许减）。
