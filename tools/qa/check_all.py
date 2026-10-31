@@ -176,7 +176,7 @@ def layer_ratchet() -> tuple[bool, str, int]:
 
 
 def layer_js() -> tuple[bool, str, int]:
-    files = ["web/app.js", "web/store.js", "web/projects.js", "web/vault.js", "web/layout.js", "web/data.js", "web/shots.js", "web/versions.js", "web/prompts.js", "dev/smoke.mjs"]
+    files = ["web/app.js", "web/store.js", "web/projects.js", "web/vault.js", "web/layout.js", "web/data.js", "web/shots.js", "web/versions.js", "web/prompts.js", "web/library.js", "web/batch.js", "web/train.js", "web/inpaint.js", "web/layout-editor.js", "web/tools.js", "web/region.js", "web/boot.js", "dev/smoke.mjs"]
     bad = []
     for p in files:
         code, out = run(["node", "--check", p])
