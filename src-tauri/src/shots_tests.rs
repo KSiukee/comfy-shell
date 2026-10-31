@@ -42,3 +42,47 @@ fn unknown_project_is_rejected() {
     let _ = std::fs::remove_dir_all(&cfg);
     assert!(list(&cfg, "nope").is_err());
 }
+
+#[test]
+fn export_episode_copies_latest_images() {
+    let cfg = tmp("episode_cfg");
+    let out = tmp("episode_out");
+    let dest = tmp("episode_dest");
+    for d in [&cfg, &out, &dest] {
+        let _ = std::fs::remove_dir_all(d);
+    }
+    let p = crate::project::create(&cfg, "整话测试").unwrap();
+    let img_dir = out.join("projects").join(&p.id);
+    std::fs::create_dir_all(&img_dir).unwrap();
+    std::fs::write(img_dir.join("a.png"), b"a").unwrap();
+    std::fs::write(img_dir.join("b.png"), b"b").unwrap();
+
+    let d = ShotDefaults {
+        profile: "moss".into(),
+        negative: String::new(),
+        width: 512,
+        height: 512,
+        steps: 8,
+        cfg: 3.0,
+        seed: 1,
+        slg: false,
+        slg_layers: "22".into(),
+        layout: None,
+    };
+    let shots = add_many(&cfg, &p.id, vec!["格一".into(), "格二".into(), "格三".into()], &d).unwrap();
+    add_image(&cfg, &p.id, &shots[0].id, &img_dir.join("a.png").to_string_lossy()).unwrap();
+    add_image(&cfg, &p.id, &shots[1].id, &img_dir.join("b.png").to_string_lossy()).unwrap();
+
+    let dir = export_episode(&cfg, &out, &p.id, &dest).unwrap();
+    assert!(dir.join("images").join(format!("01_{}", "a.png")).is_file());
+    assert!(dir.join("images").join(format!("02_{}", "b.png")).is_file());
+    assert!(dir.join("story.md").is_file());
+    let manifest: serde_json::Value =
+        serde_json::from_str(&std::fs::read_to_string(dir.join("export.json")).unwrap()).unwrap();
+    assert_eq!(manifest["images"], 2);
+    assert_eq!(manifest["missing"], 1, "第三格没出图");
+
+    let _ = std::fs::remove_dir_all(&cfg);
+    let _ = std::fs::remove_dir_all(&out);
+    let _ = std::fs::remove_dir_all(&dest);
+}

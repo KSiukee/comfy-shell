@@ -851,6 +851,22 @@ fn shot_delete(app: tauri::AppHandle, project: String, id: String) -> Result<(),
     shots::delete(&cfg_dir(&app), &project, &id)
 }
 
+#[tauri::command]
+fn shots_export(
+    app: tauri::AppHandle,
+    state: State<AppState>,
+    project: String,
+    dest: String,
+) -> Result<String, String> {
+    let dir = shots::export_episode(
+        &cfg_dir(&app),
+        &output_dir(&state),
+        &project,
+        std::path::Path::new(&dest),
+    )?;
+    Ok(dir.to_string_lossy().to_string())
+}
+
 // ---------------------------------------------------------------------------
 // 版本谱系（项目内）
 // ---------------------------------------------------------------------------
@@ -2601,6 +2617,7 @@ fn main() {
             shot_add_image,
             shot_set_layout,
             shot_delete,
+            shots_export,
             versions_list,
             version_star,
             version_delete,

@@ -166,6 +166,80 @@ pub fn delete(cfg: &Path, project: &str, id: &str) -> Result<(), String> {
     save(cfg, project, &shots)
 }
 
+/// 整话导出：每个镜头取最新一张图，按镜号命名，附 story.md + export.json。
+pub fn export_episode(
+    cfg: &Path,
+    output: &Path,
+    project: &str,
+    dest: &Path,
+) -> Result<PathBuf, String> {
+    let shots = load(cfg, project)?;
+    if shots.is_empty() {
+        return Err("还没有镜头，先存几格".into());
+    }
+    let p = crate::project::load(cfg, project)?;
+    let base = format!(
+        "{}-{}-episode",
+        crate::custom::safe_name(&p.name),
+        now_ms() / 1000
+    );
+    let mut dir = dest.join(&base);
+    let mut n = 2;
+    while dir.exists() {
+        dir = dest.join(format!("{base}-{n}"));
+        n += 1;
+        if n > 999 {
+            return Err("目标目录重名太多".into());
+        }
+    }
+    let img_dir = dir.join("images");
+    std::fs::create_dir_all(&img_dir).map_err(|e| e.to_string())?;
+
+    let mut lines = vec![format!("# {} · 分镜导出", p.name), String::new()];
+    let mut exported = 0usize;
+    let mut missing = 0usize;
+    for s in &shots {
+        lines.push(format!("## {:02}", s.index));
+        lines.push(String::new());
+        lines.push(s.prompt.clone());
+        lines.push(String::new());
+        let Some(src) = s.images.last() else {
+            missing += 1;
+            lines.push("（还没出图）".into());
+            lines.push(String::new());
+            continue;
+        };
+        let path = Path::new(src);
+        let fname = path
+            .file_name()
+            .map(|x| x.to_string_lossy().to_string())
+            .unwrap_or_else(|| "image.png".into());
+        if !path.is_file() {
+            missing += 1;
+            lines.push("（图片文件不在了）".into());
+            lines.push(String::new());
+            continue;
+        }
+        let target = img_dir.join(format!("{:02}_{}", s.index, fname));
+        std::fs::copy(path, &target).map_err(|e| format!("复制 {} 失败：{e}", path.display()))?;
+        lines.push(format!("![](images/{})", target.file_name().unwrap().to_string_lossy()));
+        lines.push(String::new());
+        exported += 1;
+    }
+    crate::fsutil::atomic_write_str(&dir.join("story.md"), &lines.join("\n"))?;
+    let manifest = serde_json::json!({
+        "kind": "episode",
+        "project": p.name,
+        "shots": shots.len(),
+        "images": exported,
+        "missing": missing,
+        "createdAt": now_ms() / 1000,
+    });
+    let text = serde_json::to_string_pretty(&manifest).map_err(|e| e.to_string())?;
+    crate::fsutil::atomic_write_str(&dir.join("export.json"), &text)?;
+    Ok(dir)
+}
+
 #[cfg(test)]
 #[path = "shots_tests.rs"]
 mod tests;

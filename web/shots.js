@@ -119,6 +119,20 @@ $("shotsBtn").onclick = async () => {
   $("shotsModal").hidden = false;
   await shotsRefresh();
 };
+$("shotsExport").onclick = async () => {
+  const p = shotProject();
+  if (!p) return toast("先选一个项目", true);
+  if (p.private) return toast("私密项目暂不支持整话导出", true);
+  const dest = await api.call("pick_folder");
+  if (!dest) return;
+  try {
+    const dir = await api.call("shots_export", { project: p.id, dest });
+    toast(`已导出：${dir}`);
+    await api.call("open_folder", { path: dir });
+  } catch (e) {
+    toast(String(e), true);
+  }
+};
 $("shotsClose").onclick = () => ($("shotsModal").hidden = true);
 
 $("storyShots").onclick = async () => {
