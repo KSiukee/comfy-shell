@@ -1,4 +1,4 @@
-   Compiling comfy-shell v0.50.0 (D:\deepseek-files\ai-tools\comfy-shell\src-tauri)
+   Compiling comfy-shell v0.51.0 (D:\deepseek-files\ai-tools\comfy-shell\src-tauri)
 warning: use of deprecated associated function `chacha20poly1305::aead::hybrid_array::Array::<T, U>::from_slice`: use `TryFrom` instead
   --> src\vault.rs:82:26
    |
@@ -14,19 +14,19 @@ warning: use of deprecated associated function `chacha20poly1305::aead::hybrid_a
    |                          ^^^^^^^^^^
 
 warning: unused variable: `total`
-    --> src\main.rs:1830:13
+    --> src\main.rs:1882:13
      |
-1830 |         let total = req.files.len();
+1882 |         let total = req.files.len();
      |             ^^^^^ help: if this is intentional, prefix it with an underscore: `_total`
      |
      = note: `#[warn(unused_variables)]` (part of `#[warn(unused)]`) on by default
 
 warning: field `name` is never read
-    --> src\main.rs:1223:5
+    --> src\main.rs:1275:5
      |
-1222 | struct TrainFile {
+1274 | struct TrainFile {
      |        --------- field in this struct
-1223 |     name: String,
+1275 |     name: String,
      |     ^^^^
      |
      = note: `#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default
@@ -44,4 +44,4 @@ warning: function `log_path` is never used
    |        ^^^^^^^^
 
 warning: `comfy-shell` (bin "comfy-shell") generated 6 warnings (run `cargo fix --bin "comfy-shell" -p comfy-shell` to apply 1 suggestion)
-    Finished `dev` profile [unoptimized + debuginfo] target(s) in 14.56s
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 14.67s

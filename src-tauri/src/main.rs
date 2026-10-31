@@ -2,6 +2,7 @@
 
 mod api;
 mod custom;
+mod dataio;
 mod enhance;
 mod fsutil;
 mod history;
@@ -731,6 +732,57 @@ fn project_private_delete(app: tauri::AppHandle, id: String) -> Result<(), Strin
         return Err("锁定区没解锁".into());
     }
     vault::delete(&cfg_dir(&app), &id)
+}
+
+// ---------------------------------------------------------------------------
+// 备份 / 导出 / 导入
+// ---------------------------------------------------------------------------
+
+#[tauri::command]
+async fn pick_folder() -> Option<String> {
+    tauri::async_runtime::spawn_blocking(|| {
+        rfd::FileDialog::new()
+            .pick_folder()
+            .map(|p| p.to_string_lossy().to_string())
+    })
+    .await
+    .ok()
+    .flatten()
+}
+
+#[tauri::command]
+fn backup_now(app: tauri::AppHandle, dest: String) -> Result<String, String> {
+    let dir = dataio::backup(&cfg_dir(&app), std::path::Path::new(&dest))?;
+    Ok(dir.to_string_lossy().to_string())
+}
+
+#[tauri::command]
+fn project_export(
+    app: tauri::AppHandle,
+    state: State<AppState>,
+    id: String,
+    dest: String,
+) -> Result<String, String> {
+    let dir = dataio::export_project(
+        &cfg_dir(&app),
+        &output_dir(&state),
+        &id,
+        std::path::Path::new(&dest),
+    )?;
+    Ok(dir.to_string_lossy().to_string())
+}
+
+#[tauri::command]
+fn project_import(
+    app: tauri::AppHandle,
+    state: State<AppState>,
+    folder: String,
+) -> Result<project::Project, String> {
+    dataio::import_project(
+        &cfg_dir(&app),
+        &output_dir(&state),
+        std::path::Path::new(&folder),
+    )
 }
 
 // ---------------------------------------------------------------------------
@@ -2399,6 +2451,10 @@ fn main() {
             project_private_list,
             project_unprivate,
             project_private_delete,
+            pick_folder,
+            backup_now,
+            project_export,
+            project_import,
             library_scan,
             library_delete,
             delete_results,

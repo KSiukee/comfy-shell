@@ -741,6 +741,12 @@
       <label class="check"><input type="checkbox" id="setStopOnExit" /> 关闭壳时一并关掉 ComfyUI</label>
       <label class="check"><input type="checkbox" id="setFreeEnhance" /> 扩写直接用未审查模型（跳过官方扩写器）</label>
       <div class="hint">官方扩写器偶尔会拒绝；勾上后所有扩写都走本地 Qwen3-VL heretic。</div>
+      <div class="row tight" style="margin-top:14px">
+        <button class="btn small" id="btnBackup">备份数据…</button>
+        <button class="btn small" id="btnExportProject">导出当前项目…</button>
+        <button class="btn small" id="btnImportProject">导入项目…</button>
+      </div>
+      <div class="hint">备份只含密文 vault；导出私密项目会解密成明文，导出前会再确认。</div>
       <div class="modal-actions">
         <button class="btn ghost" id="btnSettingsCancel">取消</button>
         <button class="btn primary" id="btnSettingsSave">保存</button>
@@ -787,6 +793,7 @@
   <script src="projects.js"></script>
   <script src="vault.js"></script>
   <script src="layout.js"></script>
+  <script src="data.js"></script>
 </body>
 </html>
 
