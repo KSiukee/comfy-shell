@@ -1,9 +1,9 @@
-# ComfyShell
+# 显影（ComfyShell）
 
 只干活的本地生图/改图壳：**不打开 ComfyUI 界面**，后台静默拉起 ComfyUI，界面上只有提示词、参数和结果。
 Rust（Tauri 2）后端 + 纯静态前端（无 node 构建）。
 
-## 现状（v0.36.0，2026-10-31 实测通过）
+## 现状（v0.38.0，2026-10-31 实测通过）
 
 | 能力 | 状态 |
 |---|---|
@@ -12,6 +12,7 @@ Rust（Tauri 2）后端 + 纯静态前端（无 node 构建）。
 | 生图 / 改图 | ✅ 参考图最多 10 张（主体/风格），Qwen 2.1 与 FLUX.3 支持 |
 | 提示词扩写 | ✅ 官方 PE；被拒时自动换本地 heretic 重写，设置里可强制走 heretic |
 | 负向提示词 | ✅ 可中→英一键翻译 |
+| 去 AI 感 | ✅ 一键补中性白平衡 / 无文字 / 自然表情 / 单光源 / 浅景深 + 噪点、轻微畸变；负面词同步补，按片段去重 |
 | 步数 / CFG | ✅ 同行对齐，30/36/42/49/25/50 快捷点选 |
 | 双 LoRA | ✅ 第二个 LoRA 槽，同架构串联，各自强度 |
 | 采样 | MOSS 50 步 / CFG 3 / euler / **SLG skip 22**；Qwen 45 步 / CFG 4；FLUX 蒸馏 16、Base 50 |
@@ -43,6 +44,13 @@ Rust（Tauri 2）后端 + 纯静态前端（无 node 构建）。
 
 MOSS 的 **SLG** 用 ComfyUI 通用 `SkipLayerGuidanceDiT`（`single_layers=22, scale=3`），默认开，慢约 25%，暗部/细节更实。
 
+## 去 AI 感
+
+- 提示词旁「🎞 去AI感」：一键补中性白平衡、无文字/水印、不看镜头的自然表情、单光源软阴影、f1.8 浅景深、轻微胶片颗粒与镜头畸变
+- 负面词同时补：黄光 / 过饱和 / 发光 / 塑料皮肤 / 过度磨皮等
+- 按逗号片段去重：提示词里已有的词不重复追加，点两次等于一次
+- 只改提示词，不动步数/CFG/模型；适合人像「一眼 AI」时打底，再按需删改
+
 ## 姿势库（Shisei）
 
 - 来源：[wquguru/shisei](https://github.com/wquguru/shisei)，CC0，280 组姿势 × 5 机位（正面/斜侧/侧面/俯视/仰视）
@@ -54,9 +62,9 @@ MOSS 的 **SLG** 用 ComfyUI 通用 `SkipLayerGuidanceDiT`（`single_layers=22, 
 ## 本地小助手（实验）
 
 - 提示词旁「🤖 助手」：用中文说需求，本地 Qwen3.5-9B 走小型工具循环
-- 目前两个工具：	ranslate（中→英片段）、xpand（本地 heretic 扩写），最多 3 步，最后给 inal
-- 实测「雨夜街头穿红大衣的银发女孩，电影感」→ translate → expand → 300 词英文提示词，约 20 秒
-- 只是固定工具的迷你 agent，不是通用 skill 加载器；要接更多工具（解析图/姿势/生成）再加
+- 四个工具：`translate`（中→英片段）、`expand`（本地 heretic 扩写）、`pose`（搜姿势库）、`analyze`（拆当前参考图），最多 4 步
+- 实测「雨夜街头穿红大衣的银发女孩，电影感」→ translate → expand → 约 20 秒出英文提示词
+- 只是固定工具的迷你 agent，不是通用 skill 加载器；`generate` / `layout` 还没接（见待办）
 
 ## MOSS 排版（Layout JSON）
 

@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>ComfyShell</title>
+  <title>显影</title>
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
@@ -14,7 +14,7 @@
         <circle cx="12" cy="12" r="4.2" stroke="currentColor" stroke-width="1.6"/>
         <circle cx="12" cy="12" r="1.4" fill="currentColor"/>
       </svg>
-      <span>ComfyShell</span>
+      <span>显影</span>
     </div>
 
     <div class="status" id="status">
@@ -81,6 +81,7 @@
           <span class="muted" style="font-size:11.5px">Ctrl+Enter 生成</span>
           <span class="spacer"></span>
           <button class="btn small ghost" id="btnPoses2" title="白模姿势库">🕺 姿势</button>
+          <button class="btn small ghost" id="btnDeAi" title="追加去 AI 感后缀 + 负面词（含噪点/轻微畸变）">🎞 去AI感</button>
           <button class="btn small ghost" id="btnAssist" title="本地小助手：中文需求 → 翻译 → 扩写 → 提示词">🤖 助手</button>
           <button class="btn small ghost" id="btnAnalyze" title="丢一张图，让本地视觉模型拆成分类提示词">🔍 解析图</button>
           <button class="btn small ghost" id="btnLayout" title="MOSS 排版：拖框定位置，文字/物体分开标注" hidden>🎨 排版</button>

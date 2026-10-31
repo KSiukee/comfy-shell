@@ -2472,6 +2472,44 @@ function applyPortraitPreset(key, silent) {
 
 $("presetSel").onchange = () => applyPortraitPreset($("presetSel").value, false);
 
+
+// ---------------------------------------------------------------- de-AI preset
+const DEAI_PROMPT =
+  "neutral white balance, no text or logos, candid expression not looking at camera, single window light with soft shadows, f1.8 shallow depth of field, subtle film grain, slight lens distortion";
+const DEAI_NEG =
+  "yellow cast, oversaturated, glow, bloom, text, watermark, plastic skin, over-smoothed";
+// 按逗号片段去重后追加：用户词里已有的（如 watermark）不再重复，点两次等于一次。
+function appendTokens(value, extra) {
+  const seen = new Set(
+    value.toLowerCase().split(",").map((s) => s.trim()).filter(Boolean)
+  );
+  const add = [];
+  for (const raw of extra.split(",")) {
+    const token = raw.trim();
+    if (token && !seen.has(token.toLowerCase())) {
+      seen.add(token.toLowerCase());
+      add.push(token);
+    }
+  }
+  if (!add.length) return value;
+  const base = value.trim().replace(/,\s*$/, "");
+  return base ? `${base}, ${add.join(", ")}` : add.join(", ");
+}
+$("btnDeAi").onclick = () => {
+  const box = $("prompt");
+  const neg = $("negative");
+  const before = `${box.value}\n${neg.value}`;
+  box.value = appendTokens(box.value, DEAI_PROMPT);
+  neg.value = appendTokens(neg.value, DEAI_NEG);
+  const changed = `${box.value}\n${neg.value}` !== before;
+  toast(
+    changed
+      ? "已加：去 AI 感后缀 + 负面词（噪点/轻微畸变；已有的不重复）"
+      : "去 AI 感后缀和负面词都已经在了"
+  );
+};
+
+
 // ---------------------------------------------------------------- local assistant
 $("btnAssist").onclick = () => {
   $("assistModal").hidden = false;
