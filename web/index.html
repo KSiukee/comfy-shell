@@ -17,14 +17,6 @@
       <span>显影</span>
     </div>
 
-    <div class="status" id="status">
-      <span class="dot" id="statusDot"></span>
-      <span id="statusText">检测中…</span>
-      <span class="sep"></span>
-      <span class="mono" id="statusPort">:8188</span>
-      <span class="muted mono" id="statusVersion"></span>
-    </div>
-
     <div class="actions">
       <button class="btn ghost" id="btnUiMode" title="切换简单 / 专业界面">简单</button>
       <button class="btn ghost" id="btnLibrary">图库</button>
@@ -51,6 +43,13 @@
     <button class="btn small ghost" id="versionsBtn" title="版本：项目内谱系，只和父版本对比">📜 版本</button>
     <button class="btn small ghost" id="promptsBtn" title="提示词库：跨项目、收藏、常用、去AI味">📚 提示词</button>
     <span class="spacer"></span>
+    <div class="status" id="status" title="ComfyUI 连接状态">
+      <span class="dot" id="statusDot"></span>
+      <span id="statusText">检测中…</span>
+      <span class="sep"></span>
+      <span class="mono" id="statusPort">:8188</span>
+      <span class="muted mono" id="statusVersion"></span>
+    </div>
     <span class="muted" style="font-size:12px">大小</span>
     <input type="range" id="resSize" min="100" max="560" step="10" value="440" style="width:110px;flex:0 0 110px" title="结果图大小（双击复位）" />
     <button class="btn small ghost" id="btnClearHistory" title="只清列表，不删图片文件">清空历史</button>
@@ -273,6 +272,12 @@
         <div class="progress-wrap" id="progressWrap" hidden>
           <div class="bar"><div class="fill" id="progressFill"></div></div>
           <div class="muted mono" id="progressText">准备中…</div>
+        </div>
+        <span class="spacer"></span>
+        <span class="muted" style="font-size:11.5px">图区</span>
+        <div class="tabs mini" id="resScope">
+          <button class="tab active" data-scope="all" title="显示所有项目的生成结果">全部</button>
+          <button class="tab" data-scope="project" title="只显示当前开工项目的结果">本项目</button>
         </div>
       </div>
       <div class="results" id="results">
@@ -906,6 +911,7 @@
 
   <script src="store.js"></script>
   <script src="app.js"></script>
+  <script src="results.js"></script>
   <script src="projects.js"></script>
   <script src="vault.js"></script>
   <script src="layout.js"></script>

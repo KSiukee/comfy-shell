@@ -89,16 +89,20 @@ async function refreshStatus() {
     const text = $("statusText");
     if (st.healthy) {
       dot.className = "dot ok";
-      text.textContent = st.managed ? "ComfyUI 运行中（本壳托管）" : "ComfyUI 运行中（外部进程）";
+      text.textContent = st.managed ? "本壳托管" : "外部进程";
+      $("status").title = st.managed ? "ComfyUI 运行中（本壳托管）" : "ComfyUI 运行中（外部进程）";
     } else if (state.starting) {
       dot.className = "dot warn";
-      text.textContent = "正在启动 ComfyUI…";
+      text.textContent = "启动中…";
+      $("status").title = "正在启动 ComfyUI…";
     } else if (state.settings?.autoStart) {
       dot.className = "dot warn";
-      text.textContent = "ComfyUI 未响应…";
+      text.textContent = "未响应…";
+      $("status").title = "ComfyUI 未响应（会自动重试）";
     } else {
       dot.className = "dot err";
-      text.textContent = "ComfyUI 未运行";
+      text.textContent = "未运行";
+      $("status").title = "ComfyUI 未运行";
     }
     $("statusPort").textContent = ":" + st.port;
     $("statusVersion").textContent = st.version ? "v" + st.version : "";
@@ -475,107 +479,6 @@ async function toggleStar(r, btn) {
     toast(String(e), true);
   }
 }
-
-function renderResults() {
-  const box = $("results");
-  box.querySelectorAll(".card").forEach((c) => c.remove());
-  $("empty").hidden = state.results.some((r) => !r.missing);
-  for (const r of state.results.filter((x) => !x.missing)) {
-    const card = document.createElement("div");
-    card.className = "card";
-    const img = document.createElement("img");
-    img.dataset.path = r.path;
-    img.alt = r.filename;
-    if (r.dataUrl) img.src = r.dataUrl;
-    else observer.observe(img);
-    img.onclick = () => openLightbox(r);
-    card.oncontextmenu = (e) => {
-      e.preventDefault();
-      showCtxMenu(e.clientX, e.clientY, resultMenu(r));
-    };
-    const meta = document.createElement("div");
-    meta.className = "meta";
-    meta.innerHTML =
-      `<span class="label" title="${r.filename}">${r.label}</span>` +
-      `<span class="time mono">${r.width}×${r.height} · ${fmtTime(r.seconds)}</span>`;
-    const star = document.createElement("button");
-    star.className = "btn ghost small star" + (state.stars.has(r.path) ? " on" : "");
-    star.title = "收藏";
-    star.textContent = state.stars.has(r.path) ? "★" : "☆";
-    star.onclick = (e) => {
-      e.stopPropagation();
-      toggleStar(r, star);
-    };
-    meta.appendChild(star);
-    const reveal = document.createElement("button");
-    reveal.className = "btn ghost small";
-    reveal.title = "在文件夹中显示";
-    reveal.textContent = "📁";
-    reveal.onclick = () => api.call("reveal_file", { path: r.path });
-    meta.appendChild(reveal);
-    const del = document.createElement("button");
-    del.className = "btn ghost small";
-    del.title = "删除（移到回收站）";
-    del.textContent = "🗑";
-    del.onclick = (e) => {
-      e.stopPropagation();
-      deleteResults([r]);
-    };
-    meta.appendChild(del);
-    const more = document.createElement("button");
-    more.className = "btn ghost small";
-    more.title = "更多";
-    more.textContent = "⋯";
-    more.onclick = (e) => {
-      e.stopPropagation();
-      const rect = more.getBoundingClientRect();
-      showCtxMenu(rect.left, rect.bottom + 4, resultMenu(r));
-    };
-    meta.appendChild(more);
-    card.appendChild(img);
-    card.appendChild(meta);
-    box.appendChild(card);
-  }
-}
-
-let lightboxItem = null;
-
-async function openLightbox(r) {
-  lightboxItem = r;
-  $("lightbox").hidden = false;
-  await showLightbox(r);
-}
-
-async function showLightbox(r) {
-  lightboxItem = r;
-  const idx = state.results.findIndex((x) => x.path === r.path);
-  $("lbPos").textContent = idx >= 0 ? `${idx + 1} / ${state.results.length}` : "";
-  $("lightboxMeta").textContent = `${r.filename} · ${r.width}×${r.height} · ${(r.prompt || "").slice(0, 40)}`;
-  $("lightboxImg").src = r.dataUrl || "";
-  if (!r.dataUrl) {
-    try {
-      r.dataUrl = await api.call("read_output_image", { path: r.path });
-      if (lightboxItem === r) $("lightboxImg").src = r.dataUrl;
-    } catch {}
-  }
-}
-
-async function lightboxStep(delta) {
-  const idx = state.results.findIndex((x) => x.path === lightboxItem?.path);
-  if (idx < 0 || state.results.length < 2) return;
-  const next = (idx + delta + state.results.length) % state.results.length;
-  await showLightbox(state.results[next]);
-}
-
-$("lbPrev").onclick = () => lightboxStep(-1);
-$("lbNext").onclick = () => lightboxStep(1);
-
-$("lightbox").addEventListener("wheel", (e) => {
-  if ($("lightbox").hidden) return;
-  e.preventDefault();
-  if (Math.abs(e.deltaY) < 3) return;
-  lightboxStep(e.deltaY > 0 ? 1 : -1);
-}, { passive: false });
 
 function mergeResults(items) {
   const seen = new Set(state.results.map((r) => r.path));

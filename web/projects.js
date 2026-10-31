@@ -53,6 +53,8 @@ async function projRefresh(selectId) {
   const scope = document.getElementById("libScope");
   if (scope) scope.options[0].textContent = `本项目（${active ? active.name : "临时"}）`;
   refreshLibraryIfOpen();
+  // 图区的「本项目」过滤也要跟着开工项目变
+  if (typeof renderResults === "function") renderResults();
   return list;
 }
 

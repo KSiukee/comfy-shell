@@ -91,15 +91,16 @@ body.col-resizing { cursor: col-resize; user-select: none; }
 .stage { min-width: 0; min-height: 0; display: flex; flex-direction: column; }
 
 .stagebar {
-  height: 46px;
+  height: 34px;
   display: flex;
   align-items: center;
   gap: 10px;
   padding: 0 16px;
   border-bottom: 1px solid var(--line);
 }
-/* 没在生成时整条收起来，别留一条空栏 */
-.stagebar:not(:has(.progress-wrap:not([hidden]))) { display: none; }
+/* 图区范围开关常驻在这一条上，所以整条不再随进度条隐藏 */
+.tabs.mini { padding: 2px; gap: 2px; }
+.tabs.mini .tab { flex: 0 0 auto; padding: 3px 9px; font-size: 11.5px; }
 
 .progress-wrap { display: flex; align-items: center; gap: 10px; min-width: 320px; }
 .bar { width: 170px; height: 4px; border-radius: 4px; background: #232838; overflow: hidden; }
@@ -624,6 +625,10 @@ body.mode-pro .simple-only { display: none !important; }
 }
 .projectbar select { width: 220px; flex: 0 0 220px; padding: 4px 8px; font-size: 12px; }
 .projectbar .btn { flex: 0 0 auto; white-space: nowrap; }
+/* 运行状态搬到项目栏右端：窄了就省略，不把别的按钮挤出去 */
+.projectbar .status { flex: 0 1 auto; min-width: 0; font-size: 11.5px; gap: 6px; }
+.projectbar .status #statusText { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.projectbar .status .sep { width: 1px; height: 12px; background: var(--line); display: inline-block; flex: 0 0 1px; }
 /* 项目管理动作（新建…锁定区）可收起：常驻太占地方，小三角一键展开 */
 .proj-toggle { padding: 4px 7px; font-size: 11px; line-height: 1; color: var(--muted); }
 .proj-toggle:hover { color: var(--text); }
