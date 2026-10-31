@@ -69,7 +69,19 @@ async function shotsRefresh() {
     return;
   }
   if (!shotsCache.length) {
-    box.textContent = "还没有镜头。剧情拆分后点「存为镜头」。";
+    const empty = document.createElement("div");
+    empty.className = "shots-empty";
+    const t = document.createElement("div");
+    t.textContent = "还没有镜头。可以直接贴一段剧情拆成镜头，也可以先生成单张再存。";
+    const b = document.createElement("button");
+    b.className = "btn small primary";
+    b.textContent = "✂️ 贴一段剧情拆镜头";
+    b.onclick = () => {
+      $("shotsSplitBox").open = true;
+      $("shotsStory").focus();
+    };
+    empty.append(t, b);
+    box.appendChild(empty);
     return;
   }
   for (const s of shotsCache) box.appendChild(shotRow(s));
@@ -137,16 +149,8 @@ $("shotsExport").onclick = async () => {
 };
 $("shotsClose").onclick = () => ($("shotsModal").hidden = true);
 
-$("storyShots").onclick = async () => {
-  const p = shotProject();
-  if (!p) return toast("先选一个项目", true);
-  if (p.private) return toast("私密项目暂不支持镜头", true);
-  const prompts = $("storyPanels")
-    .value.split("\n")
-    .map((s) => s.trim())
-    .filter(Boolean);
-  if (!prompts.length) return toast("还没有分镜", true);
-  const defaults = {
+function shotDefaults() {
+  return {
     profile: $("model").value,
     negative: $("negative").value,
     width: Number($("width").value),
@@ -158,13 +162,61 @@ $("storyShots").onclick = async () => {
     slgLayers: $("slgTier").value,
     layout: state.pendingLayout || null,
   };
+}
+
+function storyPanelLines() {
+  return ($("shotsPanels").value || "")
+    .split("\n")
+    .map((s) => s.trim())
+    .filter(Boolean);
+}
+
+$("shotsGoSplit").onclick = async () => {
+  const text = ($("shotsStory").value || "").trim();
+  if (!text) return toast("先贴一段剧情", true);
+  const btn = $("shotsGoSplit");
+  btn.disabled = true;
+  btn.textContent = "拆分中…";
+  $("shotsSplitState").textContent = "思考中…";
   try {
-    const shots = await api.call("shots_add", { project: p.id, prompts, defaults });
+    const panels = await api.call("story_split", {
+      text,
+      maxPanels: Number($("shotsMax").value) || 12,
+    });
+    $("shotsPanels").value = (panels || []).join("\n");
+    $("shotsSplitState").textContent = `拆出 ${(panels || []).length} 格，可先改再存`;
+  } catch (e) {
+    $("shotsSplitState").textContent = "";
+    toast(String(e), true);
+  } finally {
+    btn.disabled = false;
+    btn.textContent = "拆分";
+  }
+};
+
+$("shotsSavePanels").onclick = async () => {
+  const p = shotProject();
+  if (!p) return toast("先选一个项目", true);
+  if (p.private) return toast("私密项目暂不支持镜头", true);
+  const prompts = storyPanelLines();
+  if (!prompts.length) return toast("还没有分镜：先贴剧情点「拆分」", true);
+  try {
+    const shots = await api.call("shots_add", {
+      project: p.id,
+      prompts,
+      defaults: shotDefaults(),
+    });
     toast(`已存，共 ${shots.length} 个镜头`);
-    $("storyModal").hidden = true;
-    $("shotsModal").hidden = false;
     await shotsRefresh();
   } catch (e) {
     toast(String(e), true);
   }
+};
+
+$("shotsPushPanels").onclick = () => {
+  const lines = storyPanelLines();
+  if (!lines.length) return toast("还没有分镜：先贴剧情点「拆分」", true);
+  $("queueText").value = lines.join("\n");
+  queueAdd();
+  toast(`已推 ${lines.length} 条到队列（点左侧「批量队列」开始）`);
 };

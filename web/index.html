@@ -230,7 +230,6 @@
         <div id="queueList" class="queue-list"></div>
         <div class="row tight">
           <button class="btn small" id="btnQueueAdd">加入队列</button>
-          <button class="btn small ghost" id="btnStorySplit" title="用本地 LLM 把剧情拆成连续分镜">剧情拆分…</button>
           <button class="btn small primary" id="btnQueueRun">开始</button>
           <button class="btn small ghost" id="btnQueuePause" hidden>暂停</button>
           <button class="btn small ghost" id="btnQueueStop" hidden>停止</button>
@@ -429,30 +428,6 @@
         <button class="btn ghost" id="cropClear">清除框</button>
         <button class="btn ghost" id="cropCancel">取消</button>
         <button class="btn primary" id="cropOk">确定</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- story split -->
-  <div class="modal" id="storyModal" hidden>
-    <div class="modal-card" style="width: 700px">
-      <h3>剧情拆分 <span class="muted" style="font-size:12px">本地模型拆格，人工确认后再推队列</span></h3>
-      <div class="field">
-        <label>剧情原文</label>
-        <textarea id="storyText" rows="6" placeholder="贴一段连续剧情，越具体越好"></textarea>
-      </div>
-      <div class="row two">
-        <div class="field"><label>最多几格</label><input type="number" id="storyMax" value="12" min="1" max="40" /></div>
-        <div class="field"><label>&nbsp;</label><button class="btn primary" id="storyGo">拆分</button></div>
-      </div>
-      <div class="field">
-        <label>分镜（一行一格，可编辑）</label>
-        <textarea id="storyPanels" rows="8"></textarea>
-      </div>
-      <div class="modal-actions">
-        <button class="btn ghost" id="storyCancel">取消</button>
-        <button class="btn" id="storyShots">存为镜头</button>
-        <button class="btn primary" id="storyPush">推送到队列</button>
       </div>
     </div>
   </div>
@@ -935,6 +910,22 @@
   <div class="modal" id="shotsModal" hidden>
     <div class="modal-card" style="width: 760px">
       <h3>镜头 <span class="muted" style="font-size:12px">一话 = 一组镜头 · 单格可重画</span></h3>
+      <details class="shots-split" id="shotsSplitBox">
+        <summary>✂️ 从一段剧情拆镜头 <span class="muted">本地模型拆格，可改再存</span></summary>
+        <textarea id="shotsStory" rows="4" placeholder="贴一段连续剧情，越具体越好"></textarea>
+        <div class="row tight" style="margin-top:6px">
+          <span class="muted">最多</span>
+          <input type="number" id="shotsMax" value="12" min="1" max="40" style="width:76px" />
+          <span class="muted">格</span>
+          <button class="btn small primary" id="shotsGoSplit">拆分</button>
+          <span class="muted mono" id="shotsSplitState" style="font-size:11px"></span>
+        </div>
+        <textarea id="shotsPanels" rows="5" placeholder="拆出来的分镜（一行一格，可改）"></textarea>
+        <div class="row tight" style="margin-top:6px">
+          <button class="btn small" id="shotsSavePanels">存为镜头</button>
+          <button class="btn small ghost" id="shotsPushPanels">推送到队列</button>
+        </div>
+      </details>
       <div id="shotsList" style="display:flex;flex-direction:column;gap:8px;max-height:56vh;overflow:auto"></div>
       <div class="row tight" style="justify-content:flex-end;margin-top:12px">
         <button class="btn small primary" id="shotsExport">整话导出…</button>

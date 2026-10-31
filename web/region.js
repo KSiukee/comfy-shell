@@ -131,43 +131,6 @@ $("annTranslate").onclick = async () => {
   }
 };
 
-// ---------------------------------------------------------------- story split
-$("btnStorySplit").onclick = () => {
-  $("storyModal").hidden = false;
-  $("storyText").focus();
-};
-$("storyCancel").onclick = () => ($("storyModal").hidden = true);
-$("storyGo").onclick = async () => {
-  const text = $("storyText").value.trim();
-  if (!text) return toast("先贴一段剧情", true);
-  const btn = $("storyGo");
-  btn.disabled = true;
-  btn.textContent = "拆分中…";
-  try {
-    const panels = await api.call("story_split", {
-      text,
-      maxPanels: Number($("storyMax").value) || 12,
-    });
-    $("storyPanels").value = (panels || []).join("\n");
-    toast(`拆出 ${(panels || []).length} 格`);
-  } catch (e) {
-    toast(String(e), true);
-  } finally {
-    btn.disabled = false;
-    btn.textContent = "拆分";
-  }
-};
-$("storyPush").onclick = () => {
-  const lines = $("storyPanels")
-    .value.split("\n")
-    .map((s) => s.trim())
-    .filter(Boolean);
-  if (!lines.length) return toast("还没有分镜", true);
-  $("queueText").value = lines.join("\n");
-  queueAdd();
-  $("storyModal").hidden = true;
-};
-
 // ---------------------------------------------------------------- simple / pro mode
 function applyUiMode(simple) {
   document.body.classList.toggle("mode-simple", simple);
