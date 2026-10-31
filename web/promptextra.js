@@ -14,6 +14,18 @@ window.PH_EXTRA = [
     desc: "用本机模型按当前画布写一份 MOSS 排版 JSON，再进画布微调",
     onclick: () => mossDraft(),
   },
+  {
+    icon: "🗂",
+    title: "提示词库",
+    desc: "存过的提示词都在这里：搜索 / 收藏 / 常用 / 去 AI 套话",
+    onclick: () => $("promptsBtn").click(),
+  },
+  {
+    icon: "📖",
+    title: "使用说明",
+    desc: "人话版说明书：一分钟出图、各功能怎么用、常见问题",
+    onclick: () => openHelp(),
+  },
 ];
 
 async function mossDraft() {

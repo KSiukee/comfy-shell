@@ -31,6 +31,7 @@
       <button class="btn ghost" id="btnStart">启动</button>
       <button class="btn ghost" id="btnStop">停止</button>
       <button class="btn ghost" id="problemsBtn" hidden>⚠ <span id="problemsCount">0</span></button>
+      <button class="btn ghost" id="helpBtn" title="使用说明（人话版）">说明</button>
       <button class="btn ghost" id="btnSettings">设置</button>
     </div>
   </header>
@@ -866,6 +867,17 @@
     </div>
   </div>
 
+  <!-- 使用说明：内容来自 web/使用说明.md -->
+  <div class="modal" id="helpModal" hidden>
+    <div class="modal-card help-card">
+      <h3>使用说明 <span class="muted" style="font-size:12px">人话版 · 来自 web/使用说明.md</span></h3>
+      <div class="help-body" id="helpBody"></div>
+      <div class="modal-actions">
+        <button class="btn small ghost" id="helpClose">关闭</button>
+      </div>
+    </div>
+  </div>
+
   <!-- 提示词体检 -->
   <div class="modal" id="lintModal" hidden>
     <div class="modal-card lint-card">
@@ -987,6 +999,7 @@
   <script src="ab.js"></script>
   <script src="workspace.js"></script>
   <script src="problems.js"></script>
+  <script src="help.js"></script>
   <script src="boot.js"></script>
 </body>
 </html>

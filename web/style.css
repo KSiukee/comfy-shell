@@ -162,6 +162,8 @@ body.col-resizing { cursor: col-resize; user-select: none; }
 details > summary { cursor: pointer; user-select: none; }
 details[open] > summary { margin-bottom: 6px; }
 
+html { color-scheme: dark; }
+
 input[type="text"], input[type="number"], input[type="search"], input:not([type]), select, textarea {
   width: 100%;
   background: #0f1219;
@@ -694,6 +696,25 @@ body.mode-pro .simple-only { display: none !important; }
 .shot-pick-row b { flex: 0 0 34px; color: var(--muted); font-weight: 500; }
 .shot-pick-row span:nth-child(2) { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 12.5px; }
 .shot-pick-row .mono { flex: 0 0 auto; font-size: 11px; }
+
+/* 使用说明（应用内 Markdown） */
+.help-card { width: 780px; }
+.help-body { max-height: 64vh; overflow-y: auto; padding-right: 6px; font-size: 13px; line-height: 1.68; }
+.help-body h1 { font-size: 20px; margin: 4px 0 10px; }
+.help-body h2 { font-size: 16px; margin: 20px 0 8px; padding-bottom: 4px; border-bottom: 1px solid var(--line); }
+.help-body h3 { font-size: 14px; margin: 14px 0 6px; }
+.help-body p { margin: 8px 0; }
+.help-body ul, .help-body ol { margin: 8px 0 8px 20px; }
+.help-body li { margin: 3px 0; }
+.help-body code { background: #141a26; padding: 1px 5px; border-radius: 5px; font-size: 12px; }
+.help-body pre { background: #0b0e14; border: 1px solid var(--line); border-radius: 8px; padding: 10px; overflow-x: auto; }
+.help-body pre code { background: none; padding: 0; }
+.help-body table { border-collapse: collapse; margin: 10px 0; width: 100%; font-size: 12.5px; }
+.help-body th, .help-body td { border: 1px solid var(--line); padding: 6px 8px; text-align: left; vertical-align: top; }
+.help-body th { background: #0f1219; }
+.help-body blockquote { margin: 8px 0; padding: 6px 10px; border-left: 3px solid #3f4f78; color: var(--muted); }
+.help-body hr { border: 0; border-top: 1px solid var(--line); margin: 16px 0; }
+.help-body a { color: #8ea0c8; }
 
 /* 提示词体检 */
 .lint-card { width: 520px; }
