@@ -379,8 +379,9 @@
   <!-- pose library -->
   <div class="modal" id="poseModal" hidden>
     <div class="modal-card" style="width: 1000px">
-      <h3>白模姿势库 <span class="muted" style="font-size:12px">Shisei · CC0 · 280 组 × 5 机位</span></h3>
+      <h3>白模姿势库 <span class="muted" id="poseMeta" style="font-size:12px">Shisei · CC0</span></h3>
       <div class="row tight">
+        <select id="posePack" style="flex:1 1 0"></select>
         <input id="poseSearch" placeholder="搜编号/名称，如 坐姿、P001、sitting" style="flex: 2 1 0" />
         <select id="poseClass" style="flex: 1 1 0"><option value="">全部类别</option></select>
         <select id="poseAngle"><option value="front">正面</option><option value="diag">斜侧</option><option value="side">侧面</option><option value="above">俯视</option><option value="below">仰视</option></select>

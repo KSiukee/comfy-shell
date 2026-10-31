@@ -168,39 +168,10 @@ pub struct AssistStep {
 fn pose_search(port: u16, query: &str) -> String {
     let _ = port;
     let root = std::env::var("COMFY_ROOT").unwrap_or_default();
-    let path = std::path::PathBuf::from(root)
+    let input = std::path::PathBuf::from(root)
         .join("ComfyUI")
-        .join("input")
-        .join("shisei")
-        .join("catalog.json");
-    let Ok(text) = std::fs::read_to_string(path) else {
-        return "姿势库不可用".to_string();
-    };
-    let Ok(list) = serde_json::from_str::<Vec<serde_json::Value>>(&text) else {
-        return "姿势库解析失败".to_string();
-    };
-    let q = query.to_lowercase();
-    let mut hits: Vec<(String, String)> = Vec::new();
-    for p in &list {
-        let hay = format!(
-            "{} {} {} {} {}",
-            p.get("id").and_then(|v| v.as_str()).unwrap_or(""),
-            p.get("name_cn").and_then(|v| v.as_str()).unwrap_or(""),
-            p.get("name_en").and_then(|v| v.as_str()).unwrap_or(""),
-            p.get("class_cn").and_then(|v| v.as_str()).unwrap_or(""),
-            p.get("desc_en").and_then(|v| v.as_str()).unwrap_or("")
-        )
-        .to_lowercase();
-        if !q.is_empty() && hay.contains(&q) {
-            hits.push((
-                p.get("id").and_then(|v| v.as_str()).unwrap_or("").to_string(),
-                p.get("desc_en").and_then(|v| v.as_str()).unwrap_or("").to_string(),
-            ));
-        }
-        if hits.len() >= 3 {
-            break;
-        }
-    }
+        .join("input");
+    let hits = crate::pose::search(&input, query);
     if hits.is_empty() {
         return "没有匹配的姿势".to_string();
     }

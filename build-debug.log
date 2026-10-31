@@ -1,4 +1,4 @@
-   Compiling comfy-shell v0.60.1 (D:\deepseek-files\ai-tools\comfy-shell\src-tauri)
+   Compiling comfy-shell v0.61.0 (D:\deepseek-files\ai-tools\comfy-shell\src-tauri)
 warning: unused import: `tauri::State`
  --> src\commands\ai.rs:4:5
   |
@@ -50,9 +50,9 @@ warning: unused import: `tauri::State`
   |     ^^^^^^^^^^^^
 
 warning: unused import: `State`
-  --> src\main.rs:28:31
+  --> src\main.rs:29:31
    |
-28 | use tauri::{Emitter, Manager, State};
+29 | use tauri::{Emitter, Manager, State};
    |                               ^^^^^
 
 warning: use of deprecated associated function `chacha20poly1305::aead::hybrid_array::Array::<T, U>::from_slice`: use `TryFrom` instead
@@ -106,4 +106,4 @@ warning: function `log_path` is never used
    |        ^^^^^^^^
 
 warning: `comfy-shell` (bin "comfy-shell") generated 16 warnings (run `cargo fix --bin "comfy-shell" -p comfy-shell` to apply 11 suggestions)
-    Finished `dev` profile [unoptimized + debuginfo] target(s) in 15.09s
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 15.61s

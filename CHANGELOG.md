@@ -3,6 +3,11 @@
 > 本文件是补写的更新历史：最早十二个版本没有当时的发布记录，依据 `dev/test_*.py`、截图、README 旧版与代码痕迹重建，
 > 标注「推断」的条目细节可能有偏差；有发布记录之后为当时实测记录。
 
+## v0.61.0
+- 姿势库 **pack 化（#21 第一步）**：支持 `input/pose_packs/<id>/{pack.json,catalog.json,line|images}`；旧 `input/shisei` 自动作为 legacy pack。
+- 后端 `pose_pack_list` / `poses_catalog(pack)`：catalog 的图片名统一改写成相对 `ComfyUI/input` 的路径，缺图自动过滤；助手姿势搜索跨 pack。
+- 姿势库 UI 加「包」下拉，选择持久化；切包重载类别/数量。Shisei 280 组仍是默认。
+
 ## v0.60.1
 - 白模姿势库补全：缺当前机位的 47 组不再被过滤，回退到正面/任意可用机位显示——正面视角从 233/280 变成 **280/280**。
 - 卡片「填描述 / 点卡片加参考图」行为不变。

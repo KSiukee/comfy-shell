@@ -251,38 +251,6 @@ pub fn save_ref_image(state: State<AppState>, name: String, data_url: String) ->
 
 
 #[tauri::command]
-pub fn poses_catalog(state: State<AppState>) -> Result<String, String> {
-    let root = state.settings.lock().unwrap().comfy_root.clone();
-    let dir = std::path::PathBuf::from(root).join("ComfyUI").join("input").join("shisei");
-    let text = std::fs::read_to_string(dir.join("catalog.json"))
-        .map_err(|e| format!("找不到姿势库（{}）：{e}", dir.display()))?;
-    let mut value: serde_json::Value =
-        serde_json::from_str(&text).map_err(|e| format!("姿势库 catalog 解析失败: {e}"))?;
-    let available: std::collections::HashSet<String> = std::fs::read_dir(dir.join("line"))
-        .map(|rd| {
-            rd.flatten()
-                .filter_map(|e| e.file_name().into_string().ok())
-                .collect()
-        })
-        .unwrap_or_default();
-    if let Some(list) = value.as_array_mut() {
-        for pose in list.iter_mut() {
-            if let Some(views) = pose.get_mut("views").and_then(|v| v.as_object_mut()) {
-                views.retain(|_, v| v.as_str().map(|n| available.contains(n)).unwrap_or(false));
-            }
-        }
-        // drop poses with no usable image at all
-        list.retain(|p| {
-            p.get("views")
-                .and_then(|v| v.as_object())
-                .map(|o| !o.is_empty())
-                .unwrap_or(false)
-        });
-    }
-    serde_json::to_string(&value).map_err(|e| e.to_string())
-}
-
-#[tauri::command]
 pub fn read_input_image(state: State<AppState>, name: String) -> Result<String, String> {
     let root = state.settings.lock().unwrap().comfy_root.clone();
     let path = std::path::PathBuf::from(root)

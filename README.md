@@ -3,7 +3,7 @@
 只干活的本地生图/改图壳：**不打开 ComfyUI 界面**，后台静默拉起 ComfyUI，界面上只有提示词、参数和结果。
 Rust（Tauri 2）后端 + 纯静态前端（无 node 构建）。
 
-## 现状（v0.60.0，2026-10-31 实测通过）
+## 现状（v0.61.0，2026-10-31 实测通过）
 
 | 能力 | 状态 |
 |---|---|
@@ -62,6 +62,7 @@ MOSS 的 **SLG** 用 ComfyUI 通用 `SkipLayerGuidanceDiT`（`single_layers=22, 
 
 - 来源：[wquguru/shisei](https://github.com/wquguru/shisei)，CC0，280 组姿势 × 5 机位（正面/斜侧/侧面/俯视/仰视）
 - 资源位置：`ComfyUI\input\shisei\{line,photo,catalog.json}`
+- 多 pack：`ComfyUI/input/pose_packs/<id>/{pack.json,catalog.json,line|images}`；旧 `input/shisei` 自动作为 legacy pack，UI 里可切包
 - 壳里点「参考图 → 🕺 姿势库」，可搜索、按类别筛选、切换机位
 - **点卡片** = 该姿势白模加入参考图；卡片「**填**」= 英文姿势描述填进提示词；「**词**」= 复制描述
 - 白模只负责“怎么站”，角色长相仍由你的提示词 / 参考图决定

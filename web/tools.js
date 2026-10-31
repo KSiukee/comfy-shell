@@ -137,23 +137,49 @@ let poseCatalog = null;
 let poseShown = 0;
 const poseCache = new Map();
 
+let posePackId = "";
+
 async function openPoses() {
-  if (!poseCatalog) {
-    try {
-      poseCatalog = JSON.parse(await api.call("poses_catalog"));
-    } catch (e) {
-      toast(String(e), true);
-      return;
+  try {
+    if (!$("posePack").options.length) {
+      const packs = await api.call("pose_pack_list");
+      if (!packs.length) throw "没有可用的姿势库";
+      $("posePack").innerHTML = packs
+        .map((p) => `<option value="${p.id}">${p.name} · ${p.count}</option>`)
+        .join("");
+      posePackId = localStorage.getItem("cs.posePack") || packs[0].id;
+      if (!packs.some((p) => p.id === posePackId)) posePackId = packs[0].id;
+      $("posePack").value = posePackId;
     }
-    const classes = [...new Set(poseCatalog.map((p) => p.class_cn).filter(Boolean))].sort();
-    $("poseClass").innerHTML =
-      `<option value="">全部类别</option>` + classes.map((c) => `<option value="${c}">${c}</option>`).join("");
+    await loadPosePack($("posePack").value || posePackId);
+  } catch (e) {
+    toast(String(e), true);
+    return;
   }
+  $("poseModal").hidden = false;
+}
+
+async function loadPosePack(id) {
+  posePackId = id;
+  poseCatalog = JSON.parse(await api.call("poses_catalog", { pack: id }));
+  const classes = [...new Set(poseCatalog.map((p) => p.class_cn).filter(Boolean))].sort();
+  $("poseClass").innerHTML =
+    `<option value="">全部类别</option>` + classes.map((c) => `<option value="${c}">${c}</option>`).join("");
   poseShown = 0;
   $("poseGrid").innerHTML = "";
-  $("poseModal").hidden = false;
+  $("poseMeta").textContent = `${id} · ${poseCatalog.length} 组`;
   renderPoses();
 }
+
+$("posePack").onchange = async () => {
+  const id = $("posePack").value;
+  localStorage.setItem("cs.posePack", id);
+  try {
+    await loadPosePack(id);
+  } catch (e) {
+    toast(String(e), true);
+  }
+};
 
 function poseView(p, angle) {
   const v = p.views || {};
@@ -219,7 +245,7 @@ function renderPoses() {
       try {
         let url = poseCache.get(file);
         if (!url) {
-          url = await api.call("read_input_image", { name: `shisei/line/${file}` });
+          url = await api.call("read_input_image", { name: file });
           poseCache.set(file, url);
         }
         await addRefFromDataUrl(url, `pose_${p.id}_${angle}`);
@@ -242,7 +268,7 @@ function lazyLoadPoses() {
         const img = en.target;
         const file = img.dataset.file;
         if (!file || img.src) continue;
-        api.call("read_input_image", { name: `shisei/line/${file}` })
+        api.call("read_input_image", { name: file })
           .then((url) => {
             img.src = url;
             poseCache.set(file, url);

@@ -9,6 +9,7 @@ mod history;
 mod layouts;
 mod library;
 mod commands;
+mod pose;
 mod project;
 mod promptlib;
 mod server;
@@ -126,7 +127,8 @@ fn main() {
             commands::system::profiles,
             commands::system::save_ref_image,
             commands::system::read_input_image,
-            commands::system::poses_catalog,
+            pose::pose_pack_list,
+            pose::poses_catalog,
             commands::system::read_output_image,
             commands::generation::generate,
             commands::generation::enhance_prompt,
