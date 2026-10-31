@@ -624,7 +624,7 @@ function currentReq() {
     lora2Strength: Number($("lora2Strength").value),
     slg: !!$("mossSlg").checked,
     slgLayers: $("slgTier").value,
-    layout: state.pendingLayout || null, project: (window.projectUI && window.projectUI.current()) || null,
+    layout: state.pendingLayout || null, project: (window.projectUI && window.projectUI.current()) || null, versionParent: state.versionBranch || null,
     refImages: [...state.refs],
   };
 }
@@ -649,7 +649,7 @@ async function generate() {
   setBusy(true);
   $("progressText").textContent = "提交中…";
   const req = currentReq();
-  state.pendingLayout = null;
+  state.pendingLayout = null; state.versionBranch = null;
   try {
     const res = await api.call("generate", { req, turbo: $("turbo").checked });
     const items = res.images.map((im) => ({

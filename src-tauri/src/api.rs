@@ -151,6 +151,9 @@ pub struct GenReq {
     /// 私密项目：先写 `_private_staging/`，任务结束后由壳加密封存
     #[serde(default)]
     pub staging: bool,
+    /// 从哪条旧版本分叉（None = 接在最新版本后面）
+    #[serde(default)]
+    pub version_parent: Option<String>,
 }
 
 /// SaveImage prefix. Project ids are single path components; anything odd falls

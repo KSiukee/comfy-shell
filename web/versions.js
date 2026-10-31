@@ -84,6 +84,17 @@ function verRow(v, project, rerender) {
   parent.className = "muted mono";
   parent.style.fontSize = "11px";
   parent.textContent = parentIdx >= 0 ? `父 #${parentIdx + 1}` : "根版本";
+  const idx = verCache.indexOf(v) + 1;
+  const branch = document.createElement("button");
+  branch.className = "btn small ghost";
+  branch.textContent = "从这版继续";
+  branch.title = "下一次生成挂在这条版本下面（分叉）";
+  branch.onclick = () => {
+    fillVersion(v);
+    state.versionBranch = v.id;
+    $("versionsModal").hidden = true;
+    toast(`下次生成从 #${idx} 分叉`);
+  };
   const fill = document.createElement("button");
   fill.className = "btn small";
   fill.textContent = "填入";
@@ -108,7 +119,7 @@ function verRow(v, project, rerender) {
       toast(String(e), true);
     }
   };
-  head.append(verStars(v, project, rerender), time, parent, fill, diffBtn, del);
+  head.append(verStars(v, project, rerender), time, parent, branch, fill, diffBtn, del);
 
   const prompt = document.createElement("div");
   prompt.textContent = v.prompt;
@@ -194,6 +205,7 @@ async function versionsRefresh() {
 }
 
 function fillVersion(v) {
+  state.versionBranch = null;
   $("prompt").value = v.prompt || "";
   $("negative").value = v.negative || "";
   $("width").value = v.width;

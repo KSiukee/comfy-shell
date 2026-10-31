@@ -99,12 +99,16 @@ pub fn append(
     seed: &VersionSeed,
     images: &[String],
     history_id: &str,
+    branch_from: Option<&str>,
 ) -> Result<Version, String> {
     if crate::vault::is_private(cfg, project) {
         return Err("私密项目不记录版本".into());
     }
     let mut list = load(cfg, project)?;
-    let parent = list.last().map(|v| v.id.clone());
+    let parent = branch_from
+        .filter(|id| list.iter().any(|v| v.id == *id))
+        .map(|id| id.to_string())
+        .or_else(|| list.last().map(|v| v.id.clone()));
     let v = Version {
         id: format!("v_{:08x}", rand::random::<u32>()),
         parent,

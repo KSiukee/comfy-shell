@@ -528,7 +528,7 @@ async fn generate(app: tauri::AppHandle, mut req: api::GenReq, turbo: bool) -> R
                     layout: req.layout.clone(),
                 };
                 let paths: Vec<String> = out.images.iter().map(|i| i.path.clone()).collect();
-                let _ = versions::append(&cfg, pid, &seed, &paths, &id);
+                let _ = versions::append(&cfg, pid, &seed, &paths, &id, req.version_parent.as_deref());
             }
         }
 
@@ -1831,6 +1831,7 @@ fn train_run(
                 layout: None,
                 project: None,
                 staging: false,
+                version_parent: None,
             };
             if let Ok(graph) = api::build_graph(&req, false) {
                 if let Ok(out) = api::run_job(port, &root, graph, 600, |_| {}) {
