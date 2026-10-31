@@ -42,7 +42,7 @@ function renderResults() {
     card.className = "card";
     const img = document.createElement("img");
     img.dataset.path = r.path;
-    img.alt = r.filename;
+    img.alt = "";
     if (r.dataUrl) img.src = r.dataUrl;
     else observer.observe(img);
     img.onclick = () => openLightbox(r);

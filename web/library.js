@@ -28,16 +28,25 @@ function ensureLibObserver() {
 
 async function loadLibImage(img) {
   const path = img.dataset.path;
-  if (libUrlCache.has(path)) {
-    img.src = libUrlCache.get(path);
-    return;
-  }
+  const box = img.parentElement;
+  const markLoaded = () => {
+    img.classList.add("on");
+    const tip = box && box.querySelector(".li-loading");
+    if (tip) tip.remove();
+  };
   try {
-    const url = await api.call("read_output_image", { path });
-    libUrlCache.set(path, url);
-    img.src = url;
+    if (libUrlCache.has(path)) {
+      img.src = libUrlCache.get(path);
+    } else {
+      const url = await api.call("read_output_image", { path });
+      libUrlCache.set(path, url);
+      img.src = url;
+    }
+    if (img.complete && img.naturalWidth) markLoaded();
+    else img.onload = markLoaded;
   } catch {
-    img.alt = "?";
+    const tip = box && box.querySelector(".li-loading");
+    if (tip) tip.textContent = "读取失败";
   }
 }
 
@@ -115,7 +124,7 @@ function renderLibrary() {
     const promptText = libPrompts.get(it.path) || "";
     d.title = promptText || it.filename;
     d.innerHTML =
-      `<img alt="${it.filename}" data-path="${it.path}">` +
+      `<div class="li-thumb"><span class="li-loading">载入中…</span><img alt="" data-path="${it.path}"></div>` +
       `<button class="li-star ${it.starred ? "" : "off"}" title="收藏">★</button>` +
       `<div class="li-meta"><span class="label" title="${it.filename}">${it.filename}</span>` +
       `<span class="mono">${it.width}×${it.height}</span></div>`;
