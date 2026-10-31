@@ -625,8 +625,12 @@ body.mode-pro .simple-only { display: none !important; }
 }
 .projectbar select { width: 220px; flex: 0 0 220px; padding: 4px 8px; font-size: 12px; }
 .projectbar .btn { flex: 0 0 auto; white-space: nowrap; }
-/* 运行状态搬到项目栏右端：窄了就省略，不把别的按钮挤出去 */
+/* 运行状态搬到项目栏右端：正常时只留一个点（悬停看全文），
+   只有启动中/未响应/未运行才把短句露出来——平时别当视觉累赘。 */
 .projectbar .status { flex: 0 1 auto; min-width: 0; font-size: 11.5px; gap: 6px; }
+.projectbar .status #statusText, .projectbar .status .sep { display: none; }
+.projectbar .status:has(.dot.warn) #statusText,
+.projectbar .status:has(.dot.err) #statusText { display: inline; }
 .projectbar .status #statusText { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .projectbar .status .sep { width: 1px; height: 12px; background: var(--line); display: inline-block; flex: 0 0 1px; }
 /* 项目管理动作（新建…锁定区）可收起：常驻太占地方，小三角一键展开 */
