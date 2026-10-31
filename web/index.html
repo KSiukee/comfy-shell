@@ -27,6 +27,7 @@
 
     <div class="actions">
       <button class="btn ghost" id="btnUiMode" title="切换简单 / 专业界面">简单</button>
+      <button class="btn ghost" id="modelsBtn" title="模型管理：预览、触发词、启用/禁用">模型</button>
       <button class="btn ghost" id="btnLibrary">图库</button>
       <button class="btn ghost" id="btnStart">启动</button>
       <button class="btn ghost" id="btnStop">停止</button>
@@ -997,6 +998,22 @@
     </div>
   </div>
 
+  <div class="modal" id="modelsModal" hidden>
+    <div class="modal-card" style="width: 860px">
+      <h3>模型管理 <span class="muted" id="modelCount" style="font-size:12px"></span></h3>
+      <div class="row tight" style="margin-bottom:8px">
+        <input type="text" id="modelSearch" placeholder="搜模型 / 底模 / 触发词" style="flex:1 1 auto" />
+        <button class="btn small ghost" id="modelRescan">重新扫描</button>
+      </div>
+      <div class="row tight model-kinds" id="modelKinds"></div>
+      <div class="model-list" id="modelList"></div>
+      <div class="muted" style="font-size:11px;margin-top:8px">禁用只写一个 <code>.disabled</code> 标记，不动模型文件；壳里的 LoRA 下拉会跳过它（ComfyUI 自己仍能扫到）。</div>
+      <div class="modal-actions">
+        <button class="btn small ghost" id="modelsClose">关闭</button>
+      </div>
+    </div>
+  </div>
+
   <div class="modal" id="problemsModal" hidden>
     <div class="modal-card" style="width: 760px">
       <h3>问题 <span class="muted" style="font-size:12px">最近的失败/错误集中在这里</span></h3>
@@ -1016,6 +1033,7 @@
   <script src="workflowparams.js"></script>
   <script src="recipes.js"></script>
   <script src="grid.js"></script>
+  <script src="models.js"></script>
   <script src="promptfx.js"></script>
   <script src="stylepick.js"></script>
   <script src="promptlint.js"></script>

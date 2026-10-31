@@ -335,6 +335,29 @@ pub fn recipe_delete(app: tauri::AppHandle, id: String) -> Result<(), String> {
 }
 
 // ---------------------------------------------------------------------------
+// 模型管理器（#30）：扫 ComfyUI/models/**、预览、启用/禁用
+
+fn models_root(app: &tauri::AppHandle) -> std::path::PathBuf {
+    let root = app.state::<crate::AppState>().settings.lock().unwrap().comfy_root.clone();
+    std::path::PathBuf::from(root).join("ComfyUI").join("models")
+}
+
+#[tauri::command]
+pub fn models_scan(app: tauri::AppHandle) -> Vec<models::ModelFile> {
+    models::scan(&models_root(&app))
+}
+
+#[tauri::command]
+pub fn model_toggle(app: tauri::AppHandle, name: String, enabled: bool) -> Result<bool, String> {
+    models::toggle(&models_root(&app), &name, enabled)
+}
+
+#[tauri::command]
+pub fn model_preview(app: tauri::AppHandle, name: String) -> Result<String, String> {
+    models::preview_data(&models_root(&app), &name)
+}
+
+// ---------------------------------------------------------------------------
 // Saved MOSS layout templates
 // ---------------------------------------------------------------------------
 

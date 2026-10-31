@@ -697,6 +697,21 @@ body.mode-pro .simple-only { display: none !important; }
 .shot-pick-row span:nth-child(2) { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 12.5px; }
 .shot-pick-row .mono { flex: 0 0 auto; font-size: 11px; }
 
+/* 模型管理 */
+.model-kinds { flex-wrap: wrap; gap: 6px; margin-bottom: 8px; }
+.model-list { display: flex; flex-direction: column; gap: 6px; max-height: 56vh; overflow-y: auto; }
+.model-row { display: flex; align-items: center; gap: 10px; border: 1px solid var(--line); border-radius: 9px; padding: 8px 10px; background: #0f1219; }
+.model-row.off { opacity: .55; }
+.model-thumb { flex: 0 0 56px; width: 56px; height: 56px; border-radius: 7px; background: #141a26; overflow: hidden; display: flex; align-items: center; justify-content: center; }
+.model-thumb-ico { font-size: 11px; color: #6f7d96; text-transform: uppercase; letter-spacing: .5px; }
+.model-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.model-main { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 3px; }
+.model-name { font-size: 13px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.model-meta { font-size: 11px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.model-triggers { display: flex; flex-wrap: wrap; gap: 4px; }
+.model-trigger { font-size: 11px; padding: 1px 6px; border-radius: 5px; background: #1a2233; color: #9fb0d0; cursor: pointer; }
+.model-trigger:hover { background: #24304a; }
+
 /* 参数网格 */
 .grid-axis { display: flex; align-items: center; gap: 6px; margin-bottom: 6px; }
 .grid-axis > span { flex: 0 0 30px; font-size: 11.5px; }

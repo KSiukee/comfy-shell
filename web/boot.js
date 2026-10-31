@@ -4,6 +4,7 @@ bindPan("cmpB");
 boot()
   .then(() => {
     if (window.workspaceRestore) window.workspaceRestore();
+    if (typeof modelFilterInit === "function") modelFilterInit();
   })
   .catch((e) => toast("初始化失败：" + e, true));
 renderQueue();

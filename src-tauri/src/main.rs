@@ -9,6 +9,7 @@ mod history;
 mod imgmeta;
 mod layouts;
 mod library;
+mod models;
 mod commands;
 mod pose;
 mod project;
@@ -144,6 +145,9 @@ fn main() {
             commands::system::recipe_list,
             commands::system::recipe_save,
             commands::system::recipe_delete,
+            commands::system::models_scan,
+            commands::system::model_toggle,
+            commands::system::model_preview,
             commands::system::layout_tpl_list,
             commands::system::layout_tpl_load,
             commands::system::layout_tpl_save,
