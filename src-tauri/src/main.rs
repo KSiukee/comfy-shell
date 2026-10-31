@@ -9,6 +9,7 @@ mod history;
 mod layouts;
 mod library;
 mod project;
+mod promptlib;
 mod server;
 mod shots;
 mod single_instance;
@@ -872,6 +873,56 @@ fn version_star(
 #[tauri::command]
 fn version_delete(app: tauri::AppHandle, project: String, id: String) -> Result<(), String> {
     versions::delete(&cfg_dir(&app), &project, &id)
+}
+
+// ---------------------------------------------------------------------------
+// 跨项目提示词库
+// ---------------------------------------------------------------------------
+
+#[tauri::command]
+fn promptlib_list(app: tauri::AppHandle) -> Result<Vec<promptlib::PromptEntry>, String> {
+    promptlib::list(&cfg_dir(&app))
+}
+
+#[tauri::command]
+fn promptlib_save(
+    app: tauri::AppHandle,
+    text: String,
+    negative: String,
+    tags: Vec<String>,
+    project: Option<String>,
+) -> Result<promptlib::PromptEntry, String> {
+    promptlib::upsert(
+        &cfg_dir(&app),
+        &text,
+        &negative,
+        tags,
+        project.as_deref(),
+    )
+}
+
+#[tauri::command]
+fn promptlib_star(
+    app: tauri::AppHandle,
+    id: String,
+    favorite: bool,
+) -> Result<promptlib::PromptEntry, String> {
+    promptlib::star(&cfg_dir(&app), &id, favorite)
+}
+
+#[tauri::command]
+fn promptlib_use(app: tauri::AppHandle, id: String) -> Result<promptlib::PromptEntry, String> {
+    promptlib::bump_use(&cfg_dir(&app), &id)
+}
+
+#[tauri::command]
+fn promptlib_delete(app: tauri::AppHandle, id: String) -> Result<(), String> {
+    promptlib::delete(&cfg_dir(&app), &id)
+}
+
+#[tauri::command]
+fn promptlib_clean(text: String) -> promptlib::CleanResult {
+    promptlib::clean(&text)
 }
 
 // ---------------------------------------------------------------------------
@@ -2553,6 +2604,12 @@ fn main() {
             versions_list,
             version_star,
             version_delete,
+            promptlib_list,
+            promptlib_save,
+            promptlib_star,
+            promptlib_use,
+            promptlib_delete,
+            promptlib_clean,
             library_scan,
             library_delete,
             delete_results,

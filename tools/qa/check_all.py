@@ -56,7 +56,7 @@ def versions() -> dict[str, str]:
     state = json.loads(read(os.path.join(ROOT, ".codex", "state.json")))
     m = re.search(r'(?m)^version = "([^"]+)"', cargo)
     c = re.search(r"(?m)^## v(\d+\.\d+\.\d+)", changelog)
-    a = re.search(r"- 版本 \*\*(\d+\.\d+\.\d+)\*\*", agents)
+    a = re.search(r"(?:- 版本 \*\*|当前版本：)(\d+\.\d+\.\d+)", agents)
     return {
         "Cargo.toml": m.group(1) if m else "?",
         "tauri.conf.json": str(tauri.get("version", "?")),
@@ -176,7 +176,7 @@ def layer_ratchet() -> tuple[bool, str, int]:
 
 
 def layer_js() -> tuple[bool, str, int]:
-    files = ["web/app.js", "web/store.js", "web/projects.js", "web/vault.js", "web/layout.js", "web/data.js", "web/shots.js", "web/versions.js", "dev/smoke.mjs"]
+    files = ["web/app.js", "web/store.js", "web/projects.js", "web/vault.js", "web/layout.js", "web/data.js", "web/shots.js", "web/versions.js", "web/prompts.js", "dev/smoke.mjs"]
     bad = []
     for p in files:
         code, out = run(["node", "--check", p])

@@ -94,6 +94,7 @@ try {
   check("备份按钮在", (await evaluate("!!document.getElementById('btnBackup')")) === true);
   check("镜头按钮在", (await evaluate("!!document.getElementById('shotsBtn')")) === true);
   check("版本按钮在", (await evaluate("!!document.getElementById('versionsBtn')")) === true);
+  check("提示词库按钮在", (await evaluate("!!document.getElementById('promptsBtn')")) === true);
   const projects = await evaluate("api.call('project_list', { includeHidden: true })");
   check("project_list 返回数组", Array.isArray(projects), `${Array.isArray(projects) ? projects.length : "?"} 个项目`);
   check("测试项目 _test 在", Array.isArray(projects) && projects.some((p) => p.id === "_test"));
