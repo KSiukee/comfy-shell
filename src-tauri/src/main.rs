@@ -737,6 +737,46 @@ fn project_private_delete(app: tauri::AppHandle, id: String) -> Result<(), Strin
 // Image library
 // ---------------------------------------------------------------------------
 
+fn project_id_of_path(out_dir: &std::path::Path, src: &std::path::Path) -> Option<String> {
+    let rel = src.strip_prefix(out_dir).ok()?;
+    let mut comps = rel.components();
+    if comps.next()?.as_os_str() != "projects" {
+        return None;
+    }
+    let id = comps.next()?.as_os_str().to_str()?;
+    if id.is_empty() || id == "_trash" {
+        return None;
+    }
+    Some(id.to_string())
+}
+
+/// 改图/超分的产物默认落 output 根；源图在项目里时搬回同项目目录。
+fn relocate_into_project(out_dir: &std::path::Path, src: &std::path::Path, img: &mut api::ImageOut) {
+    let Some(id) = project_id_of_path(out_dir, src) else {
+        return;
+    };
+    let dir = out_dir.join("projects").join(&id);
+    if std::fs::create_dir_all(&dir).is_err() {
+        return;
+    }
+    let name = std::path::Path::new(&img.path)
+        .file_name()
+        .map(|x| x.to_string_lossy().to_string())
+        .unwrap_or_default();
+    if name.is_empty() {
+        return;
+    }
+    let target = dir.join(&name);
+    let from = std::path::PathBuf::from(&img.path);
+    if from == target {
+        return;
+    }
+    if std::fs::rename(&from, &target).is_ok() {
+        img.path = target.to_string_lossy().to_string();
+        img.subfolder = format!("projects/{id}");
+    }
+}
+
 fn output_dir(state: &AppState) -> PathBuf {
     PathBuf::from(state.settings.lock().unwrap().comfy_root.clone())
         .join("ComfyUI")
@@ -933,11 +973,13 @@ async fn upscale_image(
             }
             _ => pick_upscale_model(&root)?,
         };
-        if chosen == "__seedvr2__" {
-            api::upscale_seedvr2(port, &root, &src.to_string_lossy())
+        let mut img = if chosen == "__seedvr2__" {
+            api::upscale_seedvr2(port, &root, &src.to_string_lossy())?
         } else {
-            api::upscale_image(port, &root, &src.to_string_lossy(), &chosen)
-        }
+            api::upscale_image(port, &root, &src.to_string_lossy(), &chosen)?
+        };
+        relocate_into_project(&canon_out, &src, &mut img);
+        Ok(img)
     })
     .await
     .map_err(|e| format!("超分任务失败: {e}"))?
@@ -1039,13 +1081,16 @@ async fn inpaint_image(app: tauri::AppHandle, req: InpaintCall) -> Result<GenRes
         let graph = api::build_inpaint(&ireq)?;
 
         let app2 = handle.clone();
-        let out = api::run_job(port, &root, graph, 1800, move |p| {
+        let mut out = api::run_job(port, &root, graph, 1800, move |p| {
             let _ = app2.emit(
                 "gen-progress",
                 json!({"elapsed": p.elapsed, "running": p.queue_running,
                        "pending": p.queue_pending, "started": p.started}),
             );
         })?;
+        for img in out.images.iter_mut() {
+            relocate_into_project(&canon_out, &src, img);
+        }
 
         let base = api::profile(&req.profile)
             .map(|p| p.label.to_string())
