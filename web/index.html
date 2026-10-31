@@ -44,6 +44,7 @@
     <button class="btn small ghost" id="projTrashBtn" title="回收站">回收站</button>
     <button class="btn small ghost" id="vaultBtn" title="锁定区：加密的私密项目">🔒 锁定区</button>
     <button class="btn small ghost" id="shotsBtn" title="镜头：一话 = 一组镜头">🎬 镜头</button>
+    <button class="btn small ghost" id="versionsBtn" title="版本：项目内谱系，只和父版本对比">📜 版本</button>
     <span class="spacer"></span>
     <span class="muted" style="font-size:12px">大小</span>
     <input type="range" id="resSize" min="100" max="560" step="10" value="440" style="width:110px;flex:0 0 110px" title="结果图大小（双击复位）" />
@@ -788,6 +789,21 @@
     </div>
   </div>
 
+  <div class="modal" id="versionsModal" hidden>
+    <div class="modal-card" style="width: 820px">
+      <h3>版本 <span class="muted" style="font-size:12px">项目内谱系 · 只和父版本 diff · 默认 1 星</span></h3>
+      <div class="row tight" style="margin-bottom:8px">
+        <button class="btn small" id="verSortTime">按时间</button>
+        <button class="btn small ghost" id="verSortStars">按星</button>
+        <span class="muted" id="verCount" style="margin-left:auto;font-size:12px"></span>
+      </div>
+      <div id="versionsList" style="display:flex;flex-direction:column;gap:8px;max-height:60vh;overflow:auto"></div>
+      <div class="modal-actions">
+        <button class="btn small ghost" id="versionsClose">关闭</button>
+      </div>
+    </div>
+  </div>
+
   <div class="modal" id="shotsModal" hidden>
     <div class="modal-card" style="width: 760px">
       <h3>镜头 <span class="muted" style="font-size:12px">一话 = 一组镜头 · 单格可重画</span></h3>
@@ -807,6 +823,7 @@
   <script src="layout.js"></script>
   <script src="data.js"></script>
   <script src="shots.js"></script>
+  <script src="versions.js"></script>
 </body>
 </html>
 

@@ -14,6 +14,7 @@ mod shots;
 mod single_instance;
 mod state;
 mod vault;
+mod versions;
 mod vault_ops;
 
 use serde::{Deserialize, Serialize};
@@ -512,6 +513,25 @@ async fn generate(app: tauri::AppHandle, mut req: api::GenReq, turbo: bool) -> R
             )
         };
 
+        if let Some(pid) = req.project.as_deref() {
+            if !vault::is_private(&cfg, pid) {
+                let seed = versions::VersionSeed {
+                    prompt: req.prompt.clone(),
+                    negative: req.negative.clone(),
+                    profile: req.profile.clone(),
+                    mode: req.mode.clone(),
+                    width: req.width,
+                    height: req.height,
+                    steps: req.steps,
+                    cfg: req.cfg,
+                    seed: req.seed,
+                    layout: req.layout.clone(),
+                };
+                let paths: Vec<String> = out.images.iter().map(|i| i.path.clone()).collect();
+                let _ = versions::append(&cfg, pid, &seed, &paths, &id);
+            }
+        }
+
         Ok(GenResp {
             out,
             turbo,
@@ -828,6 +848,30 @@ fn shot_set_layout(
 #[tauri::command]
 fn shot_delete(app: tauri::AppHandle, project: String, id: String) -> Result<(), String> {
     shots::delete(&cfg_dir(&app), &project, &id)
+}
+
+// ---------------------------------------------------------------------------
+// 版本谱系（项目内）
+// ---------------------------------------------------------------------------
+
+#[tauri::command]
+fn versions_list(app: tauri::AppHandle, project: String) -> Result<Vec<versions::Version>, String> {
+    versions::list(&cfg_dir(&app), &project)
+}
+
+#[tauri::command]
+fn version_star(
+    app: tauri::AppHandle,
+    project: String,
+    id: String,
+    stars: u8,
+) -> Result<versions::Version, String> {
+    versions::star(&cfg_dir(&app), &project, &id, stars)
+}
+
+#[tauri::command]
+fn version_delete(app: tauri::AppHandle, project: String, id: String) -> Result<(), String> {
+    versions::delete(&cfg_dir(&app), &project, &id)
 }
 
 // ---------------------------------------------------------------------------
@@ -2505,6 +2549,9 @@ fn main() {
             shot_add_image,
             shot_set_layout,
             shot_delete,
+            versions_list,
+            version_star,
+            version_delete,
             library_scan,
             library_delete,
             delete_results,
