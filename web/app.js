@@ -374,7 +374,7 @@ async function loadImageInto(img) {
     item.dataUrl = await api.call("read_output_image", { path });
     img.src = item.dataUrl;
   } catch {
-    img.alt = "读取失败";
+    item.missing = true; img.closest(".card")?.remove(); if (!$("results").querySelector(".card")) $("empty").hidden = false;
   }
 }
 
@@ -479,8 +479,8 @@ async function toggleStar(r, btn) {
 function renderResults() {
   const box = $("results");
   box.querySelectorAll(".card").forEach((c) => c.remove());
-  $("empty").hidden = state.results.length > 0;
-  for (const r of state.results) {
+  $("empty").hidden = state.results.some((r) => !r.missing);
+  for (const r of state.results.filter((x) => !x.missing)) {
     const card = document.createElement("div");
     card.className = "card";
     const img = document.createElement("img");

@@ -20,6 +20,7 @@ mod state;
 mod vault;
 mod versions;
 mod vault_ops;
+mod workspace;
 
 use serde::{Deserialize, Serialize};
 use serde_json::json;
@@ -163,6 +164,8 @@ fn main() {
             commands::projects::backup_now,
             commands::projects::project_export,
             commands::projects::project_import,
+            commands::projects::workspace_get,
+            commands::projects::workspace_save,
             commands::projects::shots_list,
             commands::projects::shots_add,
             commands::projects::shot_add_image,

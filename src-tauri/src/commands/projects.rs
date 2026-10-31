@@ -173,6 +173,23 @@ pub fn project_export(
 }
 
 #[tauri::command]
+pub fn workspace_get(
+    app: tauri::AppHandle,
+    project: String,
+) -> Result<Option<serde_json::Value>, String> {
+    crate::workspace::load(&cfg_dir(&app), &project)
+}
+
+#[tauri::command]
+pub fn workspace_save(
+    app: tauri::AppHandle,
+    project: String,
+    data: serde_json::Value,
+) -> Result<(), String> {
+    crate::workspace::save(&cfg_dir(&app), &project, &data)
+}
+
+#[tauri::command]
 pub fn project_import(
     app: tauri::AppHandle,
     state: State<AppState>,
