@@ -162,7 +162,7 @@ body.col-resizing { cursor: col-resize; user-select: none; }
 details > summary { cursor: pointer; user-select: none; }
 details[open] > summary { margin-bottom: 6px; }
 
-input[type="text"], input[type="number"], select, textarea {
+input[type="text"], input[type="number"], input[type="search"], input:not([type]), select, textarea {
   width: 100%;
   background: #0f1219;
   color: var(--text);
@@ -651,6 +651,7 @@ body.mode-pro .simple-only { display: none !important; }
 .style-pop { border: 1px solid var(--line); border-radius: 12px; background: #0b0e14; padding: 8px; margin-top: 6px; }
 .style-pop-head { display: flex; gap: 6px; align-items: center; margin-bottom: 6px; }
 .style-pop-head input { flex: 1 1 auto; min-width: 0; }
+.style-pop-head input::placeholder { color: #5d6579; }
 .style-chips { display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 6px; }
 .style-chip {
   padding: 3px 9px; border-radius: 999px; border: 1px solid var(--line);
