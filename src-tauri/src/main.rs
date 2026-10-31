@@ -4,6 +4,7 @@ mod api;
 mod custom;
 mod enhance;
 mod history;
+mod layouts;
 mod library;
 mod server;
 
@@ -586,6 +587,30 @@ fn custom_save(app: tauri::AppHandle, name: String, json_text: String) -> Result
 #[tauri::command]
 fn custom_delete(app: tauri::AppHandle, name: String) -> Result<(), String> {
     custom::delete(&cfg_dir(&app), &name)
+}
+
+// ---------------------------------------------------------------------------
+// Saved MOSS layout templates
+// ---------------------------------------------------------------------------
+
+#[tauri::command]
+fn layout_tpl_list(app: tauri::AppHandle) -> Vec<String> {
+    layouts::list(&cfg_dir(&app))
+}
+
+#[tauri::command]
+fn layout_tpl_load(app: tauri::AppHandle, name: String) -> Result<serde_json::Value, String> {
+    layouts::load(&cfg_dir(&app), &name)
+}
+
+#[tauri::command]
+fn layout_tpl_save(app: tauri::AppHandle, name: String, items: String) -> Result<String, String> {
+    layouts::save(&cfg_dir(&app), &name, &items)
+}
+
+#[tauri::command]
+fn layout_tpl_delete(app: tauri::AppHandle, name: String) -> Result<(), String> {
+    layouts::delete(&cfg_dir(&app), &name)
 }
 
 // ---------------------------------------------------------------------------
@@ -2131,6 +2156,10 @@ fn main() {
             custom_list,
             custom_save,
             custom_delete,
+            layout_tpl_list,
+            layout_tpl_load,
+            layout_tpl_save,
+            layout_tpl_delete,
             library_scan,
             library_delete,
             delete_results,

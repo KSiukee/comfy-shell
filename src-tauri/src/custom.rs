@@ -11,7 +11,7 @@ fn dir(cfg: &Path) -> PathBuf {
     cfg.join("workflows")
 }
 
-fn safe_name(name: &str) -> String {
+pub(crate) fn safe_name(name: &str) -> String {
     // Keep CJK and spaces; only strip what Windows forbids in file names.
     let cleaned: String = name
         .chars()

@@ -12,6 +12,7 @@ const state = {
   refs: [],          // filenames inside ComfyUI/input
   results: [],
   stars: new Set(),       // newest first: {path, filename, width, height, label, seconds, ts, dataUrl?}
+  layoutTpls: [],         // saved layout template names (under <config>/layouts)
   running: false,
   multiBusy: false,
   starting: false,
@@ -752,6 +753,7 @@ async function ensureReady(label = "生成") {
 async function boot() {
   state.profiles = await invoke("profiles");
   state.customs = await invoke("custom_list");
+  state.layoutTpls = await invoke("layout_tpl_list").catch(() => []);
 
   state.settings = await invoke("settings_get");
   $("setRoot").value = state.settings.comfyRoot;
@@ -2589,17 +2591,90 @@ const LAYOUT_PRESETS = {
   ],
 };
 
-$("layoutPreset").onchange = () => {
+$("layoutPreset").onchange = async () => {
   const key = $("layoutPreset").value;
   if (!key) return;
+  if (key.startsWith("tpl:")) {
+    const name = key.slice(4);
+    try {
+      const items = await invoke("layout_tpl_load", { name });
+      layoutItems = items.map((x) => ({ ...x, bbox: [...x.bbox] }));
+      layoutSel = 0;
+      $("layoutTplName").value = name;
+      layoutRender();
+      toast(`已载入模板：${name}`);
+    } catch (e) {
+      toast(String(e), true);
+    }
+    return;
+  }
   layoutItems = LAYOUT_PRESETS[key].map((x) => ({ ...x, bbox: [...x.bbox] }));
   layoutSel = 0;
   layoutRender();
 };
 
+// 自定义模板：文件落在 <config>\layouts\<name>.json，一模板一文件，可直接拷给别人。
+async function refreshLayoutTpls() {
+  try {
+    state.layoutTpls = await invoke("layout_tpl_list");
+  } catch (e) {
+    state.layoutTpls = [];
+  }
+  const sel = $("layoutPreset");
+  const keep = sel.value;
+  sel.querySelectorAll("optgroup").forEach((g) => g.remove());
+  if (state.layoutTpls.length) {
+    const og = document.createElement("optgroup");
+    og.label = "我的模板";
+    for (const name of state.layoutTpls) {
+      const o = document.createElement("option");
+      o.value = "tpl:" + name;
+      o.textContent = name;
+      og.appendChild(o);
+    }
+    sel.appendChild(og);
+  }
+  if ([...sel.options].some((o) => o.value === keep)) sel.value = keep;
+}
+
+$("layoutTplSave").onclick = async () => {
+  const name = ($("layoutTplName").value || "").trim();
+  if (!name) return toast("先给模板起个名字", true);
+  if (!layoutItems.length) return toast("模板里还没有元素", true);
+  const existed = state.layoutTpls.includes(name);
+  try {
+    const saved = await invoke("layout_tpl_save", {
+      name,
+      items: JSON.stringify(layoutItems),
+    });
+    await refreshLayoutTpls();
+    $("layoutPreset").value = "tpl:" + saved;
+    $("layoutTplName").value = saved;
+    toast(`${existed ? "已覆盖模板" : "已存模板"}：${saved}`);
+  } catch (e) {
+    toast(String(e), true);
+  }
+};
+
+$("layoutTplDel").onclick = async () => {
+  const v = $("layoutPreset").value;
+  if (!v.startsWith("tpl:")) return toast("先在下拉里选中「我的模板」里的一个", true);
+  const name = v.slice(4);
+  if (!confirm(`删除模板「${name}」？\n只删模板文件，不动任何图片。`)) return;
+  try {
+    await invoke("layout_tpl_delete", { name });
+    await refreshLayoutTpls();
+    $("layoutPreset").value = "";
+    toast(`已删除模板：${name}`);
+  } catch (e) {
+    toast(String(e), true);
+  }
+};
+
 function layoutOpen() {
   if (!layoutItems.length) layoutAdd("text");
   $("layoutModal").hidden = false;
+  refreshLayoutTpls();
   layoutRender();
 }
 
