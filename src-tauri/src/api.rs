@@ -145,6 +145,20 @@ pub struct GenReq {
     pub slg_layers: String,
     #[serde(default)]
     pub layout: Option<String>,
+    /// active project id: save under `output/projects/<id>/`
+    #[serde(default)]
+    pub project: Option<String>,
+}
+
+/// SaveImage prefix. Project ids are single path components; anything odd falls
+/// back to the flat output root (never escape the output folder).
+fn save_prefix(project: Option<&str>, base: &str) -> String {
+    match project {
+        Some(id) if !id.is_empty() && !id.contains(['/', '\\']) && id != "." && id != ".." => {
+            format!("projects/{id}/{base}")
+        }
+        _ => base.to_string(),
+    }
 }
 
 fn one() -> u32 {
@@ -495,9 +509,10 @@ pub fn build_graph(req: &GenReq, turbo: bool) -> Result<Value, String> {
             "sampler_name": p.sampler, "scheduler": "simple", "denoise": 1.0}}),
     );
     g.insert("9".into(), json!({"class_type": "VAEDecode", "inputs": {"samples": ["8", 0], "vae": ["4", 0]}}));
+    let prefix = save_prefix(req.project.as_deref(), "comfyshell");
     g.insert(
         "10".into(),
-        json!({"class_type": "SaveImage", "inputs": {"images": ["9", 0], "filename_prefix": "comfyshell"}}),
+        json!({"class_type": "SaveImage", "inputs": {"images": ["9", 0], "filename_prefix": prefix}}),
     );
 
     Ok(Value::Object(g.into_iter().map(|(k, v)| (k, v)).collect()))

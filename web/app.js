@@ -624,7 +624,7 @@ function currentReq() {
     lora2Strength: Number($("lora2Strength").value),
     slg: !!$("mossSlg").checked,
     slgLayers: $("slgTier").value,
-    layout: state.pendingLayout || null,
+    layout: state.pendingLayout || null, project: (window.projectUI && window.projectUI.current()) || null,
     refImages: [...state.refs],
   };
 }

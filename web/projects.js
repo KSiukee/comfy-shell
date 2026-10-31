@@ -1,6 +1,8 @@
 // 项目栏（v0.43.0）：新建 / 改名 / 开工 / 隐藏 / 删除进回收站。
 // 所有后端调用走 store.js 的 api.call；本文件不碰生成参数（#16 再接输出目录）。
-const projState = { list: [], current: "", includeHidden: false, modalMode: "create" };
+const projState = { list: [], all: [], hiddenIds: new Set(), current: "", includeHidden: false, modalMode: "create" };
+const LIB_SCOPE_KEY = "cs.libScope";
+let libScope = localStorage.getItem(LIB_SCOPE_KEY) || "project";
 
 function projCurrent() {
   return projState.list.find((p) => p.id === projState.current) || null;
@@ -22,6 +24,12 @@ async function projRefresh(selectId) {
     return [];
   }
   projState.list = list;
+  try {
+    projState.all = await api.call("project_list", { includeHidden: true });
+  } catch {
+    projState.all = list;
+  }
+  projState.hiddenIds = new Set(projState.all.filter((p) => p.hidden).map((p) => p.id));
 
   const sel = $("projSel");
   sel.innerHTML = "";
@@ -42,6 +50,9 @@ async function projRefresh(selectId) {
   sel.value = projState.current;
   const cur = projCurrent();
   $("projHide").textContent = cur && cur.hidden ? "取消隐藏" : "隐藏";
+  const scope = document.getElementById("libScope");
+  if (scope) scope.options[0].textContent = `本项目（${active ? active.name : "临时"}）`;
+  refreshLibraryIfOpen();
   return list;
 }
 
@@ -208,6 +219,46 @@ $("projTrashClose").onclick = () => {
 };
 
 // 给以后的功能（#16 图库/生成）留一个入口
-window.projectUI = { refresh: projRefresh, current: () => projCurrent(), list: () => projState.list };
+window.projectUI = { refresh: projRefresh, current: () => projState.current || null, currentObj: () => projCurrent(), list: () => projState.list };
+
+// ---------------------------------------------------------------- 图库范围
+// 图库仍由 app.js 渲染；这里在 api.call 出口按范围过滤，不改 app.js。
+const rawApiCall = api.call.bind(api);
+api.call = (name, args) => {
+  const p = rawApiCall(name, args);
+  return name === "library_scan" ? p.then((items) => filterLibItems(items)) : p;
+};
+
+function libProjectOf(subfolder) {
+  const m = /^projects\/([^/]+)/.exec(subfolder || "");
+  return m ? m[1] : "";
+}
+
+function filterLibItems(items) {
+  const active = projCurrent();
+  return (items || []).filter((it) => {
+    const pid = libProjectOf(it.subfolder);
+    if (pid === "_test") return false;
+    if (pid && projState.hiddenIds.has(pid)) return false;
+    if (libScope === "private") return false; // #17 未启用
+    if (libScope === "all") return true;
+    return active ? pid === active.id : !pid;
+  });
+}
+
+function refreshLibraryIfOpen() {
+  const lib = document.getElementById("library");
+  if (lib && !lib.hidden && typeof loadLibrary === "function") loadLibrary();
+}
+
+const libScopeSel = document.getElementById("libScope");
+if (libScopeSel) {
+  libScopeSel.value = libScope;
+  libScopeSel.addEventListener("change", () => {
+    libScope = libScopeSel.value;
+    localStorage.setItem(LIB_SCOPE_KEY, libScope);
+    refreshLibraryIfOpen();
+  });
+}
 
 projRefresh();

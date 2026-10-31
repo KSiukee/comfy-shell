@@ -576,8 +576,8 @@ fn project_set_hidden(app: tauri::AppHandle, id: String, hidden: bool) -> Result
 }
 
 #[tauri::command]
-fn project_delete(app: tauri::AppHandle, id: String) -> Result<(), String> {
-    project::delete(&cfg_dir(&app), &id)
+fn project_delete(app: tauri::AppHandle, state: State<AppState>, id: String) -> Result<(), String> {
+    project::delete(&cfg_dir(&app), &id, &output_dir(&state))
 }
 
 #[tauri::command]
@@ -586,8 +586,8 @@ fn project_trash(app: tauri::AppHandle) -> Vec<project::TrashItem> {
 }
 
 #[tauri::command]
-fn project_restore(app: tauri::AppHandle, dir: String) -> Result<project::Project, String> {
-    project::restore(&cfg_dir(&app), &dir)
+fn project_restore(app: tauri::AppHandle, state: State<AppState>, dir: String) -> Result<project::Project, String> {
+    project::restore(&cfg_dir(&app), &dir, &output_dir(&state))
 }
 
 #[tauri::command]
@@ -1499,6 +1499,7 @@ fn train_run(
                 slg: false,
                 slg_layers: "22".to_string(),
                 layout: None,
+                project: None,
             };
             if let Ok(graph) = api::build_graph(&req, false) {
                 if let Ok(out) = api::run_job(port, &root, graph, 600, |_| {}) {

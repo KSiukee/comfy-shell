@@ -211,7 +211,7 @@ pub fn set_active(cfg: &Path, id: Option<&str>) -> Result<Vec<Project>, String> 
     Ok(list(cfg, false))
 }
 
-pub fn delete(cfg: &Path, id: &str) -> Result<(), String> {
+pub fn delete(cfg: &Path, id: &str, output: &Path) -> Result<(), String> {
     let p = load(cfg, id)?;
     safe_component(id)?;
     let dir = project_dir(cfg, id);
@@ -220,6 +220,13 @@ pub fn delete(cfg: &Path, id: &str) -> Result<(), String> {
     std::fs::rename(&dir, &dest).map_err(|e| format!("移到回收站失败：{e}"))?;
     let meta = json!({"id": p.id, "name": p.name, "deletedAt": now_ms()});
     let _ = crate::fsutil::atomic_write_str(&dest.join("meta.json"), &meta.to_string());
+    // 图片跟着项目一起进回收站；搬不动就如实说（配置已在回收站）。
+    let images = output.join("projects").join(id);
+    if images.is_dir() {
+        if let Err(e) = crate::fsutil::move_dir(&images, &dest.join("images")) {
+            return Err(format!("项目已进回收站，但图片没搬过去：{e}"));
+        }
+    }
     Ok(())
 }
 
@@ -254,7 +261,7 @@ pub fn trash(cfg: &Path) -> Vec<TrashItem> {
     out
 }
 
-pub fn restore(cfg: &Path, dir_name: &str) -> Result<Project, String> {
+pub fn restore(cfg: &Path, dir_name: &str, output: &Path) -> Result<Project, String> {
     safe_component(dir_name)?;
     let src = trash_dir(cfg).join(dir_name);
     if !src.is_dir() {
@@ -276,6 +283,27 @@ pub fn restore(cfg: &Path, dir_name: &str) -> Result<Project, String> {
     }
     std::fs::rename(&src, &dest).map_err(|e| format!("恢复失败：{e}"))?;
     let _ = std::fs::remove_file(dest.join("meta.json"));
+    // 图片搬回 output/projects/<id>（同 id 目录已存在就把文件并进去）
+    let images = dest.join("images");
+    if images.is_dir() {
+        let target = output.join("projects").join(&id);
+        if target.exists() {
+            // 同 id 目录还在：把文件逐个并进去（跨盘也能走复制+删）
+            if let Ok(rd) = std::fs::read_dir(&images) {
+                for e in rd.flatten() {
+                    let from = e.path();
+                    if from.is_file() {
+                        if let Some(name) = from.file_name() {
+                            let _ = crate::fsutil::move_file(&from, &target.join(name));
+                        }
+                    }
+                }
+            }
+            let _ = std::fs::remove_dir(&images);
+        } else {
+            crate::fsutil::move_dir(&images, &target)?;
+        }
+    }
     let mut p = load(cfg, &id)?;
     // 恢复不当场开工：否则旧项目带着 active 回来，会和现在的开工项目打架。
     if p.active {
@@ -324,22 +352,30 @@ mod tests {
     #[test]
     fn delete_restore_purge_roundtrip() {
         let cfg = tmpcfg("trash");
+        let out = tmpcfg("trash_out");
         let _ = std::fs::remove_dir_all(&cfg);
+        let _ = std::fs::remove_dir_all(&out);
         let a = create(&cfg, "要删的").unwrap();
+        let img = out.join("projects").join(&a.id).join("x.png");
+        std::fs::create_dir_all(img.parent().unwrap()).unwrap();
+        std::fs::write(&img, b"fake").unwrap();
         set_active(&cfg, Some(&a.id)).unwrap();
-        delete(&cfg, &a.id).unwrap();
+        delete(&cfg, &a.id, &out).unwrap();
         assert!(list(&cfg, true).is_empty());
+        assert!(!img.exists(), "删除后图片也要离开 output");
         let t = trash(&cfg);
         assert_eq!(t.len(), 1);
-        let restored = restore(&cfg, &t[0].dir).unwrap();
+        let restored = restore(&cfg, &t[0].dir, &out).unwrap();
         assert_eq!(restored.id, a.id);
         assert!(!restored.active, "恢复不应自动开工");
+        assert!(img.exists(), "恢复后图片要回到 output/projects/<id>");
         assert_eq!(list(&cfg, true).len(), 1);
-        delete(&cfg, &a.id).unwrap();
+        delete(&cfg, &a.id, &out).unwrap();
         let t = trash(&cfg);
         purge(&cfg, &t[0].dir).unwrap();
         assert!(trash(&cfg).is_empty());
         let _ = std::fs::remove_dir_all(&cfg);
+        let _ = std::fs::remove_dir_all(&out);
     }
 
     #[test]

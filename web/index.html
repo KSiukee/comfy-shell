@@ -452,6 +452,11 @@
   <div class="lib" id="library" hidden>
     <div class="lib-head">
       <strong>图库</strong>
+      <select id="libScope" title="图库范围：本项目 / 全部 / 私密">
+        <option value="project">本项目</option>
+        <option value="all">全部</option>
+        <option value="private" disabled>私密（未启用）</option>
+      </select>
       <input id="libSearch" placeholder="搜索文件名或提示词…" />
       <button class="btn ghost small" id="libTranslate" title="把查询翻成英文，再搜一遍提示词">中→英</button>
       <span class="chip" id="libAltChip" hidden>译文：<b id="libAltText"></b><button id="libAltClear" title="清除译文">×</button></span>

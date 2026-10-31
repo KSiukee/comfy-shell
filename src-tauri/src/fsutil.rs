@@ -71,6 +71,41 @@ pub fn cleanup_parts(dir: &Path) {
     }
 }
 
+/// 文件移动：同盘 rename；跨盘（C: 配置 ↔ D: ComfyUI 输出）退化成复制+删除。
+pub fn move_file(from: &Path, to: &Path) -> Result<(), String> {
+    if std::fs::rename(from, to).is_ok() {
+        return Ok(());
+    }
+    std::fs::copy(from, to).map_err(|e| format!("复制失败：{e}"))?;
+    std::fs::remove_file(from).map_err(|e| format!("删除源文件失败：{e}"))?;
+    Ok(())
+}
+
+fn copy_dir_all(from: &Path, to: &Path) -> Result<(), String> {
+    std::fs::create_dir_all(to).map_err(|e| e.to_string())?;
+    let rd = std::fs::read_dir(from).map_err(|e| e.to_string())?;
+    for e in rd.flatten() {
+        let p = e.path();
+        let dest = to.join(e.file_name());
+        if p.is_dir() {
+            copy_dir_all(&p, &dest)?;
+        } else {
+            std::fs::copy(&p, &dest).map_err(|e| format!("复制失败：{e}"))?;
+        }
+    }
+    Ok(())
+}
+
+/// 目录移动：同盘 rename；跨盘复制整棵树再删源。
+pub fn move_dir(from: &Path, to: &Path) -> Result<(), String> {
+    if std::fs::rename(from, to).is_ok() {
+        return Ok(());
+    }
+    copy_dir_all(from, to)?;
+    std::fs::remove_dir_all(from).map_err(|e| format!("删除源目录失败：{e}"))?;
+    Ok(())
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -95,6 +130,24 @@ mod tests {
             .count();
         assert_eq!(parts, 0, "不应留下 .part");
         let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    #[test]
+    fn move_dir_and_file_work_on_same_volume() {
+        let base = tmpdir("move");
+        let _ = std::fs::remove_dir_all(&base);
+        let a = base.join("a");
+        std::fs::create_dir_all(&a).unwrap();
+        std::fs::write(a.join("x.txt"), b"hi").unwrap();
+        let b = base.join("b");
+        move_dir(&a, &b).unwrap();
+        assert!(b.join("x.txt").exists());
+        assert!(!a.exists());
+        let c = base.join("c.txt");
+        move_file(&b.join("x.txt"), &c).unwrap();
+        assert!(c.exists());
+        assert!(!b.join("x.txt").exists());
+        let _ = std::fs::remove_dir_all(&base);
     }
 
     #[test]

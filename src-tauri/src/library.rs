@@ -23,20 +23,43 @@ use std::sync::Mutex;
 
 static CACHE: Mutex<Option<(u64, Vec<LibItem>)>> = Mutex::new(None);
 
+fn dir_nanos(p: &Path) -> u64 {
+    std::fs::metadata(p)
+        .and_then(|m| m.modified())
+        .ok()
+        .and_then(|t| t.duration_since(std::time::UNIX_EPOCH).ok())
+        .map(|d| d.as_nanos() as u64)
+        .unwrap_or(0)
+}
+
+/// Cache key over **directory** mtimes, recursively (skipping trash/favourites).
+/// Root-only mtime is not enough: images saved into `projects/<id>/` change that
+/// subdirectory's mtime, not the output root's, so the gallery would go stale.
+fn tree_key(output: &Path) -> u64 {
+    let trash = output.join("_comfyshell_trash");
+    let fav = output.join("_favorites");
+    let mut stack = vec![output.to_path_buf()];
+    let mut acc = 0u64;
+    let mut dirs = 0u64;
+    while let Some(dir) = stack.pop() {
+        if dir == trash || dir == fav {
+            continue;
+        }
+        acc ^= dir_nanos(&dir).rotate_left((dirs % 63) as u32);
+        dirs += 1;
+        if let Ok(rd) = std::fs::read_dir(&dir) {
+            for e in rd.flatten() {
+                if e.path().is_dir() {
+                    stack.push(e.path());
+                }
+            }
+        }
+    }
+    acc ^ dirs.rotate_left(17)
+}
+
 fn cache_key(cfg: &Path, output: &Path) -> u64 {
-    let dir = std::fs::metadata(output)
-        .and_then(|m| m.modified())
-        .ok()
-        .and_then(|t| t.duration_since(std::time::UNIX_EPOCH).ok())
-        .map(|d| d.as_nanos() as u64)
-        .unwrap_or(0);
-    let stars = std::fs::metadata(stars_file(cfg))
-        .and_then(|m| m.modified())
-        .ok()
-        .and_then(|t| t.duration_since(std::time::UNIX_EPOCH).ok())
-        .map(|d| d.as_nanos() as u64)
-        .unwrap_or(0);
-    dir ^ stars.rotate_left(17)
+    tree_key(output) ^ dir_nanos(&stars_file(cfg)).rotate_left(29)
 }
 
 fn cache_file(cfg: &Path) -> PathBuf {
@@ -292,4 +315,24 @@ pub fn delete(output: &Path, paths: &[String]) -> Result<usize, String> {
         }
     }
     Ok(moved)
+}
+
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn tree_key_changes_when_a_subfolder_gets_a_file() {
+        let out = std::env::temp_dir().join(format!("cs_lib_tree_{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&out);
+        let sub = out.join("projects").join("p1");
+        std::fs::create_dir_all(&sub).unwrap();
+        let k1 = tree_key(&out);
+        std::thread::sleep(std::time::Duration::from_millis(30));
+        std::fs::write(sub.join("a.png"), b"not-a-real-png").unwrap();
+        let k2 = tree_key(&out);
+        assert_ne!(k1, k2, "子目录里加图后，缓存键必须变");
+        let _ = std::fs::remove_dir_all(&out);
+    }
 }
