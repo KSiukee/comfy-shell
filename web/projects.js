@@ -74,6 +74,23 @@ function closeProjModal() {
   $("projModal").hidden = true;
 }
 
+// 项目管理动作（新建…锁定区）默认收起，省常驻地方；展开状态记在 localStorage。
+const PROJ_ACTIONS_KEY = "cs.projActionsOpen";
+function setProjActionsOpen(open) {
+  const box = $("projActions");
+  const btn = $("projToggle");
+  if (!box || !btn) return;
+  box.hidden = !open;
+  btn.textContent = open ? "◂" : "▸";
+  btn.setAttribute("aria-expanded", open ? "true" : "false");
+  btn.title = open ? "收起项目管理" : "展开项目管理（新建 / 改名 / 隐藏 / 删除 / 回收站 / 锁定区）";
+  try {
+    localStorage.setItem(PROJ_ACTIONS_KEY, open ? "1" : "0");
+  } catch {}
+}
+setProjActionsOpen(localStorage.getItem(PROJ_ACTIONS_KEY) === "1");
+$("projToggle").onclick = () => setProjActionsOpen($("projActions").hidden);
+
 $("projNew").onclick = () => openProjModal("create");
 $("projRename").onclick = () => {
   const p = projCurrent();

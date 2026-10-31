@@ -624,6 +624,11 @@ body.mode-pro .simple-only { display: none !important; }
 }
 .projectbar select { width: 220px; flex: 0 0 220px; padding: 4px 8px; font-size: 12px; }
 .projectbar .btn { flex: 0 0 auto; white-space: nowrap; }
+/* 项目管理动作（新建…锁定区）可收起：常驻太占地方，小三角一键展开 */
+.proj-toggle { padding: 4px 7px; font-size: 11px; line-height: 1; color: var(--muted); }
+.proj-toggle:hover { color: var(--text); }
+.proj-actions { display: flex; align-items: center; gap: 6px; }
+.proj-actions[hidden] { display: none; }
 
 /* queue + problems */
 .queue-list { display: flex; flex-direction: column; gap: 4px; margin: 6px 0; max-height: 220px; overflow: auto; }
