@@ -2613,6 +2613,54 @@ $("layoutPreset").onchange = async () => {
   layoutRender();
 };
 
+// 自动识框：本地 Qwen3-VL 把海报/菜单/截图读成「文字块 + 物体」，框只是草稿，拖一下更准。
+let layoutBg = "";
+
+function setLayoutBg(url) {
+  layoutBg = url || "";
+  const stage = $("layoutStage");
+  stage.style.backgroundImage = layoutBg ? `url("${layoutBg}")` : "";
+  stage.style.backgroundSize = "cover";
+  stage.style.backgroundPosition = "center";
+  stage.style.backgroundRepeat = "no-repeat";
+  $("layoutBgClear").hidden = !layoutBg;
+}
+
+async function runLayoutDetect(imageName, previewUrl) {
+  const btn = $("layoutDetect");
+  const label = btn.textContent;
+  btn.disabled = true;
+  btn.textContent = "识别中…";
+  try {
+    const items = await invoke("layout_detect", { image: imageName });
+    layoutItems = items.map((x) => ({ ...x, bbox: [...x.bbox] }));
+    layoutSel = layoutItems.length ? 0 : -1;
+    if (previewUrl) setLayoutBg(previewUrl);
+    layoutRender();
+    toast(`已识出 ${layoutItems.length} 个框，拖动微调后再生成`);
+  } catch (e) {
+    toast(String(e), true);
+  } finally {
+    btn.disabled = false;
+    btn.textContent = label;
+    $("layoutImg").value = "";
+  }
+}
+
+$("layoutDetect").onclick = () => $("layoutImg").click();
+$("layoutImg").onchange = async () => {
+  const file = $("layoutImg").files && $("layoutImg").files[0];
+  if (!file) return;
+  try {
+    const dataUrl = await readFileDataUrl(file);
+    const name = await invoke("save_ref_image", { name: file.name || "layout_ref.png", dataUrl });
+    await runLayoutDetect(name, dataUrl);
+  } catch (e) {
+    toast(String(e), true);
+  }
+};
+$("layoutBgClear").onclick = () => setLayoutBg("");
+
 // 自定义模板：文件落在 <config>\layouts\<name>.json，一模板一文件，可直接拷给别人。
 async function refreshLayoutTpls() {
   try {

@@ -1878,6 +1878,22 @@ async fn analyze_image(app: tauri::AppHandle, image: String, two_pass: Option<bo
 }
 
 #[tauri::command]
+async fn layout_detect(app: tauri::AppHandle, image: String) -> Result<serde_json::Value, String> {
+    let handle = app.clone();
+    tauri::async_runtime::spawn_blocking(move || {
+        let state = handle.state::<AppState>();
+        let port = state.settings.lock().unwrap().port;
+        if api::health(port).is_none() {
+            return Err("ComfyUI 没有在运行".to_string());
+        }
+        let items = enhance::detect_layout(port, &image)?;
+        Ok(serde_json::Value::Array(items))
+    })
+    .await
+    .map_err(|e| format!("识框任务失败: {e}"))?
+}
+
+#[tauri::command]
 async fn train_kohya_files(app: tauri::AppHandle, req: TrainFilesCall) -> Result<TrainOut, String> {
     let handle = app.clone();
     tauri::async_runtime::spawn_blocking(move || -> Result<TrainOut, String> {
@@ -2174,6 +2190,7 @@ fn main() {
             train_lora,
             assist,
             analyze_image,
+            layout_detect,
             train_lora_files,
             train_kohya_files,
             story_split,

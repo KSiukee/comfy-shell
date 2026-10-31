@@ -135,6 +135,17 @@ Rules:
 
 
 
+const GROUND_PROMPT: &str = r#"You detect layout elements in a poster, menu, e-commerce image or photo.
+Return ONLY one JSON object, no markdown, no prose:
+{"items":[{"label":"text"|"object","caption":"short English description","content":"literal text or empty","bbox":[x0,y0,x1,y1]}]}
+Rules:
+- every item MUST include bbox: 4 integers normalized to 0-1000, origin top-left, x0<x1, y0<y1, tight around the item
+- one item per text block (headline, subline, price, body copy, logo) and per main object (product, person, dish)
+- content is the literal text you can read (keep the original language), empty for objects
+- caption describes look/position in English, 3-15 words
+- skip tiny decorative bits; at most 12 items
+"#;
+
 const ASSIST_SYS: &str = r#"You are a small assistant inside an image generation app. Tools:
 - translate: translate Chinese into an English image prompt fragment.
 - expand: rewrite an English fragment into a richer prompt (lighting, lens, style, details).
@@ -336,6 +347,88 @@ pub fn analyze(port: u16, image: &str) -> Result<String, String> {
     let outputs = api::run_raw(port, wf, 600)?;
     let text = extract_text(outputs)?;
     Ok(extract_json(&text))
+}
+
+/// Ask the vision model to ground text blocks + objects, then convert its answer
+/// into editor items `{type, desc, text, bbox:[x,y,w,h]}` with 0..1 normalized boxes.
+/// The boxes are a starting draft (the model is a few percent off), meant to be
+/// dragged; `layout_detect` therefore never touches the prompt or the canvas size.
+pub fn detect_layout(port: u16, image: &str) -> Result<Vec<Value>, String> {
+    let wf = json!({
+        "1": {"class_type": "LoadImage", "inputs": {"image": image}},
+        "2": {"class_type": "CLIPLoader",
+              "inputs": {"clip_name": "qwen3vl_8b_int8_convrot.safetensors",
+                         "type": "qwen_image", "device": "default"}},
+        "3": {"class_type": "TextGenerate",
+              "inputs": {"clip": ["2", 0], "prompt": GROUND_PROMPT, "image": ["1", 0],
+                         "max_length": 700, "sampling_mode": "off"}},
+        "4": {"class_type": "PreviewAny", "inputs": {"source": ["3", 0]}},
+    });
+    let outputs = api::run_raw(port, wf, 600)?;
+    let text = extract_text(outputs)?;
+    parse_boxes(&text)
+}
+
+fn parse_boxes(raw: &str) -> Result<Vec<Value>, String> {
+    let t = extract_json(raw);
+    let v: Value = serde_json::from_str(&t).map_err(|e| format!("模型没返回可用 JSON：{e}"))?;
+    let arr = v
+        .get("items")
+        .and_then(|x| x.as_array())
+        .or_else(|| v.as_array())
+        .ok_or("返回里没有 items 数组")?;
+    let mut out = Vec::new();
+    for it in arr.iter().take(24) {
+        let label = it
+            .get("label")
+            .and_then(|x| x.as_str())
+            .unwrap_or("object")
+            .to_lowercase();
+        let kind = if label.contains("text") { "text" } else { "object" };
+        let caption = it.get("caption").and_then(|x| x.as_str()).unwrap_or("").trim();
+        let content = it.get("content").and_then(|x| x.as_str()).unwrap_or("").trim();
+        let Some(b) = it.get("bbox").and_then(|x| x.as_array()) else { continue };
+        if b.len() != 4 {
+            continue;
+        }
+        let mut n = [0f64; 4];
+        let mut bad = false;
+        for (i, x) in b.iter().enumerate() {
+            match x.as_f64() {
+                Some(f) if f >= 0.0 => n[i] = f,
+                _ => bad = true,
+            }
+        }
+        if bad {
+            continue;
+        }
+        // 0-1000 is what we ask for; accept 0..1 too in case the model normalizes itself.
+        let scale = if n.iter().any(|x| *x > 1.5) { 1000.0 } else { 1.0 };
+        let x0 = (n[0] / scale).clamp(0.0, 1.0);
+        let y0 = (n[1] / scale).clamp(0.0, 1.0);
+        let x1 = (n[2] / scale).clamp(0.0, 1.0);
+        let y1 = (n[3] / scale).clamp(0.0, 1.0);
+        let (w, h) = (x1 - x0, y1 - y0);
+        if w < 0.02 || h < 0.02 {
+            continue;
+        }
+        let desc = if caption.is_empty() {
+            if kind == "text" { "detected text" } else { "detected object" }
+        } else {
+            caption
+        };
+        let r = |x: f64| (x * 10000.0).round() / 10000.0;
+        out.push(json!({
+            "type": kind,
+            "desc": desc,
+            "text": if kind == "text" { content } else { "" },
+            "bbox": [r(x0), r(y0), r(w), r(h)],
+        }));
+    }
+    if out.is_empty() {
+        return Err("没识别到可用的框（换一张更清楚的图试试）".into());
+    }
+    Ok(out)
 }
 
 fn extract_json(text: &str) -> String {

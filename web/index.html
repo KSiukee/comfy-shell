@@ -301,6 +301,9 @@
         <input id="layoutSummary" placeholder="整张图的描述（summary）" style="flex: 2 1 0" />
         <button class="btn small" id="layoutAddText">＋ 文字</button>
         <button class="btn small" id="layoutAddObj">＋ 物体</button>
+        <button class="btn small" id="layoutDetect" title="用本地视觉模型从海报/菜单/截图自动识出文字块与物体，生成可拖的框（约 5~10 秒）">📷 识框</button>
+        <button class="btn ghost small" id="layoutBgClear" hidden title="去掉底图（只影响画布背景）">✖ 底图</button>
+        <input type="file" id="layoutImg" accept="image/png,image/jpeg,image/webp" hidden />
         <span class="muted mono" id="layoutHint"></span>
         <span class="spacer"></span>
         <button class="btn ghost small" id="layoutClose">关闭</button>
