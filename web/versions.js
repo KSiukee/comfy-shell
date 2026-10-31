@@ -2,6 +2,34 @@
 let verCache = [];
 let verSort = "time";
 let verLimit = 100;
+let verSel = []; // A/B 对比勾选（最多两条）
+
+function syncVerPick() {
+  const box = $("versionsList");
+  if (box) {
+    box.querySelectorAll("[data-ver-id]").forEach((row) => {
+      const on = verSel.includes(row.dataset.verId);
+      row.classList.toggle("ver-picked", on);
+      const cb = row.querySelector("input[type=checkbox]");
+      if (cb) cb.checked = on;
+    });
+  }
+  const btn = $("verCompare");
+  if (btn) {
+    btn.disabled = verSel.length !== 2;
+    btn.textContent = verSel.length === 2 ? "对比选中 2" : `对比选中${verSel.length ? ` (${verSel.length})` : ""}`;
+  }
+}
+
+function toggleVerSel(id) {
+  const i = verSel.indexOf(id);
+  if (i >= 0) verSel.splice(i, 1);
+  else {
+    verSel.push(id);
+    while (verSel.length > 2) verSel.shift();
+  }
+  syncVerPick();
+}
 
 function verProject() {
   return window.projectUI && window.projectUI.currentObj ? window.projectUI.currentObj() : null;
@@ -70,11 +98,21 @@ function verStars(v, project, rerender) {
 
 function verRow(v, project, rerender) {
   const row = document.createElement("div");
+  row.dataset.verId = v.id;
   row.style.cssText = "border:1px solid var(--line);border-radius:8px;padding:8px;display:flex;flex-direction:column;gap:6px";
 
   const head = document.createElement("div");
   head.className = "row tight";
   head.style.alignItems = "center";
+  const pick = document.createElement("input");
+  pick.type = "checkbox";
+  pick.title = "勾选两条做 A/B 对比（最多两条）";
+  pick.style.cssText = "accent-color:#5d7bf0;margin:0";
+  pick.checked = verSel.includes(v.id);
+  pick.onclick = (e) => {
+    e.stopPropagation();
+    toggleVerSel(v.id);
+  };
   const isLayout = v.kind === "layout";
   const kind = document.createElement("span");
   kind.textContent = isLayout ? "排版" : "出图";
@@ -139,7 +177,7 @@ function verRow(v, project, rerender) {
       toast(String(e), true);
     }
   };
-  head.append(verStars(v, project, rerender), kind, time, parent, branch, fill, diffBtn, del);
+  head.append(pick, verStars(v, project, rerender), kind, time, parent, branch, fill, diffBtn, del);
 
   const prompt = document.createElement("div");
   prompt.textContent = v.prompt;
@@ -191,11 +229,15 @@ function renderVersions() {
   if (!p) {
     box.textContent = "先在项目栏选一个项目";
     $("verCount").textContent = "";
+    verSel = [];
+    syncVerPick();
     return;
   }
   if (p.private) {
     box.textContent = "私密项目不记录版本（避免明文）";
     $("verCount").textContent = "";
+    verSel = [];
+    syncVerPick();
     return;
   }
   const sorted = verCache.slice().sort((a, b) =>
@@ -205,6 +247,8 @@ function renderVersions() {
   $("verCount").textContent = `显示 ${shown.length} / ${sorted.length}`;
   if (!sorted.length) {
     box.textContent = "还没有版本。生成一次就会记一条。";
+    verSel = [];
+    syncVerPick();
     return;
   }
   for (const v of shown) box.appendChild(verRow(v, p, renderVersions));
@@ -218,6 +262,7 @@ function renderVersions() {
     };
     box.appendChild(more);
   }
+  syncVerPick();
 }
 
 async function versionsRefresh() {
@@ -229,6 +274,7 @@ async function versionsRefresh() {
     verCache = [];
     toast(String(e), true);
   }
+  verSel = verSel.filter((id) => verCache.some((v) => v.id === id));
   renderVersions();
 }
 
@@ -254,6 +300,12 @@ $("versionsBtn").onclick = async () => {
   await versionsRefresh();
 };
 $("versionsClose").onclick = () => ($("versionsModal").hidden = true);
+$("verCompare").onclick = () => {
+  const a = verCache.find((v) => v.id === verSel[0]);
+  const b = verCache.find((v) => v.id === verSel[1]);
+  if (!a || !b) return;
+  if (typeof openVersionAB === "function") openVersionAB(a, b);
+};
 $("verSortTime").onclick = () => {
   verSort = "time";
   $("verSortTime").classList.remove("ghost");

@@ -337,7 +337,86 @@ label.row.tight .btn { flex: 0 0 auto; white-space: nowrap; }
   color: #ffd25e; border-radius: 50%; width: 22px; height: 22px; cursor: pointer; font-size: 12px;
 }
 .lib-item .li-star.off { color: #8b93a7; }
+.lib-item .li-meta .li-info { padding: 0 4px; font-size: 11px; line-height: 1.4; }
 .lib-empty { grid-column: 1/-1; text-align: center; color: var(--muted); padding: 60px 0; }
+
+/* 图库右侧详情抽屉（#25） */
+.lib-body { flex: 1; display: flex; min-height: 0; }
+.lib-detail {
+  width: 336px; flex: 0 0 336px; border-left: 1px solid var(--line);
+  background: var(--panel); display: flex; flex-direction: column; min-height: 0;
+}
+.lib-detail-head {
+  display: flex; align-items: center; gap: 8px;
+  padding: 10px 12px; border-bottom: 1px solid var(--line);
+}
+.lib-detail-body {
+  padding: 12px; overflow-y: auto;
+  display: flex; flex-direction: column; gap: 10px; font-size: 12.5px;
+}
+.lib-detail-body img.ld-thumb {
+  width: 100%; max-height: 190px; object-fit: contain;
+  background: #0b0d12; border: 1px solid var(--line); border-radius: 8px;
+}
+.ld-title { font-size: 12px; word-break: break-all; line-height: 1.5; }
+.ld-note { color: var(--muted); font-size: 11.5px; line-height: 1.55; }
+.ld-block { border-top: 1px solid var(--line); padding-top: 8px; display: flex; flex-direction: column; gap: 5px; }
+.ld-block .ld-label { color: var(--muted); font-size: 11px; }
+.ld-prompt {
+  white-space: pre-wrap; word-break: break-word; background: #0b0f17;
+  border: 1px solid var(--line); border-radius: 8px; padding: 8px;
+  font-size: 12px; line-height: 1.55; max-height: 180px; overflow-y: auto;
+}
+.ld-grid { display: grid; grid-template-columns: auto 1fr; gap: 3px 10px; font-size: 11.5px; }
+.ld-grid span:nth-child(odd) { color: var(--muted); }
+.ld-grid span:nth-child(even) { color: var(--text); word-break: break-all; }
+.ld-actions { display: flex; flex-wrap: wrap; gap: 6px; }
+.ld-badge { display: inline-block; padding: 1px 6px; border-radius: 5px; background: #1e2a3a; color: #7aa2d9; font-size: 11px; }
+
+/* ---------------- 版本 A/B ---------------- */
+.ver-picked { border-color: #5d7bf0 !important; box-shadow: 0 0 0 1px #5d7bf0 inset; }
+.ab-card {
+  width: min(1180px, calc(100vw - 48px)); max-height: calc(100vh - 40px);
+  background: var(--panel); border: 1px solid var(--line); border-radius: 16px;
+  padding: 16px; display: flex; flex-direction: column; gap: 10px;
+  box-shadow: 0 24px 70px rgba(0,0,0,.55);
+}
+.ab-head { display: flex; align-items: center; gap: 8px; }
+.ab-head h3 { margin: 0; font-size: 15px; }
+.ab-stage {
+  position: relative; flex: 1; min-height: 300px; display: grid;
+  grid-template-columns: 1fr 1fr; gap: 8px;
+  background: #07090d; border-radius: 10px; overflow: hidden;
+}
+.ab-pane {
+  position: relative; display: flex; align-items: center; justify-content: center;
+  min-height: 300px; overflow: hidden;
+}
+.ab-pane img { max-width: 100%; max-height: 60vh; object-fit: contain; display: block; }
+.ab-cap {
+  position: absolute; left: 8px; bottom: 6px; font-size: 11px; color: #c8cee0;
+  background: rgba(0,0,0,.55); padding: 2px 7px; border-radius: 6px;
+}
+.ab-stage.slide { display: block; height: 52vh; min-height: 300px; align-self: center; }
+.ab-stage.slide .ab-pane { position: absolute; inset: 0; }
+.ab-stage.slide .ab-pane img { max-height: 100%; }
+.ab-stage.slide #abPaneB { clip-path: inset(0 0 0 var(--ab-pos, 50%)); }
+.ab-stage.slide #abPaneB .ab-cap { left: auto; right: 8px; }
+.ab-divider {
+  position: absolute; top: 0; bottom: 0; left: var(--ab-pos, 50%);
+  width: 2px; background: #5d7bf0; box-shadow: 0 0 12px rgba(93,123,240,.6);
+}
+.ab-bar { display: flex; align-items: center; gap: 10px; }
+.ab-bar input[type="range"] { flex: 1; }
+.ab-diff {
+  display: flex; flex-direction: column; gap: 6px; max-height: 200px; overflow-y: auto;
+  font-size: 12px; border-top: 1px solid var(--line); padding-top: 8px;
+}
+.ab-row { display: flex; gap: 8px; font-size: 11.5px; }
+.ab-row .k { color: var(--muted); min-width: 46px; flex: 0 0 46px; }
+.ab-row .v { word-break: break-all; }
+.ab-row .chg { color: #98c379; }
+.ab-row .old { color: #e06c75; text-decoration: line-through; }
 
 /* ---------------- compare ---------------- */
 .compare { position: fixed; inset: 0; z-index: 70; background: #07090d; display: flex; flex-direction: column; }

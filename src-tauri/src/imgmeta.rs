@@ -143,6 +143,20 @@ pub fn read_png_meta(path: &Path) -> Option<Value> {
     None
 }
 
+/// 读一张输出图的参数块（图库详情用）：**只认 root 目录内的明文图**，
+/// 私密图（`vault://`）与越界路径一律 None——私密项目本来就不写明文参数。
+pub fn read_meta_under(root: &Path, path: &Path) -> Option<Value> {
+    if path.to_string_lossy().starts_with("vault://") {
+        return None;
+    }
+    let canon_root = root.canonicalize().ok()?;
+    let canon = path.canonicalize().ok()?;
+    if !canon.starts_with(&canon_root) {
+        return None;
+    }
+    read_png_meta(&canon)
+}
+
 #[cfg(test)]
 #[path = "imgmeta_tests.rs"]
 mod tests;

@@ -6,6 +6,7 @@ let libItems = [];
 let libRenderLimit = 120;
 let libSel = new Set();
 let libPrompts = new Map(); // path -> prompt (from generation history)
+let libHist = new Map(); // path -> 生成历史条目（详情抽屉在无 PNG 参数时回退用）
 let libAltQuery = ""; // english translation of the current query
 const libUrlCache = new Map();
 let libObserver = null;
@@ -58,12 +59,20 @@ async function loadLibrary() {
   try {
     const hist = await api.call("history_list");
     libPrompts = new Map();
-    for (const h of hist) for (const im of h.images || []) libPrompts.set(im.path, h.prompt || "");
+    libHist = new Map();
+    for (const h of hist) {
+      for (const im of h.images || []) {
+        libPrompts.set(im.path, h.prompt || "");
+        libHist.set(im.path, h);
+      }
+    }
   } catch {
     libPrompts = new Map();
+    libHist = new Map();
   }
   libSel.clear();
   renderLibrary();
+  if (typeof refreshLibDetail === "function") refreshLibDetail();
 }
 
 function sortedLibrary() {
@@ -135,8 +144,8 @@ function renderLibrary() {
       await api.call("library_star", { path: it.path, starred: it.starred });
       e.target.className = "li-star" + (it.starred ? "" : " off");
     };
-    img.onclick = () => openViewer(list, list.indexOf(it));
-    libObserver.observe(img);
+    if (typeof attachLibItemDetail === "function") attachLibItemDetail(d, it);
+    img.onclick = () => openViewer(list, list.indexOf(it));    libObserver.observe(img);
     grid.appendChild(d);
   }
   if (list.length > slice.length) {

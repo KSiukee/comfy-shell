@@ -96,6 +96,10 @@ try {
   check("版本按钮在", (await evaluate("!!document.getElementById('versionsBtn')")) === true);
   check("提示词库按钮在", (await evaluate("!!document.getElementById('promptsBtn')")) === true);
   check("整话导出按钮在", (await evaluate("!!document.getElementById('shotsExport')")) === true);
+  check("图库详情抽屉在", (await evaluate("!!document.getElementById('libDetail')")) === true);
+  check("版本 A/B 对比窗在", (await evaluate("!!document.getElementById('abModal')")) === true);
+  const outOfRoot = await evaluate("api.call('image_meta', { path: 'D:/__nope__/zzz.png' })");
+  check("image_meta 拒绝越界/不存在的路径", outOfRoot === null || outOfRoot === undefined, String(outOfRoot));
   const projects = await evaluate("api.call('project_list', { includeHidden: true })");
   check("project_list 返回数组", Array.isArray(projects), `${Array.isArray(projects) ? projects.length : "?"} 个项目`);
   check("测试项目 _test 在", Array.isArray(projects) && projects.some((p) => p.id === "_test"));

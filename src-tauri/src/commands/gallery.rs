@@ -99,6 +99,14 @@ pub fn library_star(app: tauri::AppHandle, path: String, starred: bool) {
     library::star(&cfg_dir(&app), &out, &path, starred);
 }
 
+/// 图库详情：读一张输出图的 `iTXt` 参数（只认 ComfyUI 目录内的明文图）。
+/// 私密图与越界路径返回 null——界面据此显示「私密图不写参数」。
+#[tauri::command]
+pub fn image_meta(state: State<AppState>, path: String) -> Option<serde_json::Value> {
+    let root = { state.settings.lock().ok()?.comfy_root.clone() };
+    crate::imgmeta::read_meta_under(std::path::Path::new(&root), std::path::Path::new(&path))
+}
+
 /// Persist a PNG produced by the frontend (e.g. a composed comparison image).
 #[tauri::command]
 pub fn save_export(state: State<AppState>, name: String, data_url: String) -> Result<String, String> {

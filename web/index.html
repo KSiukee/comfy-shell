@@ -492,7 +492,17 @@
       <button class="btn danger small" id="libDelete" disabled>删除选中</button>
       <button class="btn ghost small" id="libClose">关闭</button>
     </div>
-    <div class="lib-grid" id="libGrid"></div>
+    <div class="lib-body">
+      <div class="lib-grid" id="libGrid"></div>
+      <aside class="lib-detail" id="libDetail" hidden>
+        <div class="lib-detail-head">
+          <strong>图片详情</strong>
+          <span class="spacer"></span>
+          <button class="btn ghost small" id="libDetailClose" title="关闭">×</button>
+        </div>
+        <div class="lib-detail-body" id="libDetailBody"></div>
+      </aside>
+    </div>
   </div>
 
   <!-- image viewer -->
@@ -822,11 +832,41 @@
       <div class="row tight" style="margin-bottom:8px">
         <button class="btn small" id="verSortTime">按时间</button>
         <button class="btn small ghost" id="verSortStars">按星</button>
+        <button class="btn small ghost" id="verCompare" disabled title="勾选两条版本后对比（并排 / 滑块）">对比选中</button>
         <span class="muted" id="verCount" style="margin-left:auto;font-size:12px"></span>
       </div>
       <div id="versionsList" style="display:flex;flex-direction:column;gap:8px;max-height:60vh;overflow:auto"></div>
       <div class="modal-actions">
         <button class="btn small ghost" id="versionsClose">关闭</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 版本 A/B 对比 -->
+  <div class="modal ab" id="abModal" hidden>
+    <div class="ab-card">
+      <div class="ab-head">
+        <h3>版本对比 <span class="muted mono" id="abHint" style="font-size:12px"></span></h3>
+        <span class="spacer"></span>
+        <button class="btn small" id="abSide">并排</button>
+        <button class="btn small ghost" id="abSlide">滑块</button>
+        <button class="btn small ghost" id="abSwap">交换</button>
+        <button class="btn small ghost" id="abClose">关闭</button>
+      </div>
+      <div class="ab-stage" id="abStage">
+        <div class="ab-pane" id="abPaneA"><img id="abImgA" alt="" /><span class="ab-cap" id="abCapA"></span></div>
+        <div class="ab-pane" id="abPaneB"><img id="abImgB" alt="" /><span class="ab-cap" id="abCapB"></span></div>
+        <span class="ab-divider" id="abDivider" hidden></span>
+      </div>
+      <div class="ab-bar" id="abBar" hidden>
+        <span class="muted" style="font-size:11.5px">拖动看差异</span>
+        <input type="range" id="abRange" min="0" max="100" value="50" />
+        <span class="mono muted" id="abRangeText">50%</span>
+      </div>
+      <div class="ab-diff" id="abDiff"></div>
+      <div class="modal-actions">
+        <button class="btn small" id="abUseA">采用 A 的参数</button>
+        <button class="btn small" id="abUseB">采用 B 的参数</button>
       </div>
     </div>
   </div>
@@ -872,6 +912,8 @@
   <script src="tools.js"></script>
   <script src="region.js"></script>
   <script src="meta.js"></script>
+  <script src="detail.js"></script>
+  <script src="ab.js"></script>
   <script src="workspace.js"></script>
   <script src="problems.js"></script>
   <script src="boot.js"></script>

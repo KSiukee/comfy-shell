@@ -183,6 +183,7 @@ fn main() {
             commands::projects::promptlib_delete,
             commands::projects::promptlib_clean,
             commands::gallery::library_scan,
+            commands::gallery::image_meta,
             commands::gallery::library_delete,
             commands::gallery::delete_results,
             commands::gallery::library_star,

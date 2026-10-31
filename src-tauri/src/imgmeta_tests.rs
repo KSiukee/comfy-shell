@@ -48,3 +48,27 @@ fn embed_and_read_roundtrip() {
     assert_eq!(count, 1);
     let _ = std::fs::remove_dir_all(&dir);
 }
+
+#[test]
+fn read_meta_under_only_inside_root() {
+    let base = std::env::temp_dir().join(format!("cs_imgmeta_scope_{}", std::process::id()));
+    let root = base.join("ComfyUI");
+    let inside = root.join("output").join("a.png");
+    let outside = base.join("outside.png");
+    let _ = std::fs::remove_dir_all(&base);
+    std::fs::create_dir_all(inside.parent().unwrap()).unwrap();
+    std::fs::write(&inside, tiny_png()).unwrap();
+    std::fs::write(&outside, tiny_png()).unwrap();
+    let meta = json!({"app":"comfy-shell","prompt":"根内图"});
+    write_png_meta(&inside, &meta).unwrap();
+    write_png_meta(&outside, &json!({"app":"comfy-shell","prompt":"根外图"})).unwrap();
+
+    assert_eq!(read_meta_under(&root, &inside).unwrap()["prompt"], "根内图");
+    assert!(read_meta_under(&root, &outside).is_none(), "根外路径必须拒绝");
+    assert!(
+        read_meta_under(&root, std::path::Path::new("vault://p1/a.png")).is_none(),
+        "私密图不读明文参数"
+    );
+    assert!(read_meta_under(&root, &root.join("missing.png")).is_none());
+    let _ = std::fs::remove_dir_all(&base);
+}
