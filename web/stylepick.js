@@ -100,6 +100,29 @@ function renderStyleList() {
   const box = $("styleList");
   if (!box) return;
   box.textContent = "";
+  const cur = typeof currentStyle === "function" ? currentStyle() : null;
+
+  // 第一行永远是「不套风格」：没有它就没法退回裸提示词
+  if (!styleQuery.trim() && (styleChip === "全部" || styleChip === "收藏")) {
+    const none = document.createElement("div");
+    none.className = "style-row" + (cur ? "" : " on");
+    const main = document.createElement("button");
+    main.type = "button";
+    main.className = "style-main";
+    const b = document.createElement("b");
+    b.textContent = "（不套风格）";
+    const d = document.createElement("span");
+    d.className = "muted";
+    d.textContent = "裸提示词，不加任何风格词";
+    main.append(b, d);
+    main.onclick = () => {
+      setStyleName("");
+      closeStylePop();
+    };
+    none.appendChild(main);
+    box.appendChild(none);
+  }
+
   const list = stylePacks.filter(styleMatches);
   if (!list.length) {
     const p = document.createElement("div");
@@ -108,7 +131,6 @@ function renderStyleList() {
     box.appendChild(p);
     return;
   }
-  const cur = typeof currentStyle === "function" ? currentStyle() : null;
   for (const s of list) {
     const row = document.createElement("div");
     row.className = "style-row" + (cur && cur.name === s.name ? " on" : "");
