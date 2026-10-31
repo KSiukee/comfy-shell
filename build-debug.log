@@ -1,4 +1,4 @@
-   Compiling comfy-shell v0.63.0 (D:\deepseek-files\ai-tools\comfy-shell\src-tauri)
+   Compiling comfy-shell v0.64.0 (D:\deepseek-files\ai-tools\comfy-shell\src-tauri)
 warning: unused import: `tauri::State`
  --> src\commands\ai.rs:4:5
   |
@@ -50,10 +50,20 @@ warning: unused import: `tauri::State`
   |     ^^^^^^^^^^^^
 
 warning: unused import: `State`
-  --> src\main.rs:29:31
+  --> src\main.rs:30:31
    |
-29 | use tauri::{Emitter, Manager, State};
+30 | use tauri::{Emitter, Manager, State};
    |                               ^^^^^
+
+warning: variable does not need to be mutable
+   --> src\commands\upscale.rs:279:13
+    |
+279 |         let mut img = if chosen == "__seedvr2__" {
+    |             ----^^^
+    |             |
+    |             help: remove this `mut`
+    |
+    = note: `#[warn(unused_mut)]` (part of `#[warn(unused)]`) on by default
 
 warning: use of deprecated associated function `chacha20poly1305::aead::hybrid_array::Array::<T, U>::from_slice`: use `TryFrom` instead
   --> src\vault.rs:82:26
@@ -104,6 +114,24 @@ warning: function `caption` is never used
     |
     = note: `#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default
 
+warning: function `parse_itxt` is never used
+  --> src\imgmeta.rs:54:4
+   |
+54 | fn parse_itxt(data: &[u8]) -> Option<String> {
+   |    ^^^^^^^^^^
+
+warning: function `parse_text` is never used
+  --> src\imgmeta.rs:72:4
+   |
+72 | fn parse_text(data: &[u8]) -> Option<String> {
+   |    ^^^^^^^^^^
+
+warning: function `read_png_meta` is never used
+   --> src\imgmeta.rs:121:8
+    |
+121 | pub fn read_png_meta(path: &Path) -> Option<Value> {
+    |        ^^^^^^^^^^^^^
+
 warning: field `name` is never read
   --> src\commands\training.rs:59:16
    |
@@ -118,5 +146,5 @@ warning: function `log_path` is never used
 62 | pub fn log_path(root: &str) -> String {
    |        ^^^^^^^^
 
-warning: `comfy-shell` (bin "comfy-shell") generated 17 warnings (run `cargo fix --bin "comfy-shell" -p comfy-shell` to apply 11 suggestions)
-    Finished `dev` profile [unoptimized + debuginfo] target(s) in 22.84s
+warning: `comfy-shell` (bin "comfy-shell") generated 21 warnings (run `cargo fix --bin "comfy-shell" -p comfy-shell` to apply 12 suggestions)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 15.23s

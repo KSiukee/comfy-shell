@@ -6,6 +6,7 @@ mod dataio;
 mod enhance;
 mod fsutil;
 mod history;
+mod imgmeta;
 mod layouts;
 mod library;
 mod commands;

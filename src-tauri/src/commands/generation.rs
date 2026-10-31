@@ -150,22 +150,63 @@ pub async fn generate(app: tauri::AppHandle, mut req: api::GenReq, turbo: bool) 
             )
         };
 
-        if let Some(pid) = req.project.as_deref() {
-            if !vault::is_private(&cfg, pid) {
-                let seed = versions::VersionSeed {
-                    prompt: req.prompt.clone(),
-                    negative: req.negative.clone(),
-                    profile: req.profile.clone(),
-                    mode: req.mode.clone(),
-                    width: req.width,
-                    height: req.height,
-                    steps: req.steps,
-                    cfg: req.cfg,
-                    seed: req.seed,
-                    layout: req.layout.clone(),
-                };
-                let paths: Vec<String> = out.images.iter().map(|i| i.path.clone()).collect();
-                let _ = versions::append(&cfg, pid, &seed, &paths, &id, req.version_parent.as_deref());
+        let mut version_id = String::new();
+        if priv_key.is_none() {
+            if let Some(pid) = req.project.as_deref() {
+                if !vault::is_private(&cfg, pid) {
+                    let seed = versions::VersionSeed {
+                        prompt: req.prompt.clone(),
+                        negative: req.negative.clone(),
+                        profile: req.profile.clone(),
+                        mode: req.mode.clone(),
+                        width: req.width,
+                        height: req.height,
+                        steps: req.steps,
+                        cfg: req.cfg,
+                        seed: req.seed,
+                        layout: req.layout.clone(),
+                    };
+                    let paths: Vec<String> = out.images.iter().map(|i| i.path.clone()).collect();
+                    if let Ok(v) = versions::append(
+                        &cfg, pid, &seed, &paths, &id, req.version_parent.as_deref(),
+                    ) {
+                        version_id = v.id;
+                    }
+                }
+            }
+            let meta = json!({
+                "app": "comfy-shell",
+                "schema": 1,
+                "appVersion": env!("CARGO_PKG_VERSION"),
+                "createdAt": now_ms(),
+                "mode": req.mode,
+                "prompt": req.prompt,
+                "negative": req.negative,
+                "profile": req.profile,
+                "width": req.width,
+                "height": req.height,
+                "steps": req.steps,
+                "cfg": req.cfg,
+                "seed": req.seed,
+                "batch": req.batch,
+                "lora": req.lora,
+                "loraStrength": req.lora_strength,
+                "lora2": req.lora2,
+                "lora2Strength": req.lora2_strength,
+                "slg": req.slg,
+                "slgLayers": req.slg_layers,
+                "layout": req.layout,
+                "project": req.project,
+                "versionId": version_id,
+                "historyId": id,
+            });
+            for img in out.images.iter_mut() {
+                if !img.path.starts_with("vault://") {
+                    let _ = crate::imgmeta::write_png_meta(
+                        std::path::Path::new(&img.path),
+                        &meta,
+                    );
+                }
             }
         }
 

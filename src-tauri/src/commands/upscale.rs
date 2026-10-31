@@ -1,7 +1,7 @@
 //! 超分 / 局部重绘。
 
 use crate::*;
-use crate::commands::generation::{push_history, relocate_into_project, GenResp};
+use crate::commands::generation::{project_id_of_path, push_history, relocate_into_project, GenResp};
 use tauri::State;
 
 pub fn pick_upscale_model(root: &str) -> Result<String, String> {
@@ -82,6 +82,17 @@ pub async fn upscale_image(
             api::upscale_image(port, &root, &src.to_string_lossy(), &chosen)?
         };
         relocate_into_project(&canon_out, &src, &mut img);
+        let meta = json!({
+            "app": "comfy-shell", "schema": 1, "appVersion": env!("CARGO_PKG_VERSION"),
+            "createdAt": now_ms(), "mode": "upscale",
+            "project": project_id_of_path(&canon_out, &src),
+            "source": src.file_name().map(|x| x.to_string_lossy().to_string()),
+            "model": chosen,
+            "width": img.width, "height": img.height,
+        });
+        if !img.path.starts_with("vault://") {
+            let _ = crate::imgmeta::write_png_meta(std::path::Path::new(&img.path), &meta);
+        }
         Ok(img)
     })
     .await
@@ -191,8 +202,19 @@ pub async fn inpaint_image(app: tauri::AppHandle, req: InpaintCall) -> Result<Ge
                        "pending": p.queue_pending, "started": p.started}),
             );
         })?;
+        let meta = json!({
+            "app": "comfy-shell", "schema": 1, "appVersion": env!("CARGO_PKG_VERSION"),
+            "createdAt": now_ms(), "mode": "inpaint",
+            "prompt": req.prompt, "negative": req.negative, "profile": req.profile,
+            "steps": req.steps, "cfg": req.cfg, "seed": req.seed,
+            "project": project_id_of_path(&canon_out, &src),
+            "source": src.file_name().map(|x| x.to_string_lossy().to_string()),
+        });
         for img in out.images.iter_mut() {
             relocate_into_project(&canon_out, &src, img);
+            if !img.path.starts_with("vault://") {
+                let _ = crate::imgmeta::write_png_meta(std::path::Path::new(&img.path), &meta);
+            }
         }
 
         let base = api::profile(&req.profile)
@@ -254,16 +276,23 @@ pub async fn upscale_input(
             return Err("ComfyUI 没有在运行".into());
         }
         let chosen = model.unwrap_or_default();
-        if chosen == "__seedvr2__" {
-            api::upscale_seedvr2_from_input(port, &root, &name)
+        let mut img = if chosen == "__seedvr2__" {
+            api::upscale_seedvr2_from_input(port, &root, &name)?
         } else {
             let m = if chosen.is_empty() {
                 pick_upscale_model(&root)?
             } else {
                 chosen
             };
-            api::upscale_from_input(port, &root, &name, &m)
-        }
+            api::upscale_from_input(port, &root, &name, &m)?
+        };
+        let meta = json!({
+            "app": "comfy-shell", "schema": 1, "appVersion": env!("CARGO_PKG_VERSION"),
+            "createdAt": now_ms(), "mode": "upscale",
+            "source": name, "width": img.width, "height": img.height,
+        });
+        let _ = crate::imgmeta::write_png_meta(std::path::Path::new(&img.path), &meta);
+        Ok(img)
     })
     .await
     .map_err(|e| format!("超分任务失败: {e}"))?
