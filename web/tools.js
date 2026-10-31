@@ -155,14 +155,19 @@ async function openPoses() {
   renderPoses();
 }
 
+function poseView(p, angle) {
+  const v = p.views || {};
+  return v[angle] || v.front || Object.values(v)[0] || "";
+}
+
 function poseFiltered() {
   const q = $("poseSearch").value.trim().toLowerCase();
   const cls = $("poseClass").value;
   const angle = $("poseAngle").value;
   return poseCatalog.filter((p) => {
     if (cls && p.class_cn !== cls) return false;
-    // entries without this camera angle would show a broken/duplicated tile
-    if (!(p.views || {})[angle]) return false;
+    // 缺这个机位就回退到正面/任意可用机位，别把整组姿势藏掉
+    if (!poseView(p, angle)) return false;
     if (!q) return true;
     const hay = `${p.id} ${p.name_cn || ""} ${p.name_en || ""} ${p.class_cn || ""} ${p.desc_en || ""}`.toLowerCase();
     return hay.includes(q);
@@ -183,7 +188,7 @@ function renderPoses() {
   poseShown = end;
   grid.innerHTML = "";
   for (const p of list.slice(0, end)) {
-    const file = (p.views || {})[angle] || (p.views || {}).front || Object.values(p.views || {})[0];
+    const file = poseView(p, angle);
     if (!file) continue;
     const d = document.createElement("div");
     d.className = "pose-card";
