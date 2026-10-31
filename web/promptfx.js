@@ -19,7 +19,11 @@ async function loadStylePacks() {
   const want = localStorage.getItem(STYLE_KEY) || "";
   sel.innerHTML = "";
   sel.appendChild(new Option("（不套风格）", ""));
-  stylePacks.forEach((s, i) => sel.appendChild(new Option(s.name, String(i))));
+  stylePacks.forEach((s, i) => {
+    const opt = new Option(s.zh ? s.zh : s.name, String(i));
+    if (s.zh && s.zh !== s.name) opt.title = s.name;
+    sel.appendChild(opt);
+  });
   const hit = stylePacks.findIndex((s) => s.name === want);
   if (hit >= 0) sel.value = String(hit);
   updateFxHint();
@@ -252,7 +256,7 @@ function updateFxHint() {
   const wc = jobs.reduce((n, j) => n + j.wildcards, 0);
   const bits = [];
   if (jobs.length > 1) bits.push(`${jobs.length} 组`);
-  if (style) bits.push(`风格 · ${style.name}`);
+  if (style) bits.push(`风格 · ${style.zh || style.name}`);
   if (loras) bits.push(`LoRA ${loras}`);
   if (wc) bits.push(`通配符 ${wc} 处`);
   el.textContent = bits.length

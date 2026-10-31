@@ -6,13 +6,29 @@
 use serde::Serialize;
 use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
+use std::sync::OnceLock;
 
 #[derive(Serialize, Clone, Debug, PartialEq)]
 #[serde(rename_all = "camelCase")]
 pub struct Style {
     pub name: String,
+    /// 中文显示名（可以为空）：上游风格包全是英文名，查表补上；提示词正文不动。
+    pub zh: String,
     pub positive: String,
     pub negative: String,
+}
+
+/// 上游（sdxl_prompt_styler / Fooocus）风格名的中文对照，随包内置。
+fn zh_map() -> &'static BTreeMap<String, String> {
+    static MAP: OnceLock<BTreeMap<String, String>> = OnceLock::new();
+    MAP.get_or_init(|| serde_json::from_str(include_str!("style_zh.json")).unwrap_or_default())
+}
+
+fn zh_for(name: &str) -> String {
+    zh_map()
+        .get(&name.trim().to_lowercase())
+        .cloned()
+        .unwrap_or_default()
 }
 
 pub fn styles_dir(cfg: &Path) -> PathBuf {
@@ -55,7 +71,15 @@ fn style_from_value(v: &serde_json::Value, fallback: &str) -> Option<Style> {
         .map(|s| s.trim().to_string())
         .filter(|s| !s.is_empty())
         .unwrap_or_else(|| fallback.to_string());
-    Some(Style { name, positive, negative })
+    let zh = v
+        .get("zh")
+        .or_else(|| v.get("name_zh"))
+        .or_else(|| v.get("label"))
+        .and_then(|x| x.as_str())
+        .map(|s| s.trim().to_string())
+        .filter(|s| !s.is_empty())
+        .unwrap_or_else(|| zh_for(&name));
+    Some(Style { name, zh, positive, negative })
 }
 
 fn styles_in_value(v: &serde_json::Value, fallback: &str) -> Vec<Style> {
@@ -186,7 +210,7 @@ pub fn style_pack_open(app: tauri::AppHandle) -> Result<String, String> {
     seed_file(
         &dir,
         "example.json",
-        "{\n  \"name\": \"电影感\",\n  \"positive\": \"cinematic photo, {prompt}, film grain, shallow depth of field\",\n  \"negative\": \"cartoon, text, watermark\"\n}\n",
+        "{\n  \"name\": \"电影感\",\n  \"zh\": \"电影感\",\n  \"positive\": \"cinematic photo, {prompt}, film grain, shallow depth of field\",\n  \"negative\": \"cartoon, text, watermark\"\n}\n",
     )?;
     seed_file(
         &wc,
@@ -227,6 +251,7 @@ pub fn import_styles_into(dir: &Path, name: &str, json_text: &str) -> Result<(us
         .map(|s| {
             serde_json::json!({
                 "name": s.name,
+                "zh": s.zh,
                 "positive": s.positive,
                 "negative": s.negative
             })

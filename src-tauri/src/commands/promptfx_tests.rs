@@ -83,11 +83,36 @@ fn import_normalizes_keys_and_never_overwrites() {
         serde_json::from_str(&std::fs::read_to_string(&p1).unwrap()).unwrap();
     assert_eq!(saved[0]["positive"], "anime {prompt}");
     assert_eq!(saved[0]["negative"], "photo");
+    assert_eq!(saved[0]["zh"], "动画", "导入时把中文名一起写进去");
 
     let (_, p2) = import_styles_into(&d, "twri pack", src).unwrap();
     assert_ne!(p1, p2, "同名导入要另起一号，别覆盖");
     assert!(import_styles_into(&d, "bad", "{not json").is_err());
     assert!(import_styles_into(&d, "empty", "[]").is_err());
+    let _ = std::fs::remove_dir_all(&d);
+}
+
+#[test]
+fn upstream_names_get_chinese_labels() {
+    let d = tmp("zh");
+    let _ = std::fs::remove_dir_all(&d);
+    std::fs::create_dir_all(&d).unwrap();
+    std::fs::write(
+        d.join("up.json"),
+        r#"[
+            {"name":"photo-silhouette","prompt":"silhouette {prompt}"},
+            {"name":"ads-fashion editorial","prompt":"fashion {prompt}"},
+            {"name":"my-own-style","prompt":"own {prompt}"},
+            {"name":"photo-hdr","zh":"高动态","prompt":"hdr {prompt}"}
+        ]"#,
+    )
+    .unwrap();
+    let list = read_styles(&d);
+    let by = |n: &str| list.iter().find(|s| s.name == n).unwrap();
+    assert_eq!(by("photo-silhouette").zh, "剪影");
+    assert_eq!(by("ads-fashion editorial").zh, "时尚杂志");
+    assert_eq!(by("my-own-style").zh, "", "表里没有就留空，界面回退英文名");
+    assert_eq!(by("photo-hdr").zh, "高动态", "文件里写了的优先");
     let _ = std::fs::remove_dir_all(&d);
 }
 
