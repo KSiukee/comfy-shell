@@ -20,6 +20,8 @@ $("btnExportProject").onclick = async () => {
   const p = window.projectUI && window.projectUI.currentObj ? window.projectUI.currentObj() : null;
   if (!p) return toast("先选一个项目", true);
   if (p.private && !confirm("这是私密项目：导出会把内容解密成明文。\n确定导出到明文文件夹？")) return;
+  const warn = typeof poseLicenseWarn === "function" ? poseLicenseWarn() : "";
+  if (warn && !confirm(`本项目用过仅本地使用的姿势库：\n${warn}\n\n继续导出？`)) return;
   const dest = await pickFolder();
   if (!dest) return;
   try {

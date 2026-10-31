@@ -138,14 +138,16 @@ let poseShown = 0;
 const poseCache = new Map();
 
 let posePackId = "";
+let posePackInfo = new Map();
 
 async function openPoses() {
   try {
     if (!$("posePack").options.length) {
       const packs = await api.call("pose_pack_list");
       if (!packs.length) throw "没有可用的姿势库";
+      posePackInfo = new Map(packs.map((p) => [p.id, p]));
       $("posePack").innerHTML = packs
-        .map((p) => `<option value="${p.id}">${p.name} · ${p.count}</option>`)
+        .map((p) => `<option value="${p.id}">${p.name} · ${p.count}${p.publishable ? "" : "（仅本地）"}</option>`)
         .join("");
       posePackId = localStorage.getItem("cs.posePack") || packs[0].id;
       if (!packs.some((p) => p.id === posePackId)) posePackId = packs[0].id;
@@ -167,8 +169,24 @@ async function loadPosePack(id) {
     `<option value="">全部类别</option>` + classes.map((c) => `<option value="${c}">${c}</option>`).join("");
   poseShown = 0;
   $("poseGrid").innerHTML = "";
-  $("poseMeta").textContent = `${id} · ${poseCatalog.length} 组`;
+  const info = posePackInfo.get(id) || { name: id, license: "未标注", publishable: false, note: "" };
+  $("poseMeta").textContent = `${info.name} · ${poseCatalog.length} 组 · ${info.publishable ? "可发布" : "仅本地"}`;
+  const hint = $("poseLicenseHint");
+  if (info.publishable) {
+    hint.hidden = true;
+    hint.textContent = "";
+  } else {
+    hint.hidden = false;
+    hint.textContent = `⚠ ${info.name}：${info.license}${info.note ? " · " + info.note : ""} —— 生成图发布/商用前请确认版权`;
+    hint.style.color = "#d9a441";
+  }
   renderPoses();
+}
+
+function poseLicenseWarn() {
+  const p = window.projectUI && window.projectUI.currentObj ? window.projectUI.currentObj() : null;
+  if (!p) return "";
+  return localStorage.getItem(`cs.poseWarn.${p.id}`) || "";
 }
 
 $("posePack").onchange = async () => {
@@ -250,6 +268,11 @@ function renderPoses() {
           poseCache.set(file, url);
         }
         await addRefFromDataUrl(url, `pose_${p.id}_${angle}`);
+        const info = posePackInfo.get(posePackId);
+        const proj = window.projectUI && window.projectUI.currentObj ? window.projectUI.currentObj() : null;
+        if (info && !info.publishable && proj) {
+          localStorage.setItem(`cs.poseWarn.${proj.id}`, `${info.name}｜${info.license}`);
+        }
         $("poseModal").hidden = true;
       } catch (e) {
         toast(String(e), true);

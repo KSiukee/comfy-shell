@@ -123,6 +123,8 @@ $("shotsExport").onclick = async () => {
   const p = shotProject();
   if (!p) return toast("先选一个项目", true);
   if (p.private) return toast("私密项目暂不支持整话导出", true);
+  const warn = typeof poseLicenseWarn === "function" ? poseLicenseWarn() : "";
+  if (warn && !confirm(`本项目用过仅本地使用的姿势库：\n${warn}\n\n继续导出？`)) return;
   const dest = await api.call("pick_folder");
   if (!dest) return;
   try {

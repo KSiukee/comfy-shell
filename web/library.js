@@ -256,6 +256,8 @@ async function exportCompare() {
     const labelB = `${cmpPaths[1].filename}  ${ib.width}×${ib.height}`;
     ctx.fillText(labelB, pad * 2 + wa, y);
 
+    const warn = typeof poseLicenseWarn === "function" ? poseLicenseWarn() : "";
+    if (warn && !confirm(`本项目用过仅本地使用的姿势库：\n${warn}\n\n继续导出？`)) return;
     const dataUrl = canvas.toDataURL("image/png");
     const stamp = new Date().toISOString().replace(/[:.]/g, "-").slice(0, 19);
     const path = await api.call("save_export", { name: `compare_${stamp}.png`, dataUrl });

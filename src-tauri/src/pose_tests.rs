@@ -37,6 +37,12 @@ fn discovers_legacy_and_packs_and_rewrites_paths() {
     let demo_list = load_catalog(&input, "demo", &demo, false).unwrap();
     assert_eq!(demo_list[0]["views"]["front"], "pose_packs/demo/line/b.webp");
 
+    let legacy_meta = pack_meta(&legacy, "shisei", true);
+    assert!(legacy_meta.publishable, "旧 shisei 默认 CC0 可发布");
+    assert!(legacy_meta.license.contains("CC0"));
+    let demo_meta = pack_meta(&demo, "demo", false);
+    assert!(!demo_meta.publishable, "未知 pack 保守不可发布");
+    assert_eq!(demo_meta.license, "未标注");
     assert_eq!(search(&input, "站").len(), 1);
     let _ = std::fs::remove_dir_all(&input);
 }

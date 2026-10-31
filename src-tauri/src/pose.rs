@@ -15,6 +15,9 @@ pub struct PosePack {
     pub name: String,
     pub count: usize,
     pub legacy: bool,
+    pub license: String,
+    pub publishable: bool,
+    pub note: String,
 }
 
 fn input_root(state: &State<AppState>) -> PathBuf {
@@ -43,12 +46,50 @@ pub fn pack_dirs(input: &Path) -> Vec<(String, PathBuf, bool)> {
     out
 }
 
-fn pack_name(dir: &Path, id: &str) -> String {
-    std::fs::read_to_string(dir.join("pack.json"))
+struct PackMeta {
+    name: String,
+    license: String,
+    publishable: bool,
+    note: String,
+}
+
+/// 读 pack.json 的授权信息；旧 shisei 默认 CC0 可发布，未知 pack 默认保守不可发布。
+pub fn pack_meta(dir: &Path, id: &str, legacy: bool) -> PackMeta {
+    let v = std::fs::read_to_string(dir.join("pack.json"))
         .ok()
         .and_then(|t| serde_json::from_str::<Value>(&t).ok())
-        .and_then(|v| v.get("name").and_then(|n| n.as_str()).map(|s| s.to_string()))
-        .unwrap_or_else(|| id.to_string())
+        .unwrap_or(Value::Null);
+    let name = v
+        .get("name")
+        .and_then(|n| n.as_str())
+        .map(|s| s.to_string())
+        .unwrap_or_else(|| id.to_string());
+    let license = v
+        .get("license")
+        .and_then(|n| n.as_str())
+        .map(|s| s.to_string())
+        .unwrap_or_else(|| {
+            if legacy {
+                "CC0（图片）".to_string()
+            } else {
+                "未标注".to_string()
+            }
+        });
+    let publishable = v
+        .get("publishable")
+        .and_then(|n| n.as_bool())
+        .unwrap_or(legacy);
+    let note = v
+        .get("note")
+        .and_then(|n| n.as_str())
+        .map(|s| s.to_string())
+        .unwrap_or_default();
+    PackMeta {
+        name,
+        license,
+        publishable,
+        note,
+    }
 }
 
 fn image_subdir(dir: &Path) -> &'static str {
@@ -119,11 +160,15 @@ pub fn pose_pack_list(state: State<AppState>) -> Result<Vec<PosePack>, String> {
         if list.is_empty() {
             continue;
         }
+        let meta = pack_meta(&dir, &id, legacy);
         out.push(PosePack {
-            name: pack_name(&dir, &id),
+            name: meta.name,
             count: list.len(),
             id,
             legacy,
+            license: meta.license,
+            publishable: meta.publishable,
+            note: meta.note,
         });
     }
     if out.is_empty() {

@@ -1,4 +1,4 @@
-   Compiling comfy-shell v0.62.0 (D:\deepseek-files\ai-tools\comfy-shell\src-tauri)
+   Compiling comfy-shell v0.63.0 (D:\deepseek-files\ai-tools\comfy-shell\src-tauri)
 warning: unused import: `tauri::State`
  --> src\commands\ai.rs:4:5
   |
@@ -83,6 +83,19 @@ warning: unused variable: `output`
 172 |     output: &Path,
     |     ^^^^^^ help: if this is intentional, prefix it with an underscore: `_output`
 
+warning: type `PackMeta` is more private than the item `pack_meta`
+  --> src\pose.rs:57:1
+   |
+57 | pub fn pack_meta(dir: &Path, id: &str, legacy: bool) -> PackMeta {
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ function `pack_meta` is reachable at visibility `pub(crate)`
+   |
+note: but type `PackMeta` is only usable at visibility `pub(self)`
+  --> src\pose.rs:49:1
+   |
+49 | struct PackMeta {
+   | ^^^^^^^^^^^^^^^
+   = note: `#[warn(private_interfaces)]` on by default
+
 warning: function `caption` is never used
    --> src\enhance.rs:101:8
     |
@@ -105,5 +118,5 @@ warning: function `log_path` is never used
 62 | pub fn log_path(root: &str) -> String {
    |        ^^^^^^^^
 
-warning: `comfy-shell` (bin "comfy-shell") generated 16 warnings (run `cargo fix --bin "comfy-shell" -p comfy-shell` to apply 11 suggestions)
-    Finished `dev` profile [unoptimized + debuginfo] target(s) in 15.76s
+warning: `comfy-shell` (bin "comfy-shell") generated 17 warnings (run `cargo fix --bin "comfy-shell" -p comfy-shell` to apply 11 suggestions)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 22.84s
