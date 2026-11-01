@@ -104,3 +104,19 @@ pub async fn layout_detect(app: tauri::AppHandle, image: String) -> Result<serde
     .await
     .map_err(|e| format!("识框任务失败: {e}"))?
 }
+
+/// 只找人脸（局部重绘「自动圈脸」用）。返回 {type,desc,text,bbox}，bbox 是归一化 x,y,w,h。
+#[tauri::command]
+pub async fn face_detect(app: tauri::AppHandle, image: String) -> Result<serde_json::Value, String> {
+    let handle = app.clone();
+    tauri::async_runtime::spawn_blocking(move || {
+        let state = handle.state::<AppState>();
+        let port = state.settings.lock().unwrap().port;
+        if api::health(port).is_none() {
+            return Err("ComfyUI 没有在运行".to_string());
+        }
+        enhance::detect_face(port, &image)
+    })
+    .await
+    .map_err(|e| format!("找脸任务失败: {e}"))?
+}

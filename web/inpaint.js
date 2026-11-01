@@ -53,6 +53,16 @@ function exitMaskMode() {
 }
 
 function drawStroke(ctx, stroke, color = "rgba(255,70,70,0.5)") {
+  if (stroke.ellipse) {
+    // 「自动圈脸」用的一次性椭圆（不可擦、不可拖，撤销就没了）
+    const e = stroke.ellipse;
+    ctx.globalCompositeOperation = "source-over";
+    ctx.fillStyle = color;
+    ctx.beginPath();
+    ctx.ellipse(e.cx, e.cy, e.rx, e.ry, 0, 0, Math.PI * 2);
+    ctx.fill();
+    return;
+  }
   const pts = stroke.points;
   if (!pts.length) return;
   ctx.globalCompositeOperation = stroke.erase ? "destination-out" : "source-over";
@@ -94,6 +104,44 @@ function exportMaskDataUrl() {
   ctx.fillStyle = "#000000";
   ctx.fillRect(0, 0, c.width, c.height);
   return c.toDataURL("image/png");
+}
+
+// ---------------------------------------------------------------- 自动圈脸（只盖脸的椭圆）
+//
+// 为什么要有这个：局部重绘的效果八成取决于蒙版（docs/57 §6 那次的教训是蒙版贪大，
+// 把头发和发簪一起画了）。这里用本机视觉模型找一个脸框，再按框画椭圆——
+// 比手涂稳定，也比「按比例猜」靠谱。模型会晚一点点（几秒），失败就让人自己涂。
+async function autoFaceMask() {
+  const it = viewer.list[viewer.idx];
+  if (!it || !maskState.active) return;
+  const btn = $("maskFace");
+  const old = btn.textContent;
+  btn.disabled = true;
+  btn.textContent = "找脸中…";
+  try {
+    const dataUrl = await api.call("image_data_url", { path: it.path });
+    const name = await api.call("save_ref_image", { name: "face_detect_src.png", dataUrl });
+    const box = await api.call("face_detect", { image: name });
+    const [x, y, w, h] = box.bbox;
+    const W = maskState.w;
+    const H = maskState.h;
+    // 模型给的是「整个头」的框（含头发），要往里收成脸：
+    // 水平取中间 60%，垂直从 42% 到 100%（发际线以下到下巴）——不这么收会把发簪一起重画。
+    const cx = (x + w / 2) * W;
+    const top = (y + h * 0.42) * H;
+    const bottom = (y + h) * H;
+    const rx = w * 0.30 * W;
+    const ry = ((bottom - top) / 2) * 1.05;
+    const cy = (top + bottom) / 2;
+    maskState.strokes.push({ ellipse: { cx, cy, rx, ry } });
+    redrawMask();
+    toast("已圈脸——大小不合适就撤销后手涂");
+  } catch (e) {
+    toast(`没圈上：${e}`, true);
+  } finally {
+    btn.disabled = false;
+    btn.textContent = old;
+  }
 }
 
 function maskPoint(e) {
@@ -271,6 +319,7 @@ $("maskErase").onclick = () => {
   maskState.erase = !maskState.erase;
   $("maskErase").classList.toggle("primary", maskState.erase);
 };
+$("maskFace").onclick = () => autoFaceMask();
 $("maskUndo").onclick = () => {
   maskState.strokes.pop();
   redrawMask();

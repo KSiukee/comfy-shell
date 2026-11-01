@@ -219,6 +219,7 @@ fn main() {
             commands::ai::layout_draft,
             commands::ai::analyze_image,
             commands::ai::layout_detect,
+            commands::ai::face_detect,
             commands::training_files::train_lora_files,
             commands::training_kohya::train_kohya_files,
             commands::ai::story_split,

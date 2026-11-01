@@ -325,14 +325,44 @@ pub fn analyze(port: u16, image: &str) -> Result<String, String> {
 /// The boxes are a starting draft (the model is a few percent off), meant to be
 /// dragged; `layout_detect` therefore never touches the prompt or the canvas size.
 pub fn detect_layout(port: u16, image: &str) -> Result<Vec<Value>, String> {
+    detect_boxes(port, image, GROUND_PROMPT, 700)
+}
+
+/// 只找人脸：给「自动圈脸」（局部重绘的蒙版预置）用。返回 {type,desc,text,bbox}，bbox 是归一化 x,y,w,h。
+const FACE_PROMPT: &str = r#"Find the face of the main person in this image.
+Return ONLY one JSON object, no markdown, no prose:
+{"items":[{"label":"face","caption":"short English description","content":"","bbox":[x0,y0,x1,y1]}]}
+Rules:
+- exactly ONE item: the face (hairline to chin, ear to ear), not the whole head, not the body
+- bbox MUST be 4 integers normalized to 0-1000, origin top-left, x0<x1, y0<y1, tight around the face
+- if no human face is visible, return {"items":[]}
+"#;
+
+pub fn detect_face(port: u16, image: &str) -> Result<Value, String> {
+    let items = detect_boxes(port, image, FACE_PROMPT, 300)?;
+    // 模型偶尔会把整个人也框进来：取面积最大的那个（脸比误框的身形更贴合重绘需求）
+    let area = |v: &Value| -> f64 {
+        v.get("bbox")
+            .and_then(|x| x.as_array())
+            .filter(|a| a.len() == 4)
+            .map(|a| a[2].as_f64().unwrap_or(0.0) * a[3].as_f64().unwrap_or(0.0))
+            .unwrap_or(0.0)
+    };
+    items
+        .into_iter()
+        .max_by(|a, b| area(a).partial_cmp(&area(b)).unwrap_or(std::cmp::Ordering::Equal))
+        .ok_or_else(|| "没找到人脸（这张图里可能没有人）".to_string())
+}
+
+fn detect_boxes(port: u16, image: &str, prompt: &str, max_len: i64) -> Result<Vec<Value>, String> {
     let wf = json!({
         "1": {"class_type": "LoadImage", "inputs": {"image": image}},
         "2": {"class_type": "CLIPLoader",
               "inputs": {"clip_name": "qwen3vl_8b_int8_convrot.safetensors",
                          "type": "qwen_image", "device": "default"}},
         "3": {"class_type": "TextGenerate",
-              "inputs": {"clip": ["2", 0], "prompt": GROUND_PROMPT, "image": ["1", 0],
-                         "max_length": 700, "sampling_mode": "off"}},
+              "inputs": {"clip": ["2", 0], "prompt": prompt, "image": ["1", 0],
+                         "max_length": max_len, "sampling_mode": "off"}},
         "4": {"class_type": "PreviewAny", "inputs": {"source": ["3", 0]}},
     });
     let outputs = api::run_raw(port, wf, 600)?;
