@@ -130,6 +130,77 @@ async function startInpaint() {
   $("inpaintPrompt").focus();
 }
 
+// ---------------------------------------------------------------- 角色底板当参考（自动裁脸）
+//
+// 为什么要在前端裁一刀：整身底板里脸只有 ~100px，当参考时身份信号太弱，
+// 重绘出来的脸会「像但不真像」；裁成 512 的大头再喂，效果明显更稳（实测见 docs/57）。
+// 裁剪比例按 3:4 全身底板（人基本居中）估的：水平 32%-70%、垂直 6%-30%。
+let inpaintRefName = "";
+
+async function inpaintPlateFaceDataUrl(platePath) {
+  const dataUrl = await api.call("image_data_url", { path: platePath });
+  const img = new Image();
+  await new Promise((res, rej) => {
+    img.onload = res;
+    img.onerror = rej;
+    img.src = dataUrl;
+  });
+  const w = img.naturalWidth;
+  const h = img.naturalHeight;
+  const box = { x: 0.32, y: 0.06, w: 0.38, h: 0.24 };
+  const c = document.createElement("canvas");
+  c.width = 512;
+  c.height = 512;
+  c.getContext("2d").drawImage(
+    img,
+    Math.round(w * box.x),
+    Math.round(h * box.y),
+    Math.round(w * box.w),
+    Math.round(h * box.h),
+    0,
+    0,
+    512,
+    512,
+  );
+  return c.toDataURL("image/png");
+}
+
+async function pickCharacterPlate() {
+  try {
+    const list = await api.call("character_list", { project: charProjectId() || null });
+    if (!list.length) return null;
+    const cur = window.charCurrent && charCurrent && charCurrent.id ? charCurrent : null;
+    const card = (cur && list.find((c) => c.id === cur.id)) || list[0];
+    return card.identityPlate ? card : null;
+  } catch {
+    return null;
+  }
+}
+
+async function inpaintUsePlate() {
+  const card = await pickCharacterPlate();
+  if (!card) {
+    toast("还没有带底板的角色卡：先去「角色卡」建一个并点「出底板」", true);
+    return;
+  }
+  const btn = $("inpaintUsePlate");
+  btn.disabled = true;
+  const old = btn.textContent;
+  btn.textContent = "裁脸中…";
+  try {
+    const dataUrl = await inpaintPlateFaceDataUrl(card.identityPlate);
+    inpaintRefName = await api.call("save_ref_image", { name: "plate_face_ref.png", dataUrl });
+    $("inpaintRefState").textContent = `参考：${card.name} 的底板（已裁脸）`;
+    $("inpaintUseRef").checked = true;
+    toast(`已用「${card.name}」的底板裁出脸当参考`);
+  } catch (e) {
+    toast(String(e), true);
+  } finally {
+    btn.disabled = false;
+    btn.textContent = old;
+  }
+}
+
 async function runInpaint() {
   const it = viewer.list[viewer.idx];
   const prompt = $("inpaintPrompt").value.trim();
@@ -141,10 +212,18 @@ async function runInpaint() {
   const target = p && p.supportsEdit ? p : state.profiles.find((x) => x.id === "qwen21");
   const maskDataUrl = exportMaskDataUrl();
   let refImageDataUrl = null;
-  if ($("inpaintUseRef").checked && state.refs.length) {
-    try {
-      refImageDataUrl = await api.call("read_input_image", { name: state.refs[0] });
-    } catch {}
+  if ($("inpaintUseRef").checked) {
+    // 优先用「自动裁脸」那张（身份信号强得多），没有再退回当前参考图
+    if (inpaintRefName) {
+      try {
+        refImageDataUrl = await api.call("read_input_image", { name: inpaintRefName });
+      } catch {}
+    }
+    if (!refImageDataUrl && state.refs.length) {
+      try {
+        refImageDataUrl = await api.call("read_input_image", { name: state.refs[0] });
+      } catch {}
+    }
   }
   const btn = $("inpaintGo");
   btn.disabled = true;
@@ -202,6 +281,7 @@ $("maskClear").onclick = () => {
 };
 $("maskCancel").onclick = exitMaskMode;
 $("maskStart").onclick = startInpaint;
+$("inpaintUsePlate").onclick = () => inpaintUsePlate();
 $("inpaintCancel").onclick = () => ($("inpaintModal").hidden = true);
 $("inpaintGo").onclick = runInpaint;
 
