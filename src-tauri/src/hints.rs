@@ -25,13 +25,22 @@ const STOPWORDS: &[&str] = &[
 
 #[derive(Serialize, Clone, Debug, PartialEq)]
 #[serde(rename_all = "camelCase")]
+pub struct PhraseProject {
+    pub id: String,
+    pub count: u32,
+}
+
+#[derive(Serialize, Clone, Debug, PartialEq)]
+#[serde(rename_all = "camelCase")]
 pub struct Phrase {
     pub text: String,
-    /// 出现次数（同一条提示词里重复也只算一次）
+    /// 出现次数（同一条提示词里重复也算）
     pub count: u32,
     /// 出现在几条提示词里
     pub sources: u32,
     pub last_ts: u64,
+    /// 来自哪些项目（老记录没有项目字段 ⇒ id 为空串的那个）
+    pub projects: Vec<PhraseProject>,
 }
 
 fn is_stopword(s: &str) -> bool {
@@ -111,14 +120,26 @@ fn windows(seg: &str) -> Vec<String> {
     out
 }
 
-/// 挖短语。`project` 为 Some 时只看那个项目自己生成的记录（老记录没有项目字段，算"全局"）。
-pub fn mine(items: &[HistoryItem], project: Option<&str>, hidden: &[String]) -> Vec<Phrase> {
-    let mut acc: HashMap<String, (u32, u32, u64)> = HashMap::new();
+/// 挖短语。
+///
+/// - `project` 为 Some 时只看那个项目自己生成的记录（老记录没有项目字段，算"全局"）。
+/// - `excluded` 里的项目**完全不参与**（不管它是明文、隐藏还是锁定项目，都按 id 排除）。
+pub fn mine(
+    items: &[HistoryItem],
+    project: Option<&str>,
+    hidden: &[String],
+    excluded: &[String],
+) -> Vec<Phrase> {
+    let mut acc: HashMap<String, (u32, u32, u64, HashMap<String, u32>)> = HashMap::new();
     for item in items {
         if let Some(p) = project {
             if item.project.as_deref() != Some(p) {
                 continue;
             }
+        }
+        let pid = item.project.clone().unwrap_or_default();
+        if !pid.is_empty() && excluded.iter().any(|e| e == &pid) {
+            continue;
         }
         // 一条提示词里出现几次（同一条里重复也算），以及它算不算"这条提示词里出现过"
         let mut occ: HashMap<String, u32> = HashMap::new();
@@ -131,17 +152,25 @@ pub fn mine(items: &[HistoryItem], project: Option<&str>, hidden: &[String]) -> 
             }
         }
         for (w, n) in occ {
-            let e = acc.entry(w).or_insert((0, 0, 0));
+            let e = acc.entry(w).or_insert_with(|| (0, 0, 0, HashMap::new()));
             e.0 += n; // 出现次数
             e.1 += 1; // 来源条数
             e.2 = e.2.max(item.ts);
+            *e.3.entry(pid.clone()).or_insert(0) += n;
         }
     }
 
     let mut list: Vec<Phrase> = acc
         .into_iter()
-        .filter(|(_, (c, s, _))| *c >= MIN_COUNT && *s >= MIN_SOURCES)
-        .map(|(text, (count, sources, last_ts))| Phrase { text, count, sources, last_ts })
+        .filter(|(_, (c, s, _, _))| *c >= MIN_COUNT && *s >= MIN_SOURCES)
+        .map(|(text, (count, sources, last_ts, by_project))| {
+            let mut projects: Vec<PhraseProject> = by_project
+                .into_iter()
+                .map(|(id, count)| PhraseProject { id, count })
+                .collect();
+            projects.sort_by(|a, b| b.count.cmp(&a.count).then(a.id.cmp(&b.id)));
+            Phrase { text, count, sources, last_ts, projects }
+        })
         .collect();
 
     // 长的优先：被更长候选完全覆盖、且次数没明显更多的短词，就别占位置。
@@ -193,7 +222,7 @@ mod tests {
             item(3, "浅景深电影感，室内窗光", None),
             item(4, "只出现一次的特殊短语", None),
         ];
-        let out = mine(&items, None, &[]);
+        let out = mine(&items, None, &[], &[]);
         let texts: Vec<&str> = out.iter().map(|p| p.text.as_str()).collect();
         assert!(texts.contains(&"浅景深电影感"), "重复三次的短语要挖出来：{texts:?}");
         assert!(!texts.iter().any(|t| t.contains("特殊短语")), "只出现一次的不能挖出来");
@@ -206,7 +235,7 @@ mod tests {
             item(2, "一个女孩，一个男孩，画面质感", None),
             item(3, "一个女孩，一个男孩，画面质感", None),
         ];
-        let out = mine(&items, None, &[]);
+        let out = mine(&items, None, &[], &[]);
         assert!(out.is_empty(), "泛词全被停用词挡掉，实际：{:?}", out);
 
         let items2 = vec![
@@ -214,7 +243,7 @@ mod tests {
             item(2, "雨夜霓虹倒影", None),
             item(3, "雨夜霓虹倒影", None),
         ];
-        let out2 = mine(&items2, None, &["雨夜霓虹倒影".to_string()]);
+        let out2 = mine(&items2, None, &["雨夜霓虹倒影".to_string()], &[]);
         assert!(out2.is_empty(), "手动隐藏的短语不该再出现");
     }
 
@@ -227,12 +256,37 @@ mod tests {
             item(4, "项目A特有的短语组合", Some("b")),
             item(5, "项目A特有的短语组合", None),
         ];
-        let only_a = mine(&items, Some("a"), &[]);
+        let only_a = mine(&items, Some("a"), &[], &[]);
         assert!(only_a.iter().any(|p| p.text == "项目A特有的短语组合"));
         let p = only_a.iter().find(|p| p.text == "项目A特有的短语组合").unwrap();
         assert_eq!(p.count, 3, "别的项目与老记录都不算进 a");
-        let all = mine(&items, None, &[]);
+        let all = mine(&items, None, &[], &[]);
         let p2 = all.iter().find(|p| p.text == "项目A特有的短语组合").unwrap();
         assert_eq!(p2.count, 5);
+        // 来源项目按次数排，老记录（无项目）的 id 是空串
+        assert_eq!(p2.projects.len(), 3);
+        assert_eq!(p2.projects[0].id, "a");
+        assert_eq!(p2.projects[0].count, 3);
+        assert!(p2.projects.iter().any(|x| x.id.is_empty() && x.count == 1));
+    }
+
+    #[test]
+    fn excluded_projects_never_contribute() {
+        let items = vec![
+            item(1, "被排除项目里的常用短语", Some("secret")),
+            item(2, "被排除项目里的常用短语", Some("secret")),
+            item(3, "被排除项目里的常用短语", Some("secret")),
+            item(4, "被排除项目里的常用短语", Some("ok")),
+            item(5, "被排除项目里的常用短语", Some("ok")),
+            item(6, "被排除项目里的常用短语", Some("ok")),
+        ];
+        let with = mine(&items, None, &[], &[]);
+        assert_eq!(with[0].count, 6);
+        let without = mine(&items, None, &[], &["secret".to_string()]);
+        assert_eq!(without[0].count, 3, "被排除项目的 3 条不该算进来");
+        assert!(without[0].projects.iter().all(|p| p.id != "secret"));
+        // 剩下的不够门槛（只剩 2 条）⇒ 整条消失
+        let gone = mine(&items[3..5], None, &[], &[]);
+        assert!(gone.is_empty());
     }
 }

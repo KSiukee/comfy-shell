@@ -29,6 +29,43 @@ function adderProjectId() {
   return window.projectUI && window.projectUI.current ? window.projectUI.current() : "";
 }
 
+const PHRASE_EXCLUDE = "cs.phraseExcludeProjects";
+
+function phraseExcluded() {
+  try {
+    const v = JSON.parse(localStorage.getItem(PHRASE_EXCLUDE) || "[]");
+    return Array.isArray(v) ? v : [];
+  } catch {
+    return [];
+  }
+}
+
+function phraseExclude(id) {
+  const list = phraseExcluded();
+  if (!id || list.includes(id)) return;
+  list.push(id);
+  localStorage.setItem(PHRASE_EXCLUDE, JSON.stringify(list));
+}
+
+function phraseRestore(id) {
+  const list = phraseExcluded().filter((x) => x !== id);
+  localStorage.setItem(PHRASE_EXCLUDE, JSON.stringify(list));
+}
+
+/// 项目 id → 名字；老记录没有项目（id 空串）显示成「早先的记录」。
+function phraseProjectName(id) {
+  if (!id) return "早先的记录";
+  const list = (window.projectUI && window.projectUI.list ? window.projectUI.list() : []) || [];
+  const p = list.find((x) => x.id === id);
+  return p ? p.name || p.id : id;
+}
+
+function phraseSourceText(it) {
+  const parts = (it.projects || []).slice(0, 4).map((p) => phraseProjectName(p.id));
+  const more = (it.projects || []).length > 4 ? ` 等 ${it.projects.length} 个` : "";
+  return parts.length ? `来自 ${parts.join("、")}${more}` : "";
+}
+
 function adderFavs() {
   try {
     const v = JSON.parse(localStorage.getItem(ADDER_FAV) || "[]");
@@ -167,9 +204,20 @@ async function renderAdders() {
       const rows = await api.call("phrase_mine", {
         project: adderMineAll ? null : adderProjectId() || null,
         hidden: phraseHidden(),
+        excluded: phraseExcluded(),
       });
       items = (rows || [])
-        .map((r) => ({ n: r.text, zh: r.text, en: r.text, g: "", cat: "mine", mine: true, count: r.count, sources: r.sources }))
+        .map((r) => ({
+          n: r.text,
+          zh: r.text,
+          en: r.text,
+          g: "",
+          cat: "mine",
+          mine: true,
+          count: r.count,
+          sources: r.sources,
+          projects: r.projects || [],
+        }))
         .filter(adderMatches);
     } catch (e) {
       items = [];
@@ -204,6 +252,33 @@ async function renderAdders() {
     }
     return;
   }
+  if (adderCat === "mine") {
+    const ex = phraseExcluded();
+    if (ex.length) {
+      const row = document.createElement("div");
+      row.className = "row tight";
+      row.style.gridColumn = "1 / -1";
+      row.style.flexWrap = "wrap";
+      const lab = document.createElement("span");
+      lab.className = "muted";
+      lab.style.fontSize = "11.5px";
+      lab.textContent = "已排除的项目：";
+      row.appendChild(lab);
+      for (const id of ex) {
+        const chip = document.createElement("button");
+        chip.type = "button";
+        chip.className = "style-chip on";
+        chip.textContent = `${phraseProjectName(id)} ×`;
+        chip.title = "点一下恢复这个项目的挖掘";
+        chip.onclick = () => {
+          phraseRestore(id);
+          renderAdders();
+        };
+        row.appendChild(chip);
+      }
+      box.appendChild(row);
+    }
+  }
   for (const it of items) {
     const card = document.createElement("div");
     card.className = "expr-card";
@@ -211,7 +286,12 @@ async function renderAdders() {
     const name = document.createElement("b");
     name.textContent = it.n;
     const desc = document.createElement("span");
-    desc.textContent = it.mine ? `出现 ${it.count} 次 · 跨 ${it.sources} 条提示词` : adderText(it);
+    if (it.mine) {
+      const src = phraseSourceText(it);
+      desc.textContent = `出现 ${it.count} 次 · 跨 ${it.sources} 条${src ? " · " + src : ""}`;
+    } else {
+      desc.textContent = adderText(it);
+    }
     const star = document.createElement("button");
     star.type = "button";
     if (it.mine) {
@@ -234,6 +314,36 @@ async function renderAdders() {
       };
     }
     card.append(name, desc, star);
+    if (it.mine && (it.projects || []).length) {
+      const srcRow = document.createElement("div");
+      srcRow.className = "phrase-src";
+      for (const p of it.projects.slice(0, 4)) {
+        const label = `${phraseProjectName(p.id)} ${p.count}`;
+        if (!p.id) {
+          // 老记录没有项目信息，排除不了，就不做成可点的
+          const span = document.createElement("span");
+          span.className = "phrase-src-chip";
+          span.style.cursor = "default";
+          span.textContent = label;
+          span.title = "早先的记录没有项目信息，没法按项目排除";
+          srcRow.appendChild(span);
+          continue;
+        }
+        const chip = document.createElement("button");
+        chip.type = "button";
+        chip.className = "phrase-src-chip";
+        chip.textContent = label;
+        chip.title = "点一下：把这个项目从挖掘里排除";
+        chip.onclick = (e) => {
+          e.stopPropagation();
+          phraseExclude(p.id);
+          toast(`已排除「${phraseProjectName(p.id)}」的挖掘`);
+          renderAdders();
+        };
+        srcRow.appendChild(chip);
+      }
+      card.appendChild(srcRow);
+    }
     card.onclick = () => adderApply(it);
     box.appendChild(card);
   }
