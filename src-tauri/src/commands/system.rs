@@ -249,6 +249,27 @@ pub fn save_ref_image(state: State<AppState>, name: String, data_url: String) ->
     Ok(filename)
 }
 
+/// 把 ComfyUI/input 里的一张参考图读成 dataURL（参考图补白要用它读原图）。
+#[tauri::command]
+pub fn ref_preview(state: State<AppState>, name: String) -> Result<String, String> {
+    let root = state.settings.lock().unwrap().comfy_root.clone();
+    let dir = std::path::PathBuf::from(&root).join("ComfyUI").join("input");
+    let safe: String = name
+        .chars()
+        .map(|c| if c.is_ascii_alphanumeric() || c == '.' || c == '-' || c == '_' { c } else { '_' })
+        .collect();
+    let path = dir.join(&safe);
+    let bytes = std::fs::read(&path).map_err(|e| format!("读不到参考图 {safe}: {e}"))?;
+    use base64::Engine as _;
+    let b64 = base64::engine::general_purpose::STANDARD.encode(bytes);
+    let mime = if safe.to_lowercase().ends_with(".jpg") || safe.to_lowercase().ends_with(".jpeg") {
+        "image/jpeg"
+    } else {
+        "image/png"
+    };
+    Ok(format!("data:{mime};base64,{b64}"))
+}
+
 
 #[tauri::command]
 pub fn read_input_image(state: State<AppState>, name: String) -> Result<String, String> {

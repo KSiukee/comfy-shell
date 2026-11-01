@@ -131,6 +131,7 @@ fn main() {
             commands::system::models_list,
             commands::system::profiles,
             commands::system::save_ref_image,
+            commands::system::ref_preview,
             commands::system::read_input_image,
             pose::pose_pack_list,
             pose::poses_catalog,
