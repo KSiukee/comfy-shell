@@ -3,6 +3,16 @@
 > 本文件是补写的更新历史：最早十二个版本没有当时的发布记录，依据 `dev/test_*.py`、截图、README 旧版与代码痕迹重建，
 > 标注「推断」的条目细节可能有偏差；有发布记录之后为当时实测记录。
 
+## v0.92.0
+- **Kromoss 8 步接进壳（#59）**：模型下拉多一档 **「Kromoss 8 步（MOSS 微调 · 约 6 秒/张）」**。
+  - Kromoss = MOSS-Image-Base 全量微调（int8 5.04 GB），配官方 8 步 DMD Turbo LoRA（1.1 GB）。
+  - 同提示词同种子：MOSS SFT 50 步 **42.2 秒** → Kromoss 8 步 **6.0 秒**（细节偏软，草稿档）。
+  - 8 步 Turbo LoRA **写死在链路里**（不挂它 8 步 CFG 1 会糊），不依赖「turbo」勾选框；单测守着。
+  - CFG 1 ⇒ 负面词无效（与 FLUX.3 蒸馏同一条规律）。
+- **实测登记、暂不进产品**：
+  - **MAX ULTRA hires**（comfyanonymous 的 LoHa 实验件）：2048² 4.2MP 25 步 **123.6 秒**能出，16GB 显存没炸；带与不带 LoRA 在这一张对照里看不出差别，要更多样本才敢说有用。
+  - **CharRef v2**：单图锁角色，实测拿写实汉服底板仍**换脸**（作者自述 anime 训练、写实脸会漂）⇒ 对写实角色卡无效，二次元可留备选。
+- 单测 67（+1：Kromoss 必须挂上 8 步 Turbo LoRA）；冒烟 49。详见 `docs/59-Kromoss-高清-CharRef-实测-20261101.md`。
 ## v0.91.0
 - **MOSS 二编接进壳（#58）**：模型下拉多一档 **「MOSS-Image 编辑（指令改衣/改色/改光）」**。
   - 走 ComfyUI 0.43 的官方通路：`LoraLoaderModelOnly`(编辑 LoRA) + `TextEncodeMOSSImageEdit`（`edit_format=Moss-Image-Edit`）+ `SkipLayerGuidanceDiTSimple(22)`。

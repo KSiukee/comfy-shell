@@ -293,6 +293,23 @@ pub fn profile(name: &str) -> Option<Profile> {
             shift: None,
         },
         // MOSS 二编（ComfyUI 0.43 官方 MOSS-Image Edit 通路）：
+        // Kromoss = MOSS-Image-Base 的全量微调（lodestones），配官方 8 步 DMD Turbo LoRA：
+        // 1024² 实测 6 秒/张（MOSS SFT 50 步要 42-66 秒）。草稿档：细节比满步软。
+        "kromoss" => Profile {
+            unet: "kromoss_int8_convrot.safetensors",
+            clip: "qwen3.5_9b_int8_convrot.safetensors",
+            clip_type: "moss_image",
+            vae: "flux2-vae_small.safetensors",
+            sampler: "euler",
+            steps: 8,
+            cfg: 1.0,
+            turbo_lora: None,
+            turbo_steps: 8,
+            supports_edit: false,
+            default_negative: "nsfw, worst quality, bad anatomy, watermark, jpeg artifact",
+            label: "Kromoss 8 步（MOSS 微调 · 约 6 秒/张）",
+            shift: None,
+        },
         // 文本编码器必须带 Qwen3.5 视觉权重，所以这里用官方的 qwen3.5_9b，
         // 不跟其他 MOSS 档共用 heretic 版。见 docs/58-MOSS二编-接入-20261101.md
         "mossedit" => Profile {
@@ -316,7 +333,7 @@ pub fn profile(name: &str) -> Option<Profile> {
 
 pub fn profiles_json() -> Value {
     let mut out = Vec::new();
-    for name in ["qwen21", "flux3", "flux3base", "moss", "mossbase", "mossimagine", "mossedit"] {
+    for name in ["qwen21", "flux3", "flux3base", "moss", "mossbase", "mossimagine", "mossedit", "kromoss"] {
         if let Some(p) = profile(name) {
             out.push(json!({
                 "id": name,
@@ -335,6 +352,9 @@ pub fn profiles_json() -> Value {
 
 /// MOSS 二编用的编辑 LoRA（Comfy-Org 打包版，从 chinoll/Moss-Image-Edit 转来）。
 pub const MOSS_EDIT_LORA: &str = "moss_image_edit_lora_rank_64_bf16.safetensors";
+
+/// Kromoss 的 8 步 DMD Turbo LoRA（lodestones/Kromoss 官方配套）。
+pub const KROMOSS_TURBO_LORA: &str = "kromoss_8steps_dmd_lora.safetensors";
 
 /// Resolve the effective LoRA: explicit pick wins, otherwise the turbo LoRA when asked.
 fn lora_node(model_src: &str, req: &GenReq, p: &Profile, turbo: bool) -> (Option<String>, String) {
@@ -397,6 +417,16 @@ pub fn build_graph(req: &GenReq, turbo: bool) -> Result<Value, String> {
             json!({"class_type": "QwenImage21Cache", "inputs": {"model": ["1", 0], "device": "auto", "dtype": "default"}}),
         );
         model_src = "2".into();
+    }
+    // Kromoss 的 8 步 Turbo LoRA 是必需件：不挂它，8 步 + CFG 1 会糊。
+    // 所以写死在链路里，不靠「turbo」勾选框。
+    if req.profile == "kromoss" {
+        g.insert(
+            "30".into(),
+            json!({"class_type": "LoraLoaderModelOnly", "inputs": {
+                "model": [model_src.clone(), 0], "lora_name": KROMOSS_TURBO_LORA, "strength_model": 1.0}}),
+        );
+        model_src = "30".into();
     }
     // MOSS 二编（官方 0.43 通路）：编辑 LoRA 先挂，再走 SLG 的 Simple 版。
     // 顺序照官方示例：UNET -> LoRA -> SkipLayerGuidanceDiTSimple -> KSampler。
@@ -1263,8 +1293,19 @@ mod tests {
     }
 
     #[test]
+    fn kromoss_always_applies_its_8_step_lora() {
+        let mut r = base("kromoss", &[]);
+        r.mode = "t2i".into();
+        let g = build_graph(&r, false).unwrap();
+        assert_eq!(g["30"]["class_type"], "LoraLoaderModelOnly");
+        assert_eq!(g["30"]["inputs"]["lora_name"], KROMOSS_TURBO_LORA);
+        assert_eq!(g["8"]["inputs"]["model"], json!(["30", 0]), "KSampler 必须用到挂了 Turbo 的模型");
+        // 没挂参考图：走普通文生图两路编码
+        assert_eq!(g["5"]["class_type"], "CLIPTextEncode");
+    }
+
+    #[test]
     fn flux_edit_keeps_its_own_path() {
-        // 回归：别的档不能因为这次改动走到 MOSS 的节点上
         let g = build_graph(&base("flux3", &["ref.png"]), false).unwrap();
         assert_eq!(g["7"]["class_type"], "ReferenceMultiLatent");
         assert!(g.get("31").is_none());
