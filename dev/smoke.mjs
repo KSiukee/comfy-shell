@@ -110,6 +110,7 @@ try {
   check("模型管理窗在", (await evaluate("!!document.getElementById('modelsModal')")) === true);
   check("表情辅助入口在", (await evaluate("!!document.getElementById('exprBtn')")) === true);
   check("常用短语模块在", (await evaluate("typeof phraseHidden === 'function'")) === true);
+  check("添加器分组在", (await evaluate("typeof adderBuildTabs === 'function'")) === true);
   check("内联补全在", (await evaluate("typeof pbInit === 'function'")) === true);
   check("表情辅助窗在", (await evaluate("!!document.getElementById('exprModal')")) === true);
   const layoutErr = await evaluate(

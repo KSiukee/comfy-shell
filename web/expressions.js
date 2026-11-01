@@ -102,11 +102,17 @@ async function adderLoad() {
     {
       key: "expr",
       label: "表情",
+      group: "人物",
       items: expr.items.map((it) => ({ n: it.n, zh: it.zh, en: it.en || it.zh, g: it.g })),
     },
   ];
   for (const c of adders.categories) {
-    cats.push({ key: c.key, label: c.label, items: c.items.map((it) => ({ n: it.n, zh: it.zh, en: it.en || it.zh, g: "" })) });
+    cats.push({
+      key: c.key,
+      label: c.label,
+      group: c.group || "视觉",
+      items: c.items.map((it) => ({ n: it.n, zh: it.zh, en: it.en || it.zh, g: "" })),
+    });
   }
   adderData = cats;
   return cats;
@@ -167,36 +173,20 @@ async function renderAdders() {
     return;
   }
   if (!adderCat) adderCat = "expr";
-  tabs.textContent = "";
-  const favN = adderFavs().length;
-  const buttons = [
-    { key: "fav", label: `★ 收藏 ${favN}` },
-    { key: "mine", label: "我的用语" },
-    ...cats.map((c) => ({ key: c.key, label: `${c.label} ${c.items.length}` })),
-  ];
-  for (const b of buttons) {
-    const btn = document.createElement("button");
-    btn.type = "button";
-    btn.className = "style-chip" + ((adderCat || "expr") === b.key ? " on" : "");
-    btn.textContent = b.label;
-    btn.onclick = () => {
-      adderCat = b.key;
+  adderBuildTabs(tabs, cats, {
+    cat: adderCat,
+    lang: adderLang,
+    favCount: adderFavs().length,
+    onPick: (key) => {
+      adderCat = key;
       renderAdders();
-    };
-    tabs.appendChild(btn);
-  }
-  for (const lang of ["zh", "en"]) {
-    const btn = document.createElement("button");
-    btn.type = "button";
-    btn.className = "style-chip expr-lang" + (adderLang === lang ? " on" : "");
-    btn.textContent = lang === "zh" ? "中文" : "EN";
-    btn.onclick = () => {
+    },
+    onLang: (lang) => {
       adderLang = lang;
       localStorage.setItem("cs.adderLang", lang);
       renderAdders();
-    };
-    tabs.appendChild(btn);
-  }
+    },
+  });
 
   let items;
   if (adderCat === "mine") {

@@ -717,6 +717,8 @@ body.mode-pro .simple-only { display: none !important; }
 .phrase-src { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 2px; }
 .phrase-src-chip { font-size: 10.5px; padding: 1px 6px; border-radius: 5px; border: 1px solid #2a3242; background: #131a26; color: #8fa0bd; cursor: pointer; font-family: inherit; }
 .phrase-src-chip:hover { border-color: #3f4f78; color: #c9d6ea; }
+.adder-row { margin-bottom: 6px; }
+.adder-group.on { background: #23304a; border-color: #3d5480; }
 #exprTabs { flex-wrap: wrap; row-gap: 6px; }
 .expr-lang { min-width: 46px; }
 

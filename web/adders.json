@@ -1,193 +1,1519 @@
 {
-  "note": "提示词添加器：光线 / 构图 / 镜头 / 机位。每条都是可直接接在提示词后面的短句，中英双语。",
+  "note": "提示词添加器：按「视觉 / 人物 / 环境 / 风格」分组，共 20 类。每条都是可直接接在提示词后面的短句，中英双语。",
   "categories": [
     {
       "key": "light",
       "label": "光线",
       "items": [
-        { "n": "侧光", "zh": "侧光，明暗交界落在脸上", "en": "side lighting, shadow line across the face" },
-        { "n": "逆光", "zh": "逆光，边缘一圈轮廓光", "en": "backlit, rim light along the silhouette" },
-        { "n": "伦勃朗光", "zh": "伦勃朗光，脸侧三角光斑", "en": "Rembrandt lighting, triangle of light on the cheek" },
-        { "n": "蝴蝶光", "zh": "蝴蝶光，鼻下蝴蝶形阴影", "en": "butterfly lighting, butterfly shadow under the nose" },
-        { "n": "分割光", "zh": "分割光，脸一半亮一半暗", "en": "split lighting, half the face in shadow" },
-        { "n": "窗光", "zh": "柔和窗光，从侧面斜进来", "en": "soft window light from the side" },
-        { "n": "黄金时刻", "zh": "黄金时刻，暖色低角度阳光", "en": "golden hour, warm low sun" },
-        { "n": "蓝调时刻", "zh": "蓝调时刻，冷蓝环境光", "en": "blue hour, cold ambient light" },
-        { "n": "阴天柔光", "zh": "阴天柔光，几乎没有硬阴影", "en": "overcast soft light, no hard shadows" },
-        { "n": "硬光", "zh": "硬光，边界清晰的投影", "en": "hard light, crisp-edged shadows" },
-        { "n": "霓虹光", "zh": "霓虹光，粉蓝色块打在脸上", "en": "neon glow, pink and blue light on the face" },
-        { "n": "烛光", "zh": "烛光，暖橙色跳动光", "en": "candlelight, warm flickering glow" },
-        { "n": "顶光", "zh": "顶部光，眼窝带阴影", "en": "top light, shadows under the brow" },
-        { "n": "底光", "zh": "底光，从下方打上来", "en": "uplight from below" },
-        { "n": "丁达尔光", "zh": "丁达尔光，空气里有光柱", "en": "volumetric god rays through the air" },
-        { "n": "剪影", "zh": "剪影，主体全黑只留轮廓", "en": "silhouette, subject fully dark against the light" },
-        { "n": "光斑", "zh": "树叶漏下的斑驳光斑", "en": "dappled light through leaves" },
-        { "n": "混合色温", "zh": "冷背景暖主体，色温对比", "en": "mixed color temperature, warm subject against cool background" }
-      ]
+        {
+          "n": "侧光",
+          "zh": "侧光，明暗交界落在脸上",
+          "en": "side lighting, shadow line across the face"
+        },
+        {
+          "n": "逆光",
+          "zh": "逆光，边缘一圈轮廓光",
+          "en": "backlit, rim light along the silhouette"
+        },
+        {
+          "n": "伦勃朗光",
+          "zh": "伦勃朗光，脸侧三角光斑",
+          "en": "Rembrandt lighting, triangle of light on the cheek"
+        },
+        {
+          "n": "蝴蝶光",
+          "zh": "蝴蝶光，鼻下蝴蝶形阴影",
+          "en": "butterfly lighting, butterfly shadow under the nose"
+        },
+        {
+          "n": "分割光",
+          "zh": "分割光，脸一半亮一半暗",
+          "en": "split lighting, half the face in shadow"
+        },
+        {
+          "n": "窗光",
+          "zh": "柔和窗光，从侧面斜进来",
+          "en": "soft window light from the side"
+        },
+        {
+          "n": "黄金时刻",
+          "zh": "黄金时刻，暖色低角度阳光",
+          "en": "golden hour, warm low sun"
+        },
+        {
+          "n": "蓝调时刻",
+          "zh": "蓝调时刻，冷蓝环境光",
+          "en": "blue hour, cold ambient light"
+        },
+        {
+          "n": "阴天柔光",
+          "zh": "阴天柔光，几乎没有硬阴影",
+          "en": "overcast soft light, no hard shadows"
+        },
+        {
+          "n": "硬光",
+          "zh": "硬光，边界清晰的投影",
+          "en": "hard light, crisp-edged shadows"
+        },
+        {
+          "n": "霓虹光",
+          "zh": "霓虹光，粉蓝色块打在脸上",
+          "en": "neon glow, pink and blue light on the face"
+        },
+        {
+          "n": "烛光",
+          "zh": "烛光，暖橙色跳动光",
+          "en": "candlelight, warm flickering glow"
+        },
+        {
+          "n": "顶光",
+          "zh": "顶部光，眼窝带阴影",
+          "en": "top light, shadows under the brow"
+        },
+        {
+          "n": "底光",
+          "zh": "底光，从下方打上来",
+          "en": "uplight from below"
+        },
+        {
+          "n": "丁达尔光",
+          "zh": "丁达尔光，空气里有光柱",
+          "en": "volumetric god rays through the air"
+        },
+        {
+          "n": "剪影",
+          "zh": "剪影，主体全黑只留轮廓",
+          "en": "silhouette, subject fully dark against the light"
+        },
+        {
+          "n": "光斑",
+          "zh": "树叶漏下的斑驳光斑",
+          "en": "dappled light through leaves"
+        },
+        {
+          "n": "混合色温",
+          "zh": "冷背景暖主体，色温对比",
+          "en": "mixed color temperature, warm subject against cool background"
+        }
+      ],
+      "group": "视觉"
     },
     {
       "key": "frame",
       "label": "构图",
       "items": [
-        { "n": "三分法", "zh": "三分法构图，主体落在交点上", "en": "rule of thirds, subject on an intersection" },
-        { "n": "中心构图", "zh": "中心构图，主体居中对称", "en": "centered composition" },
-        { "n": "对称", "zh": "严格对称构图", "en": "strict symmetrical composition" },
-        { "n": "对角线", "zh": "对角线构图，画面有动势", "en": "diagonal composition" },
-        { "n": "引导线", "zh": "引导线把视线带向主体", "en": "leading lines toward the subject" },
-        { "n": "框架构图", "zh": "前景框架，像透过门框看", "en": "framing, seen through a doorway" },
-        { "n": "留白", "zh": "大量留白，主体偏一侧", "en": "lots of negative space, subject off to one side" },
-        { "n": "前景虚化", "zh": "前景虚化，主体清晰", "en": "blurred foreground, sharp subject" },
-        { "n": "特写", "zh": "特写，只到肩部", "en": "close-up, shoulders up" },
-        { "n": "半身", "zh": "半身构图，到腰部", "en": "half-body shot, waist up" },
-        { "n": "全身", "zh": "全身构图，含脚", "en": "full-body shot including feet" },
-        { "n": "环境肖像", "zh": "环境肖像，人物小、场景大", "en": "environmental portrait, small subject in a wide scene" },
-        { "n": "框不满", "zh": "画面裁掉部分肢体，更有张力", "en": "cropped framing, limbs cut off for tension" },
-        { "n": "重复元素", "zh": "背景重复元素，节奏感", "en": "repeating background elements" }
-      ]
+        {
+          "n": "三分法",
+          "zh": "三分法构图，主体落在交点上",
+          "en": "rule of thirds, subject on an intersection"
+        },
+        {
+          "n": "中心构图",
+          "zh": "中心构图，主体居中对称",
+          "en": "centered composition"
+        },
+        {
+          "n": "对称",
+          "zh": "严格对称构图",
+          "en": "strict symmetrical composition"
+        },
+        {
+          "n": "对角线",
+          "zh": "对角线构图，画面有动势",
+          "en": "diagonal composition"
+        },
+        {
+          "n": "引导线",
+          "zh": "引导线把视线带向主体",
+          "en": "leading lines toward the subject"
+        },
+        {
+          "n": "框架构图",
+          "zh": "前景框架，像透过门框看",
+          "en": "framing, seen through a doorway"
+        },
+        {
+          "n": "留白",
+          "zh": "大量留白，主体偏一侧",
+          "en": "lots of negative space, subject off to one side"
+        },
+        {
+          "n": "前景虚化",
+          "zh": "前景虚化，主体清晰",
+          "en": "blurred foreground, sharp subject"
+        },
+        {
+          "n": "特写",
+          "zh": "特写，只到肩部",
+          "en": "close-up, shoulders up"
+        },
+        {
+          "n": "半身",
+          "zh": "半身构图，到腰部",
+          "en": "half-body shot, waist up"
+        },
+        {
+          "n": "全身",
+          "zh": "全身构图，含脚",
+          "en": "full-body shot including feet"
+        },
+        {
+          "n": "环境肖像",
+          "zh": "环境肖像，人物小、场景大",
+          "en": "environmental portrait, small subject in a wide scene"
+        },
+        {
+          "n": "框不满",
+          "zh": "画面裁掉部分肢体，更有张力",
+          "en": "cropped framing, limbs cut off for tension"
+        },
+        {
+          "n": "重复元素",
+          "zh": "背景重复元素，节奏感",
+          "en": "repeating background elements"
+        }
+      ],
+      "group": "视觉"
     },
     {
       "key": "lens",
       "label": "镜头",
       "items": [
-        { "n": "24mm 广角", "zh": "24mm 广角，透视夸张", "en": "24mm wide-angle, exaggerated perspective" },
-        { "n": "35mm 纪实", "zh": "35mm 纪实视角", "en": "35mm documentary look" },
-        { "n": "50mm 标准", "zh": "50mm 标准视角，接近人眼", "en": "50mm standard lens, natural perspective" },
-        { "n": "85mm 人像", "zh": "85mm 人像镜头，背景奶油化", "en": "85mm portrait lens, creamy background" },
-        { "n": "135mm 压缩", "zh": "135mm 长焦压缩，空间被压平", "en": "135mm telephoto compression, flattened space" },
-        { "n": "微距", "zh": "微距镜头，细节放大", "en": "macro lens, extreme detail" },
-        { "n": "鱼眼", "zh": "鱼眼镜头，明显桶形畸变", "en": "fisheye, strong barrel distortion" },
-        { "n": "移轴", "zh": "移轴镜头，像微缩模型", "en": "tilt-shift, miniature look" },
-        { "n": "浅景深", "zh": "浅景深 f/1.4，背景虚化成块", "en": "shallow depth of field f/1.4, background melted" },
-        { "n": "深景深", "zh": "深景深 f/8，前后都清楚", "en": "deep focus f/8, everything sharp" },
-        { "n": "焦外光斑", "zh": "焦外光斑，背景散成一粒粒光", "en": "bokeh balls in the background" },
-        { "n": "变形宽银幕", "zh": "变形宽银幕镜头，横向拉丝高光", "en": "anamorphic lens, horizontal flares" },
-        { "n": "老镜头", "zh": "老镜头质感，轻微柔焦与色散", "en": "vintage lens, slight softness and chromatic aberration" }
-      ]
+        {
+          "n": "24mm 广角",
+          "zh": "24mm 广角，透视夸张",
+          "en": "24mm wide-angle, exaggerated perspective"
+        },
+        {
+          "n": "35mm 纪实",
+          "zh": "35mm 纪实视角",
+          "en": "35mm documentary look"
+        },
+        {
+          "n": "50mm 标准",
+          "zh": "50mm 标准视角，接近人眼",
+          "en": "50mm standard lens, natural perspective"
+        },
+        {
+          "n": "85mm 人像",
+          "zh": "85mm 人像镜头，背景奶油化",
+          "en": "85mm portrait lens, creamy background"
+        },
+        {
+          "n": "135mm 压缩",
+          "zh": "135mm 长焦压缩，空间被压平",
+          "en": "135mm telephoto compression, flattened space"
+        },
+        {
+          "n": "微距",
+          "zh": "微距镜头，细节放大",
+          "en": "macro lens, extreme detail"
+        },
+        {
+          "n": "鱼眼",
+          "zh": "鱼眼镜头，明显桶形畸变",
+          "en": "fisheye, strong barrel distortion"
+        },
+        {
+          "n": "移轴",
+          "zh": "移轴镜头，像微缩模型",
+          "en": "tilt-shift, miniature look"
+        },
+        {
+          "n": "浅景深",
+          "zh": "浅景深 f/1.4，背景虚化成块",
+          "en": "shallow depth of field f/1.4, background melted"
+        },
+        {
+          "n": "深景深",
+          "zh": "深景深 f/8，前后都清楚",
+          "en": "deep focus f/8, everything sharp"
+        },
+        {
+          "n": "焦外光斑",
+          "zh": "焦外光斑，背景散成一粒粒光",
+          "en": "bokeh balls in the background"
+        },
+        {
+          "n": "变形宽银幕",
+          "zh": "变形宽银幕镜头，横向拉丝高光",
+          "en": "anamorphic lens, horizontal flares"
+        },
+        {
+          "n": "老镜头",
+          "zh": "老镜头质感，轻微柔焦与色散",
+          "en": "vintage lens, slight softness and chromatic aberration"
+        }
+      ],
+      "group": "视觉"
     },
     {
       "key": "angle",
       "label": "机位",
       "items": [
-        { "n": "正面", "zh": "正面平视", "en": "front view, eye level" },
-        { "n": "四分之三侧", "zh": "四分之三侧面", "en": "three-quarter profile" },
-        { "n": "正侧", "zh": "正侧面，只看到一侧轮廓", "en": "full profile, one-sided silhouette" },
-        { "n": "背面", "zh": "背面视角", "en": "from behind" },
-        { "n": "回头看", "zh": "回头越过肩膀看镜头", "en": "looking back over the shoulder" },
-        { "n": "俯视", "zh": "俯视机位，从上往下拍", "en": "high angle, looking down" },
-        { "n": "仰视", "zh": "低机位仰拍，显得高大", "en": "low angle, looking up" },
-        { "n": "主观视角", "zh": "第一人称主观视角", "en": "first-person POV" },
-        { "n": "过肩", "zh": "过肩镜头，前景有肩膀", "en": "over-the-shoulder shot" },
-        { "n": "荷兰角", "zh": "荷兰角，画面倾斜", "en": "dutch angle, tilted frame" },
-        { "n": "双人合照", "zh": "双人同框，一前一后", "en": "two-shot, one in front of the other" },
-        { "n": "头顶视角", "zh": "正上方俯拍，像无人机", "en": "top-down drone view" }
+        {
+          "n": "正面",
+          "zh": "正面平视",
+          "en": "front view, eye level"
+        },
+        {
+          "n": "四分之三侧",
+          "zh": "四分之三侧面",
+          "en": "three-quarter profile"
+        },
+        {
+          "n": "正侧",
+          "zh": "正侧面，只看到一侧轮廓",
+          "en": "full profile, one-sided silhouette"
+        },
+        {
+          "n": "背面",
+          "zh": "背面视角",
+          "en": "from behind"
+        },
+        {
+          "n": "回头看",
+          "zh": "回头越过肩膀看镜头",
+          "en": "looking back over the shoulder"
+        },
+        {
+          "n": "俯视",
+          "zh": "俯视机位，从上往下拍",
+          "en": "high angle, looking down"
+        },
+        {
+          "n": "仰视",
+          "zh": "低机位仰拍，显得高大",
+          "en": "low angle, looking up"
+        },
+        {
+          "n": "主观视角",
+          "zh": "第一人称主观视角",
+          "en": "first-person POV"
+        },
+        {
+          "n": "过肩",
+          "zh": "过肩镜头，前景有肩膀",
+          "en": "over-the-shoulder shot"
+        },
+        {
+          "n": "荷兰角",
+          "zh": "荷兰角，画面倾斜",
+          "en": "dutch angle, tilted frame"
+        },
+        {
+          "n": "双人合照",
+          "zh": "双人同框，一前一后",
+          "en": "two-shot, one in front of the other"
+        },
+        {
+          "n": "头顶视角",
+          "zh": "正上方俯拍，像无人机",
+          "en": "top-down drone view"
+        }
+      ],
+      "group": "视觉"
+    },
+    {
+      "key": "material",
+      "label": "材质",
+      "items": [
+        {
+          "n": "丝绸",
+          "zh": "丝绸面料，光泽顺着褶皱流动",
+          "en": "silk fabric, sheen flowing along the folds"
+        },
+        {
+          "n": "皮革",
+          "zh": "皮革质感，表面有细密纹路",
+          "en": "leather texture with fine grain"
+        },
+        {
+          "n": "针织",
+          "zh": "针织纹理，毛线粗细可见",
+          "en": "visible knit texture, yarn thickness clear"
+        },
+        {
+          "n": "薄纱",
+          "zh": "半透明薄纱，边缘轻飘",
+          "en": "translucent tulle, edges drifting"
+        },
+        {
+          "n": "牛仔",
+          "zh": "水洗牛仔布，磨白处起毛",
+          "en": "washed denim, frayed at the faded spots"
+        },
+        {
+          "n": "羊毛",
+          "zh": "羊毛呢，表面一层细绒",
+          "en": "wool felt with a fine nap"
+        },
+        {
+          "n": "金属",
+          "zh": "金属反光，高光拉成一条",
+          "en": "metallic reflection, highlights stretched into a line"
+        },
+        {
+          "n": "天鹅绒",
+          "zh": "天鹅绒，光线压出深浅",
+          "en": "velvet, light pressing depth into the nap"
+        },
+        {
+          "n": "亚麻",
+          "zh": "亚麻布，褶皱自然",
+          "en": "linen with natural creases"
+        },
+        {
+          "n": "蕾丝",
+          "zh": "蕾丝花边，镂空透光",
+          "en": "lace trim, cutouts letting light through"
+        },
+        {
+          "n": "漆面",
+          "zh": "漆皮亮面，反光锐利",
+          "en": "patent leather, sharp reflections"
+        },
+        {
+          "n": "羽毛",
+          "zh": "羽毛质感，边缘蓬松",
+          "en": "feathered texture with fluffy edges"
+        },
+        {
+          "n": "缎面",
+          "zh": "缎面，垂坠带光",
+          "en": "satin, draping with sheen"
+        },
+        {
+          "n": "粗花呢",
+          "zh": "粗花呢，交织的粗线",
+          "en": "tweed with coarse interwoven threads"
+        },
+        {
+          "n": "湿润",
+          "zh": "潮湿的表面，水珠挂着",
+          "en": "wet surface with clinging droplets"
+        },
+        {
+          "n": "磨砂",
+          "zh": "磨砂质感，光被打散",
+          "en": "frosted texture scattering the light"
+        }
+      ],
+      "group": "视觉"
+    },
+    {
+      "key": "grade",
+      "label": "调色",
+      "group": "视觉",
+      "items": [
+        {
+          "n": "高饱和",
+          "zh": "高饱和度，颜色顶到最亮",
+          "en": "high saturation, colors pushed bright"
+        },
+        {
+          "n": "低饱和",
+          "zh": "低饱和，颜色发灰",
+          "en": "desaturated, colors turned grey"
+        },
+        {
+          "n": "青橙",
+          "zh": "青橙调色，肤色偏暖、背景偏青",
+          "en": "teal and orange grade, warm skin, teal shadows"
+        },
+        {
+          "n": "单色调",
+          "zh": "单一色调，全画面一个色相",
+          "en": "monochromatic, one hue throughout"
+        },
+        {
+          "n": "双色调",
+          "zh": "双色调，紫与橙",
+          "en": "duotone, purple and orange"
+        },
+        {
+          "n": "黑金",
+          "zh": "黑金调色，暗部纯黑、高光发金",
+          "en": "black and gold grade, pure blacks, golden highlights"
+        },
+        {
+          "n": "粉灰",
+          "zh": "粉灰调，像旧杂志",
+          "en": "pink-grey grade, like an old magazine"
+        },
+        {
+          "n": "墨绿",
+          "zh": "墨绿主调，阴影压深",
+          "en": "deep green grade, shadows crushed"
+        },
+        {
+          "n": "褪色",
+          "zh": "褪色处理，像放了很久的照片",
+          "en": "faded, like a long-stored print"
+        },
+        {
+          "n": "胶片偏色",
+          "zh": "胶片偏色，高光泛黄",
+          "en": "film color shift, highlights leaning yellow"
+        },
+        {
+          "n": "高对比",
+          "zh": "高对比，暗部死黑",
+          "en": "high contrast, blacks crushed"
+        },
+        {
+          "n": "冷调",
+          "zh": "整体冷调，皮肤泛蓝",
+          "en": "cool grade overall, skin leaning blue"
+        }
       ]
     },
     {
       "key": "outfit",
       "label": "服装",
       "items": [
-        { "n": "校服", "zh": "白色衬衫配藏青百褶裙，校服领带", "en": "white shirt with navy pleated skirt, school tie" },
-        { "n": "水手服", "zh": "水手服，白色上衣配蓝色衣领", "en": "sailor uniform, white top with blue collar" },
-        { "n": "白衬衫", "zh": "白衬衫，袖口挽到小臂", "en": "white dress shirt, sleeves rolled to the forearm" },
-        { "n": "西装", "zh": "合身西装套装，领口挺括", "en": "tailored suit with crisp lapels" },
-        { "n": "旗袍", "zh": "深色旗袍，侧边开衩", "en": "dark qipao with a side slit" },
-        { "n": "汉服", "zh": "宽袖汉服，衣带垂落", "en": "loose-sleeved hanfu, sash hanging down" },
-        { "n": "毛衣", "zh": "粗针织毛衣，衣领松垮", "en": "chunky knit sweater with a loose collar" },
-        { "n": "风衣", "zh": "米色风衣，腰带半系", "en": "beige trench coat, belt half tied" },
-        { "n": "皮夹克", "zh": "黑色皮夹克，拉链半开", "en": "black leather jacket, zipper half open" },
-        { "n": "针织长裙", "zh": "贴身针织长裙，垂坠感", "en": "fitted knit maxi dress with soft drape" },
-        { "n": "机能风", "zh": "机能风外套，多个口袋与绑带", "en": "techwear jacket with utility pockets and straps" },
-        { "n": "卫衣", "zh": "宽松卫衣，帽子扣在脑后", "en": "oversized hoodie, hood pushed back" },
-        { "n": "婚纱", "zh": "白色婚纱，薄纱裙摆铺开", "en": "white wedding gown, tulle skirt spread out" },
-        { "n": "护士服", "zh": "复古护士服，白色围裙", "en": "vintage nurse uniform with white apron" },
-        { "n": "和服", "zh": "和服，腰带打成结", "en": "kimono with an obi tied in a knot" },
-        { "n": "运动装", "zh": "运动背心配短裤，汗湿", "en": "sports tank and shorts, sweat-damp" },
-        { "n": "军装大衣", "zh": "军装风长大衣，肩章清晰", "en": "long military coat with clear epaulettes" },
-        { "n": "吊带裙", "zh": "细吊带裙，锁骨露出", "en": "thin-strap slip dress, collarbones exposed" }
+        {
+          "n": "校服",
+          "zh": "白色衬衫配藏青百褶裙，校服领带",
+          "en": "white shirt with navy pleated skirt, school tie"
+        },
+        {
+          "n": "水手服",
+          "zh": "水手服，白色上衣配蓝色衣领",
+          "en": "sailor uniform, white top with blue collar"
+        },
+        {
+          "n": "白衬衫",
+          "zh": "白衬衫，袖口挽到小臂",
+          "en": "white dress shirt, sleeves rolled to the forearm"
+        },
+        {
+          "n": "西装",
+          "zh": "合身西装套装，领口挺括",
+          "en": "tailored suit with crisp lapels"
+        },
+        {
+          "n": "旗袍",
+          "zh": "深色旗袍，侧边开衩",
+          "en": "dark qipao with a side slit"
+        },
+        {
+          "n": "汉服",
+          "zh": "宽袖汉服，衣带垂落",
+          "en": "loose-sleeved hanfu, sash hanging down"
+        },
+        {
+          "n": "毛衣",
+          "zh": "粗针织毛衣，衣领松垮",
+          "en": "chunky knit sweater with a loose collar"
+        },
+        {
+          "n": "风衣",
+          "zh": "米色风衣，腰带半系",
+          "en": "beige trench coat, belt half tied"
+        },
+        {
+          "n": "皮夹克",
+          "zh": "黑色皮夹克，拉链半开",
+          "en": "black leather jacket, zipper half open"
+        },
+        {
+          "n": "针织长裙",
+          "zh": "贴身针织长裙，垂坠感",
+          "en": "fitted knit maxi dress with soft drape"
+        },
+        {
+          "n": "机能风",
+          "zh": "机能风外套，多个口袋与绑带",
+          "en": "techwear jacket with utility pockets and straps"
+        },
+        {
+          "n": "卫衣",
+          "zh": "宽松卫衣，帽子扣在脑后",
+          "en": "oversized hoodie, hood pushed back"
+        },
+        {
+          "n": "婚纱",
+          "zh": "白色婚纱，薄纱裙摆铺开",
+          "en": "white wedding gown, tulle skirt spread out"
+        },
+        {
+          "n": "护士服",
+          "zh": "复古护士服，白色围裙",
+          "en": "vintage nurse uniform with white apron"
+        },
+        {
+          "n": "和服",
+          "zh": "和服，腰带打成结",
+          "en": "kimono with an obi tied in a knot"
+        },
+        {
+          "n": "运动装",
+          "zh": "运动背心配短裤，汗湿",
+          "en": "sports tank and shorts, sweat-damp"
+        },
+        {
+          "n": "军装大衣",
+          "zh": "军装风长大衣，肩章清晰",
+          "en": "long military coat with clear epaulettes"
+        },
+        {
+          "n": "吊带裙",
+          "zh": "细吊带裙，锁骨露出",
+          "en": "thin-strap slip dress, collarbones exposed"
+        }
+      ],
+      "group": "人物"
+    },
+    {
+      "key": "hair",
+      "label": "发型",
+      "group": "人物",
+      "items": [
+        {
+          "n": "长直发",
+          "zh": "一头直长发垂到肩下",
+          "en": "long straight hair falling past the shoulders"
+        },
+        {
+          "n": "大波浪",
+          "zh": "大波浪卷发，发尾蓬松",
+          "en": "big loose waves, ends full"
+        },
+        {
+          "n": "齐肩短发",
+          "zh": "齐肩短发，发尾微微内扣",
+          "en": "shoulder-length bob, ends turned in"
+        },
+        {
+          "n": "丸子头",
+          "zh": "高丸子头，几缕碎发散落",
+          "en": "high bun with a few loose strands"
+        },
+        {
+          "n": "双马尾",
+          "zh": "双马尾，发绳系紧",
+          "en": "twin tails tied tight"
+        },
+        {
+          "n": "低马尾",
+          "zh": "低马尾，后颈留出碎发",
+          "en": "low ponytail, loose strands at the nape"
+        },
+        {
+          "n": "空气刘海",
+          "zh": "薄空气刘海，能看见额头",
+          "en": "wispy see-through bangs, forehead visible"
+        },
+        {
+          "n": "编发",
+          "zh": "侧编发，辫子垂到胸前",
+          "en": "side braid falling to the chest"
+        },
+        {
+          "n": "湿发",
+          "zh": "湿发贴在额角",
+          "en": "wet hair sticking to the temple"
+        },
+        {
+          "n": "银白长发",
+          "zh": "银白色长发，发丝很细",
+          "en": "silver-white long hair, fine strands"
+        },
+        {
+          "n": "寸头",
+          "zh": "极短的寸头",
+          "en": "buzz cut"
+        },
+        {
+          "n": "背头",
+          "zh": "全部向后梳的背头，发丝纹路清晰",
+          "en": "slicked back, strand texture visible"
+        },
+        {
+          "n": "短卷发",
+          "zh": "短卷发，卷度小而密",
+          "en": "short curls, tight and dense"
+        },
+        {
+          "n": "挑染",
+          "zh": "发尾挑染成浅色",
+          "en": "light-dyed tips"
+        }
       ]
     },
     {
-      "key": "material",
-      "label": "材质",
+      "key": "makeup",
+      "label": "妆容",
+      "group": "人物",
       "items": [
-        { "n": "丝绸", "zh": "丝绸面料，光泽顺着褶皱流动", "en": "silk fabric, sheen flowing along the folds" },
-        { "n": "皮革", "zh": "皮革质感，表面有细密纹路", "en": "leather texture with fine grain" },
-        { "n": "针织", "zh": "针织纹理，毛线粗细可见", "en": "visible knit texture, yarn thickness clear" },
-        { "n": "薄纱", "zh": "半透明薄纱，边缘轻飘", "en": "translucent tulle, edges drifting" },
-        { "n": "牛仔", "zh": "水洗牛仔布，磨白处起毛", "en": "washed denim, frayed at the faded spots" },
-        { "n": "羊毛", "zh": "羊毛呢，表面一层细绒", "en": "wool felt with a fine nap" },
-        { "n": "金属", "zh": "金属反光，高光拉成一条", "en": "metallic reflection, highlights stretched into a line" },
-        { "n": "天鹅绒", "zh": "天鹅绒，光线压出深浅", "en": "velvet, light pressing depth into the nap" },
-        { "n": "亚麻", "zh": "亚麻布，褶皱自然", "en": "linen with natural creases" },
-        { "n": "蕾丝", "zh": "蕾丝花边，镂空透光", "en": "lace trim, cutouts letting light through" },
-        { "n": "漆面", "zh": "漆皮亮面，反光锐利", "en": "patent leather, sharp reflections" },
-        { "n": "羽毛", "zh": "羽毛质感，边缘蓬松", "en": "feathered texture with fluffy edges" },
-        { "n": "缎面", "zh": "缎面，垂坠带光", "en": "satin, draping with sheen" },
-        { "n": "粗花呢", "zh": "粗花呢，交织的粗线", "en": "tweed with coarse interwoven threads" },
-        { "n": "湿润", "zh": "潮湿的表面，水珠挂着", "en": "wet surface with clinging droplets" },
-        { "n": "磨砂", "zh": "磨砂质感，光被打散", "en": "frosted texture scattering the light" }
+        {
+          "n": "素颜",
+          "zh": "几乎素颜，皮肤感自然",
+          "en": "bare-faced, natural skin"
+        },
+        {
+          "n": "淡妆",
+          "zh": "淡妆，唇色接近本色",
+          "en": "light makeup, lips near natural"
+        },
+        {
+          "n": "红唇",
+          "zh": "正红唇色，唇线清晰",
+          "en": "classic red lips with a clean line"
+        },
+        {
+          "n": "水光唇",
+          "zh": "水光唇，唇面反光",
+          "en": "glossy lips catching the light"
+        },
+        {
+          "n": "烟熏眼",
+          "zh": "烟熏眼妆，眼尾晕开",
+          "en": "smoky eyes, outer corner blended"
+        },
+        {
+          "n": "泪痕妆",
+          "zh": "眼下泪痕妆，湿亮",
+          "en": "tear-streak makeup under the eyes, wet sheen"
+        },
+        {
+          "n": "晒伤妆",
+          "zh": "横跨鼻梁的晒伤腮红",
+          "en": "sunburn blush across the nose bridge"
+        },
+        {
+          "n": "舞台妆",
+          "zh": "舞台妆，眼影浓重",
+          "en": "stage makeup with heavy shadow"
+        },
+        {
+          "n": "雀斑",
+          "zh": "鼻梁上淡淡雀斑",
+          "en": "faint freckles across the nose"
+        },
+        {
+          "n": "高光",
+          "zh": "颧骨高光，皮肤发亮",
+          "en": "highlight on the cheekbones, skin glowing"
+        },
+        {
+          "n": "断眉",
+          "zh": "眉尾断开的断眉",
+          "en": "slit eyebrow, gap at the tail"
+        },
+        {
+          "n": "眼线",
+          "zh": "上挑眼线，眼尾拉长",
+          "en": "winged liner, extended at the corner"
+        }
       ]
     },
     {
-      "key": "style",
-      "label": "画风",
+      "key": "accessory",
+      "label": "配饰",
+      "group": "人物",
       "items": [
-        { "n": "电影胶片", "zh": "电影胶片质感，轻微颗粒", "en": "cinematic film look with light grain" },
-        { "n": "宝丽来", "zh": "宝丽来相纸，边缘过曝", "en": "Polaroid print, edges blown out" },
-        { "n": "黑白胶片", "zh": "黑白胶片，银盐颗粒", "en": "black and white film, silver grain" },
-        { "n": "油画", "zh": "厚涂油画，笔触明显", "en": "thick oil painting, visible brushwork" },
-        { "n": "水彩", "zh": "水彩晕染，边界化开", "en": "watercolor wash, edges bleeding" },
-        { "n": "素描", "zh": "铅笔素描，排线清晰", "en": "pencil sketch with clear hatching" },
-        { "n": "漫画分镜", "zh": "漫画分镜，速度线与网点", "en": "manga panel with speed lines and screentone" },
-        { "n": "复古插画", "zh": "美式复古插画，印刷颗粒", "en": "vintage American illustration, print grain" },
-        { "n": "3D渲染", "zh": "3D 渲染，柔和全局光", "en": "3D render with soft global illumination" },
-        { "n": "黏土动画", "zh": "黏土定格动画质感", "en": "claymation stop-motion look" },
-        { "n": "概念图", "zh": "CG 概念设定图，光影强烈", "en": "CG concept art with strong lighting" },
-        { "n": "赛博霓虹", "zh": "赛博朋克霓虹配色", "en": "cyberpunk neon palette" },
-        { "n": "浮世绘", "zh": "浮世绘版画，平涂色块", "en": "ukiyo-e woodblock, flat color blocks" },
-        { "n": "像素画", "zh": "像素画，有限色板", "en": "pixel art with a limited palette" },
-        { "n": "双重曝光", "zh": "双重曝光，人影与风景叠合", "en": "double exposure, figure merged with landscape" },
-        { "n": "长曝光", "zh": "长曝光，光轨拖尾", "en": "long exposure with trailing light streaks" },
-        { "n": "极简海报", "zh": "极简海报，大面积留白", "en": "minimal poster with large empty space" },
-        { "n": "蒸汽波", "zh": "蒸汽波，紫粉渐变与网格", "en": "vaporwave, purple-pink gradient and grid" }
+        {
+          "n": "耳机",
+          "zh": "头戴耳机挂在脖子上",
+          "en": "over-ear headphones around the neck"
+        },
+        {
+          "n": "圆框眼镜",
+          "zh": "细边圆框眼镜",
+          "en": "thin round-frame glasses"
+        },
+        {
+          "n": "墨镜",
+          "zh": "黑墨镜遮住眼睛",
+          "en": "black sunglasses hiding the eyes"
+        },
+        {
+          "n": "口罩",
+          "zh": "白色口罩拉到下巴",
+          "en": "white mask pulled down to the chin"
+        },
+        {
+          "n": "耳环",
+          "zh": "单边长耳坠",
+          "en": "single long drop earring"
+        },
+        {
+          "n": "项链",
+          "zh": "细链小吊坠项链",
+          "en": "thin chain necklace with a small pendant"
+        },
+        {
+          "n": "贝雷帽",
+          "zh": "贝雷帽歪戴",
+          "en": "beret worn tilted"
+        },
+        {
+          "n": "鸭舌帽",
+          "zh": "鸭舌帽压低遮住眉眼",
+          "en": "cap pulled low over the eyes"
+        },
+        {
+          "n": "发夹",
+          "zh": "一字夹别住侧发",
+          "en": "hair clip holding back the side hair"
+        },
+        {
+          "n": "围巾",
+          "zh": "厚围巾裹到下巴",
+          "en": "thick scarf up to the chin"
+        },
+        {
+          "n": "手套",
+          "zh": "皮手套，指节处有褶",
+          "en": "leather gloves creased at the knuckles"
+        },
+        {
+          "n": "手表",
+          "zh": "金属表带手表",
+          "en": "metal-banded watch"
+        },
+        {
+          "n": "纹身",
+          "zh": "小臂上的细线纹身",
+          "en": "fine-line tattoo on the forearm"
+        },
+        {
+          "n": "绷带",
+          "zh": "手背缠着绷带",
+          "en": "bandage wrapped around the back of the hand"
+        }
       ]
     },
     {
-      "key": "era",
-      "label": "年代",
+      "key": "action",
+      "label": "动作",
+      "group": "人物",
       "items": [
-        { "n": "80年代港风", "zh": "八十年代港风，霓虹与胶片色", "en": "1980s Hong Kong style, neon and film color" },
-        { "n": "90年代日系", "zh": "九十年代日系，柔光与低饱和", "en": "1990s Japanese style, soft light, low saturation" },
-        { "n": "千禧Y2K", "zh": "千禧年 Y2K，金属与亮色", "en": "Y2K look with chrome and bright color" },
-        { "n": "民国上海", "zh": "民国上海，旗袍与老招牌", "en": "Republican-era Shanghai, qipao and old shop signs" },
-        { "n": "昭和喫茶店", "zh": "昭和喫茶店，暖灯与深色木", "en": "Showa-era kissaten, warm lamps and dark wood" },
-        { "n": "赛博未来", "zh": "赛博未来，全息与湿地面", "en": "cyber future with holograms and wet ground" },
-        { "n": "废土", "zh": "废土，锈迹与扬尘", "en": "wasteland with rust and blowing dust" },
-        { "n": "太空歌剧", "zh": "太空歌剧，巨大舱体与冷光", "en": "space opera, vast hulls and cold light" },
-        { "n": "北欧极简", "zh": "北欧极简，白墙与原木", "en": "Scandinavian minimal, white walls and raw wood" },
-        { "n": "地中海", "zh": "地中海，白墙蓝顶与强日照", "en": "Mediterranean, white walls, blue domes, harsh sun" },
-        { "n": "京都町屋", "zh": "京都町屋，木格栅与石板路", "en": "Kyoto machiya, wooden lattice and stone paving" },
-        { "n": "构成主义", "zh": "苏联构成主义，红黑斜向构图", "en": "Soviet constructivism, red-black diagonals" },
-        { "n": "装饰艺术", "zh": "装饰艺术 Art Deco，几何金线", "en": "Art Deco with geometric gold lines" },
-        { "n": "巴洛克", "zh": "巴洛克，繁复金饰与暗部", "en": "Baroque, ornate gilding and deep shadow" }
+        {
+          "n": "站立",
+          "zh": "静静站着，重心压在一只脚上",
+          "en": "standing still, weight on one leg"
+        },
+        {
+          "n": "倚墙",
+          "zh": "背靠墙站着",
+          "en": "leaning back against a wall"
+        },
+        {
+          "n": "坐着",
+          "zh": "曲腿坐着，手撑在身后",
+          "en": "sitting with knees bent, hands behind"
+        },
+        {
+          "n": "蹲下",
+          "zh": "蹲下，抬头看",
+          "en": "crouching, looking up"
+        },
+        {
+          "n": "躺卧",
+          "zh": "侧躺在床单上",
+          "en": "lying on one side on the sheets"
+        },
+        {
+          "n": "回眸",
+          "zh": "转身回眸",
+          "en": "turning back to look over the shoulder"
+        },
+        {
+          "n": "起舞",
+          "zh": "转身起舞，裙摆旋开",
+          "en": "mid-turn dancing, skirt flaring"
+        },
+        {
+          "n": "奔跑",
+          "zh": "向前奔跑，头发扬起",
+          "en": "running forward, hair lifting"
+        },
+        {
+          "n": "跳跃",
+          "zh": "起跳瞬间，双脚离地",
+          "en": "mid-jump, both feet off the ground"
+        },
+        {
+          "n": "伸手",
+          "zh": "伸手向镜头",
+          "en": "reaching a hand toward the lens"
+        },
+        {
+          "n": "抱膝",
+          "zh": "抱膝坐在地上",
+          "en": "hugging knees on the floor"
+        },
+        {
+          "n": "撑伞",
+          "zh": "撑着伞站在雨里",
+          "en": "holding an umbrella in the rain"
+        },
+        {
+          "n": "看书",
+          "zh": "低头看书，指尖压着书页",
+          "en": "reading, fingers pressing the page"
+        },
+        {
+          "n": "打电话",
+          "zh": "手机贴着耳朵",
+          "en": "phone held to the ear"
+        },
+        {
+          "n": "系鞋带",
+          "zh": "弯腰系鞋带",
+          "en": "bending to tie a shoelace"
+        },
+        {
+          "n": "拨头发",
+          "zh": "抬手把头发别到耳后",
+          "en": "tucking hair behind the ear"
+        }
+      ]
+    },
+    {
+      "key": "scene",
+      "label": "场景",
+      "group": "环境",
+      "items": [
+        {
+          "n": "便利店",
+          "zh": "深夜便利店，白炽灯很亮",
+          "en": "late-night convenience store, bright fluorescent light"
+        },
+        {
+          "n": "居酒屋",
+          "zh": "窄小居酒屋，木桌与暖帘",
+          "en": "tiny izakaya, wooden tables and noren"
+        },
+        {
+          "n": "地铁站",
+          "zh": "空荡的地铁站台",
+          "en": "empty subway platform"
+        },
+        {
+          "n": "天台",
+          "zh": "楼顶天台，水塔与铁栏",
+          "en": "rooftop with a water tank and railings"
+        },
+        {
+          "n": "图书馆",
+          "zh": "图书馆书架之间",
+          "en": "between the library stacks"
+        },
+        {
+          "n": "咖啡馆",
+          "zh": "靠窗的咖啡馆座位",
+          "en": "window seat in a cafe"
+        },
+        {
+          "n": "教室",
+          "zh": "空教室，课桌排成行",
+          "en": "empty classroom, desks in rows"
+        },
+        {
+          "n": "旧公寓",
+          "zh": "老公寓走廊，墙皮剥落",
+          "en": "old apartment hallway, peeling paint"
+        },
+        {
+          "n": "医院走廊",
+          "zh": "深夜医院走廊，偏绿的光",
+          "en": "hospital corridor at night, greenish light"
+        },
+        {
+          "n": "泳池边",
+          "zh": "天台泳池边，水面反光",
+          "en": "rooftop poolside, water reflecting"
+        },
+        {
+          "n": "神社",
+          "zh": "神社石阶与鸟居",
+          "en": "shrine steps and a torii gate"
+        },
+        {
+          "n": "废墟",
+          "zh": "废弃厂房，铁架生锈",
+          "en": "abandoned factory with rusted frames"
+        },
+        {
+          "n": "竹林",
+          "zh": "竹林小径，头顶密叶",
+          "en": "bamboo path under dense leaves"
+        },
+        {
+          "n": "海边",
+          "zh": "海边礁石，浪打上来",
+          "en": "seaside rocks with waves breaking"
+        },
+        {
+          "n": "森林",
+          "zh": "深林，地上落满枯叶",
+          "en": "deep forest, dead leaves on the ground"
+        },
+        {
+          "n": "老街",
+          "zh": "老城窄巷，电线交错",
+          "en": "narrow old-town alley, tangled wires"
+        }
+      ]
+    },
+    {
+      "key": "time",
+      "label": "时间",
+      "group": "环境",
+      "items": [
+        {
+          "n": "黎明",
+          "zh": "黎明，天边泛白",
+          "en": "dawn, the sky paling"
+        },
+        {
+          "n": "清晨",
+          "zh": "清晨，光很薄",
+          "en": "early morning, thin light"
+        },
+        {
+          "n": "正午",
+          "zh": "正午，影子最短",
+          "en": "noon, shadows at their shortest"
+        },
+        {
+          "n": "午后",
+          "zh": "午后，光斜进来",
+          "en": "afternoon, light slanting in"
+        },
+        {
+          "n": "黄昏",
+          "zh": "黄昏，天边橙红",
+          "en": "dusk, orange-red at the horizon"
+        },
+        {
+          "n": "入夜",
+          "zh": "入夜，灯刚亮",
+          "en": "early night, lights just on"
+        },
+        {
+          "n": "深夜",
+          "zh": "深夜，几乎没有光",
+          "en": "deep night, almost no light"
+        },
+        {
+          "n": "凌晨",
+          "zh": "凌晨，街面空着",
+          "en": "pre-dawn, streets empty"
+        }
       ]
     },
     {
       "key": "weather",
       "label": "天气",
       "items": [
-        { "n": "雨", "zh": "下雨，雨丝斜落", "en": "rain falling at a slant" },
-        { "n": "暴雨", "zh": "暴雨，水花溅起", "en": "downpour, splashes rising" },
-        { "n": "雪", "zh": "落雪，雪片清晰", "en": "falling snow, flakes distinct" },
-        { "n": "薄雾", "zh": "薄雾，远处轮廓化开", "en": "thin mist, distant shapes softened" },
-        { "n": "晨雾", "zh": "晨雾，脚下留下浅印", "en": "morning fog, shallow footprints behind" },
-        { "n": "沙尘", "zh": "沙尘，空气泛黄", "en": "dust haze, the air turning yellow" },
-        { "n": "雷雨", "zh": "雷雨前压，云层低垂", "en": "storm front, low heavy clouds" },
-        { "n": "雾凇", "zh": "雾凇，枝条挂满白霜", "en": "rime ice coating the branches" },
-        { "n": "热浪", "zh": "热浪，空气扭曲", "en": "heat haze distorting the air" },
-        { "n": "极光", "zh": "极光，绿色帷幕垂落", "en": "aurora, green curtains hanging down" },
-        { "n": "湿地面", "zh": "湿地面反着灯", "en": "wet ground mirroring the lights" },
-        { "n": "炊烟", "zh": "炊烟，一缕升起", "en": "a thread of cooking smoke rising" }
+        {
+          "n": "雨",
+          "zh": "下雨，雨丝斜落",
+          "en": "rain falling at a slant"
+        },
+        {
+          "n": "暴雨",
+          "zh": "暴雨，水花溅起",
+          "en": "downpour, splashes rising"
+        },
+        {
+          "n": "雪",
+          "zh": "落雪，雪片清晰",
+          "en": "falling snow, flakes distinct"
+        },
+        {
+          "n": "薄雾",
+          "zh": "薄雾，远处轮廓化开",
+          "en": "thin mist, distant shapes softened"
+        },
+        {
+          "n": "晨雾",
+          "zh": "晨雾，脚下留下浅印",
+          "en": "morning fog, shallow footprints behind"
+        },
+        {
+          "n": "沙尘",
+          "zh": "沙尘，空气泛黄",
+          "en": "dust haze, the air turning yellow"
+        },
+        {
+          "n": "雷雨",
+          "zh": "雷雨前压，云层低垂",
+          "en": "storm front, low heavy clouds"
+        },
+        {
+          "n": "雾凇",
+          "zh": "雾凇，枝条挂满白霜",
+          "en": "rime ice coating the branches"
+        },
+        {
+          "n": "热浪",
+          "zh": "热浪，空气扭曲",
+          "en": "heat haze distorting the air"
+        },
+        {
+          "n": "极光",
+          "zh": "极光，绿色帷幕垂落",
+          "en": "aurora, green curtains hanging down"
+        },
+        {
+          "n": "湿地面",
+          "zh": "湿地面反着灯",
+          "en": "wet ground mirroring the lights"
+        },
+        {
+          "n": "炊烟",
+          "zh": "炊烟，一缕升起",
+          "en": "a thread of cooking smoke rising"
+        }
+      ],
+      "group": "环境"
+    },
+    {
+      "key": "era",
+      "label": "年代",
+      "items": [
+        {
+          "n": "80年代港风",
+          "zh": "八十年代港风，霓虹与胶片色",
+          "en": "1980s Hong Kong style, neon and film color"
+        },
+        {
+          "n": "90年代日系",
+          "zh": "九十年代日系，柔光与低饱和",
+          "en": "1990s Japanese style, soft light, low saturation"
+        },
+        {
+          "n": "千禧Y2K",
+          "zh": "千禧年 Y2K，金属与亮色",
+          "en": "Y2K look with chrome and bright color"
+        },
+        {
+          "n": "民国上海",
+          "zh": "民国上海，旗袍与老招牌",
+          "en": "Republican-era Shanghai, qipao and old shop signs"
+        },
+        {
+          "n": "昭和喫茶店",
+          "zh": "昭和喫茶店，暖灯与深色木",
+          "en": "Showa-era kissaten, warm lamps and dark wood"
+        },
+        {
+          "n": "赛博未来",
+          "zh": "赛博未来，全息与湿地面",
+          "en": "cyber future with holograms and wet ground"
+        },
+        {
+          "n": "废土",
+          "zh": "废土，锈迹与扬尘",
+          "en": "wasteland with rust and blowing dust"
+        },
+        {
+          "n": "太空歌剧",
+          "zh": "太空歌剧，巨大舱体与冷光",
+          "en": "space opera, vast hulls and cold light"
+        },
+        {
+          "n": "北欧极简",
+          "zh": "北欧极简，白墙与原木",
+          "en": "Scandinavian minimal, white walls and raw wood"
+        },
+        {
+          "n": "地中海",
+          "zh": "地中海，白墙蓝顶与强日照",
+          "en": "Mediterranean, white walls, blue domes, harsh sun"
+        },
+        {
+          "n": "京都町屋",
+          "zh": "京都町屋，木格栅与石板路",
+          "en": "Kyoto machiya, wooden lattice and stone paving"
+        },
+        {
+          "n": "构成主义",
+          "zh": "苏联构成主义，红黑斜向构图",
+          "en": "Soviet constructivism, red-black diagonals"
+        },
+        {
+          "n": "装饰艺术",
+          "zh": "装饰艺术 Art Deco，几何金线",
+          "en": "Art Deco with geometric gold lines"
+        },
+        {
+          "n": "巴洛克",
+          "zh": "巴洛克，繁复金饰与暗部",
+          "en": "Baroque, ornate gilding and deep shadow"
+        }
+      ],
+      "group": "环境"
+    },
+    {
+      "key": "style",
+      "label": "画风",
+      "items": [
+        {
+          "n": "电影胶片",
+          "zh": "电影胶片质感，轻微颗粒",
+          "en": "cinematic film look with light grain"
+        },
+        {
+          "n": "宝丽来",
+          "zh": "宝丽来相纸，边缘过曝",
+          "en": "Polaroid print, edges blown out"
+        },
+        {
+          "n": "黑白胶片",
+          "zh": "黑白胶片，银盐颗粒",
+          "en": "black and white film, silver grain"
+        },
+        {
+          "n": "油画",
+          "zh": "厚涂油画，笔触明显",
+          "en": "thick oil painting, visible brushwork"
+        },
+        {
+          "n": "水彩",
+          "zh": "水彩晕染，边界化开",
+          "en": "watercolor wash, edges bleeding"
+        },
+        {
+          "n": "素描",
+          "zh": "铅笔素描，排线清晰",
+          "en": "pencil sketch with clear hatching"
+        },
+        {
+          "n": "漫画分镜",
+          "zh": "漫画分镜，速度线与网点",
+          "en": "manga panel with speed lines and screentone"
+        },
+        {
+          "n": "复古插画",
+          "zh": "美式复古插画，印刷颗粒",
+          "en": "vintage American illustration, print grain"
+        },
+        {
+          "n": "3D渲染",
+          "zh": "3D 渲染，柔和全局光",
+          "en": "3D render with soft global illumination"
+        },
+        {
+          "n": "黏土动画",
+          "zh": "黏土定格动画质感",
+          "en": "claymation stop-motion look"
+        },
+        {
+          "n": "概念图",
+          "zh": "CG 概念设定图，光影强烈",
+          "en": "CG concept art with strong lighting"
+        },
+        {
+          "n": "赛博霓虹",
+          "zh": "赛博朋克霓虹配色",
+          "en": "cyberpunk neon palette"
+        },
+        {
+          "n": "浮世绘",
+          "zh": "浮世绘版画，平涂色块",
+          "en": "ukiyo-e woodblock, flat color blocks"
+        },
+        {
+          "n": "像素画",
+          "zh": "像素画，有限色板",
+          "en": "pixel art with a limited palette"
+        },
+        {
+          "n": "双重曝光",
+          "zh": "双重曝光，人影与风景叠合",
+          "en": "double exposure, figure merged with landscape"
+        },
+        {
+          "n": "长曝光",
+          "zh": "长曝光，光轨拖尾",
+          "en": "long exposure with trailing light streaks"
+        },
+        {
+          "n": "极简海报",
+          "zh": "极简海报，大面积留白",
+          "en": "minimal poster with large empty space"
+        },
+        {
+          "n": "蒸汽波",
+          "zh": "蒸汽波，紫粉渐变与网格",
+          "en": "vaporwave, purple-pink gradient and grid"
+        }
+      ],
+      "group": "风格"
+    },
+    {
+      "key": "school",
+      "label": "画派",
+      "group": "风格",
+      "items": [
+        {
+          "n": "印象派",
+          "zh": "印象派，短笔触与光斑",
+          "en": "impressionist, short strokes and patches of light"
+        },
+        {
+          "n": "后印象派",
+          "zh": "后印象派，色块厚重",
+          "en": "post-impressionist, heavy color masses"
+        },
+        {
+          "n": "表现主义",
+          "zh": "表现主义，线条扭曲",
+          "en": "expressionist, distorted lines"
+        },
+        {
+          "n": "野兽派",
+          "zh": "野兽派，纯色冲撞",
+          "en": "fauvist, clashing pure color"
+        },
+        {
+          "n": "超现实",
+          "zh": "超现实，物体错位",
+          "en": "surreal, objects displaced"
+        },
+        {
+          "n": "极简主义",
+          "zh": "极简，去掉一切多余",
+          "en": "minimalist, everything extra removed"
+        },
+        {
+          "n": "构成主义",
+          "zh": "构成主义，几何斜切",
+          "en": "constructivist, geometric diagonals"
+        },
+        {
+          "n": "新艺术",
+          "zh": "新艺术，藤蔓般的曲线",
+          "en": "art nouveau, vine-like curves"
+        },
+        {
+          "n": "波普",
+          "zh": "波普，网点与撞色",
+          "en": "pop art, halftone dots and clashing color"
+        },
+        {
+          "n": "哥特",
+          "zh": "哥特，尖拱与暗色",
+          "en": "gothic, pointed arches and dark tones"
+        },
+        {
+          "n": "蒸汽朋克",
+          "zh": "蒸汽朋克，黄铜与齿轮",
+          "en": "steampunk, brass and gears"
+        },
+        {
+          "n": "赛博朋克",
+          "zh": "赛博朋克，霓虹与雨",
+          "en": "cyberpunk, neon and rain"
+        },
+        {
+          "n": "国潮",
+          "zh": "国潮，红金配色与纹样",
+          "en": "guochao, red-gold palette with traditional motifs"
+        },
+        {
+          "n": "和风",
+          "zh": "和风，留白与淡彩",
+          "en": "Japanese style, negative space and pale color"
+        }
+      ]
+    },
+    {
+      "key": "film",
+      "label": "胶片",
+      "group": "风格",
+      "items": [
+        {
+          "n": "Portra 400",
+          "zh": "柯达 Portra 400，肤色柔和",
+          "en": "Kodak Portra 400, soft skin tones"
+        },
+        {
+          "n": "Pro 400H",
+          "zh": "富士 Pro 400H，青调清淡",
+          "en": "Fuji Pro 400H, gentle cyan cast"
+        },
+        {
+          "n": "CineStill 800T",
+          "zh": "CineStill 800T，夜景偏青、灯晕开",
+          "en": "CineStill 800T, cool night scenes, halation around lights"
+        },
+        {
+          "n": "HP5",
+          "zh": "伊尔福 HP5，黑白高颗粒",
+          "en": "Ilford HP5, black and white with strong grain"
+        },
+        {
+          "n": "SX-70",
+          "zh": "宝丽来 SX-70，低对比带暖",
+          "en": "Polaroid SX-70, low contrast and warm"
+        },
+        {
+          "n": "Gold 200",
+          "zh": "柯达 Gold 200，暖黄的日常感",
+          "en": "Kodak Gold 200, warm everyday look"
+        },
+        {
+          "n": "400D",
+          "zh": "CineStill 400D，白天光线柔和",
+          "en": "CineStill 400D, soft in daylight"
+        },
+        {
+          "n": "徕卡 M6",
+          "zh": "徕卡 M6 手持，轻微暗角",
+          "en": "Leica M6 handheld, slight vignetting"
+        },
+        {
+          "n": "哈苏中画幅",
+          "zh": "哈苏中画幅，细节密",
+          "en": "Hasselblad medium format, dense detail"
+        },
+        {
+          "n": "大画幅",
+          "zh": "4×5 大画幅，透视克制",
+          "en": "4x5 large format, restrained perspective"
+        },
+        {
+          "n": "数码直出",
+          "zh": "数码直出，锐利干净",
+          "en": "digital straight out of camera, sharp and clean"
+        },
+        {
+          "n": "手机拍摄",
+          "zh": "手机拍摄，广角近摄畸变",
+          "en": "shot on a phone, wide close-up distortion"
+        }
+      ]
+    },
+    {
+      "key": "mood",
+      "label": "氛围",
+      "group": "风格",
+      "items": [
+        {
+          "n": "孤独",
+          "zh": "孤独感，画面空着",
+          "en": "lonely, the frame left empty"
+        },
+        {
+          "n": "温柔",
+          "zh": "温柔，光线很软",
+          "en": "gentle, soft light"
+        },
+        {
+          "n": "压抑",
+          "zh": "压抑，空间挤",
+          "en": "oppressive, cramped space"
+        },
+        {
+          "n": "暧昧",
+          "zh": "暧昧，视线交错",
+          "en": "ambiguous tension, glances crossing"
+        },
+        {
+          "n": "疲惫",
+          "zh": "疲惫，肩膀塌下",
+          "en": "weary, shoulders slumped"
+        },
+        {
+          "n": "克制",
+          "zh": "克制，情绪收着",
+          "en": "restrained, feeling held back"
+        },
+        {
+          "n": "危险",
+          "zh": "危险，气氛绷紧",
+          "en": "dangerous, the air pulled tight"
+        },
+        {
+          "n": "怀旧",
+          "zh": "怀旧，像旧照片",
+          "en": "nostalgic, like an old photograph"
+        },
+        {
+          "n": "圣洁",
+          "zh": "圣洁，光从头顶落下",
+          "en": "sacred, light falling from above"
+        },
+        {
+          "n": "迷离",
+          "zh": "迷离，焦点偏软",
+          "en": "dreamy, focus slightly soft"
+        },
+        {
+          "n": "雀跃",
+          "zh": "雀跃，动作轻快",
+          "en": "buoyant, movements light"
+        },
+        {
+          "n": "冷峻",
+          "zh": "冷峻，表情不动",
+          "en": "cold, expression unmoved"
+        }
+      ]
+    },
+    {
+      "key": "layout",
+      "label": "版式",
+      "group": "风格",
+      "items": [
+        {
+          "n": "杂志封面",
+          "zh": "杂志封面版式，大标题压在图上方",
+          "en": "magazine cover layout, big title over the image"
+        },
+        {
+          "n": "电影海报",
+          "zh": "电影海报，主标题在下方",
+          "en": "movie poster, title at the bottom"
+        },
+        {
+          "n": "唱片封面",
+          "zh": "唱片封面，方形构图",
+          "en": "album cover, square composition"
+        },
+        {
+          "n": "极简海报",
+          "zh": "极简海报，居中一行字",
+          "en": "minimal poster, one centered line"
+        },
+        {
+          "n": "拼贴",
+          "zh": "拼贴版式，图片剪开重排",
+          "en": "collage layout, images cut and re-arranged"
+        },
+        {
+          "n": "双栏",
+          "zh": "双栏版式，图文左右分",
+          "en": "two-column layout, image and text split"
+        },
+        {
+          "n": "网格",
+          "zh": "严格网格，元素对齐",
+          "en": "strict grid, elements aligned"
+        },
+        {
+          "n": "大字压图",
+          "zh": "超大字号压在主体上",
+          "en": "oversized type laid over the subject"
+        },
+        {
+          "n": "票据感",
+          "zh": "票据版式，虚线框与编号",
+          "en": "ticket layout, dashed frames and numbers"
+        },
+        {
+          "n": "手写批注",
+          "zh": "手写批注，箭头指向细节",
+          "en": "handwritten annotations with arrows"
+        }
       ]
     }
   ]
