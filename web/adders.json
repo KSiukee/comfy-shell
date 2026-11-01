@@ -1,5 +1,5 @@
 {
-  "note": "提示词添加器：按「视觉 / 人物 / 环境 / 风格」分组，共 20 类。每条都是可直接接在提示词后面的短句，中英双语。",
+  "note": "提示词添加器：按「视觉 / 人物 / 环境 / 风格」分组，共 20 类。每条都是可直接接在提示词后面的短句，中英双语。不含宗教场所与有历史争议的地域/年代表述。",
   "categories": [
     {
       "key": "light",
@@ -929,11 +929,6 @@
           "en": "rooftop poolside, water reflecting"
         },
         {
-          "n": "神社",
-          "zh": "神社石阶与鸟居",
-          "en": "shrine steps and a torii gate"
-        },
-        {
           "n": "废墟",
           "zh": "废弃厂房，铁架生锈",
           "en": "abandoned factory with rusted frames"
@@ -957,6 +952,11 @@
           "n": "老街",
           "zh": "老城窄巷，电线交错",
           "en": "narrow old-town alley, tangled wires"
+        },
+        {
+          "n": "旧书店",
+          "zh": "旧书店，书架顶到天花板",
+          "en": "used bookstore, shelves up to the ceiling"
         }
       ]
     },
@@ -1094,14 +1094,14 @@
           "en": "Y2K look with chrome and bright color"
         },
         {
-          "n": "民国上海",
-          "zh": "民国上海，旗袍与老招牌",
-          "en": "Republican-era Shanghai, qipao and old shop signs"
+          "n": "老上海",
+          "zh": "老上海，旗袍与老招牌",
+          "en": "old Shanghai, qipao and old shop signs"
         },
         {
-          "n": "昭和喫茶店",
-          "zh": "昭和喫茶店，暖灯与深色木",
-          "en": "Showa-era kissaten, warm lamps and dark wood"
+          "n": "老咖啡馆",
+          "zh": "日式老咖啡馆，暖灯与深色木",
+          "en": "old Japanese coffee shop, warm lamps and dark wood"
         },
         {
           "n": "赛博未来",
@@ -1135,8 +1135,8 @@
         },
         {
           "n": "构成主义",
-          "zh": "苏联构成主义，红黑斜向构图",
-          "en": "Soviet constructivism, red-black diagonals"
+          "zh": "构成主义，红黑斜向构图",
+          "en": "constructivist, red and black diagonals"
         },
         {
           "n": "装饰艺术",
