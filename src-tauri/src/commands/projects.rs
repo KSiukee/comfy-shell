@@ -246,6 +246,28 @@ pub fn shot_delete(app: tauri::AppHandle, project: String, id: String) -> Result
     shots::delete(&cfg_dir(&app), &project, &id)
 }
 
+/// 给一镜挂角色卡（#33）：只存 id，不校验存在性——角色被删了要在体检里报出来。
+#[tauri::command]
+pub fn shot_set_characters(
+    app: tauri::AppHandle,
+    project: String,
+    id: String,
+    characters: Vec<String>,
+) -> Result<shots::Shot, String> {
+    shots::set_characters(&cfg_dir(&app), &project, &id, characters)
+}
+
+/// 记下这一镜出图实际用到的角色与底板（整话一致性体检的证据）。
+#[tauri::command]
+pub fn shot_set_cast(
+    app: tauri::AppHandle,
+    project: String,
+    id: String,
+    cast: Vec<shots::CastRef>,
+) -> Result<shots::Shot, String> {
+    shots::set_cast(&cfg_dir(&app), &project, &id, cast)
+}
+
 #[tauri::command]
 pub fn shots_export(
     app: tauri::AppHandle,

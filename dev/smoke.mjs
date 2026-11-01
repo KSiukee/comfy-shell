@@ -96,6 +96,9 @@ try {
   check("版本按钮在", (await evaluate("!!document.getElementById('versionsBtn')")) === true);
   check("提示词库按钮在", (await evaluate("!!document.getElementById('promptsBtn')")) === true);
   check("整话导出按钮在", (await evaluate("!!document.getElementById('shotsExport')")) === true);
+  check("镜头挂卡在", (await evaluate("typeof shotCastChips === 'function' && typeof shotCheck === 'function'")) === true);
+  check("整话出图/体检按钮在", (await evaluate("!!document.getElementById('shotsRun') && !!document.getElementById('shotsCheck')")) === true);
+  check("挂角色窗在", (await evaluate("!!document.getElementById('shotCastModal') && !!document.getElementById('shotCastList')")) === true);
   check("图库详情抽屉在", (await evaluate("!!document.getElementById('libDetail')")) === true);
   check("版本 A/B 对比窗在", (await evaluate("!!document.getElementById('abModal')")) === true);
   const outOfRoot = await evaluate("api.call('image_meta', { path: 'D:/__nope__/zzz.png' })");

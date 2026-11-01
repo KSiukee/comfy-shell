@@ -188,6 +188,8 @@ fn main() {
             commands::projects::shots_add,
             commands::projects::shot_add_image,
             commands::projects::shot_set_layout,
+            commands::projects::shot_set_characters,
+            commands::projects::shot_set_cast,
             commands::projects::shot_delete,
             commands::projects::shots_export,
             commands::projects::layout_version_save,

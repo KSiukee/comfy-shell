@@ -13,6 +13,26 @@ fn now_ms() -> u64 {
         .unwrap_or(0)
 }
 
+/// 一镜最多挂几个角色（和 characters.js 的「最多挂 3 张底板」同一口径）。
+pub const MAX_CAST: usize = 3;
+
+/// 出图那一刻真正用到的角色：名字 + 当时那张身份底板的路径。
+///
+/// 为什么要把「当时用哪张底板」也存下来（#33 整话一致性体检）：
+/// 同一角色换了底板（重出过底板）而前后镜头没跟上，两格画出来就是两个人；
+/// 只比对底板路径是**机械可查**的证据，不靠肉眼。
+#[derive(Clone, Serialize, Deserialize, Debug, PartialEq, Default)]
+#[serde(rename_all = "camelCase", default)]
+pub struct CastRef {
+    #[serde(default)]
+    pub id: String,
+    #[serde(default)]
+    pub name: String,
+    /// 本次出图挂的身份底板（没有底板 = 只注入了文字）
+    #[serde(default)]
+    pub plate: Option<String>,
+}
+
 #[derive(Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase", default)]
 pub struct Shot {
@@ -30,6 +50,10 @@ pub struct Shot {
     pub slg_layers: String,
     pub layout: Option<String>,
     pub images: Vec<String>,
+    /// 这一镜挂了哪些角色卡（存 id；用户意图）
+    pub characters: Vec<String>,
+    /// 上一次出图实际用到的角色与底板（存证据）
+    pub cast: Vec<CastRef>,
     pub created_at: u64,
 }
 
@@ -50,6 +74,8 @@ impl Default for Shot {
             slg_layers: "22".into(),
             layout: None,
             images: Vec::new(),
+            characters: Vec::new(),
+            cast: Vec::new(),
             created_at: 0,
         }
     }
@@ -130,6 +156,8 @@ pub fn add_many(
             slg_layers: d.slg_layers.clone(),
             layout: d.layout.clone(),
             images: Vec::new(),
+            characters: Vec::new(),
+            cast: Vec::new(),
             created_at: t,
         });
         next += 1;
@@ -154,6 +182,61 @@ pub fn set_layout(cfg: &Path, project: &str, id: &str, layout: Option<String>) -
     let updated = {
         let s = shots.iter_mut().find(|s| s.id == id).ok_or("镜头不存在")?;
         s.layout = layout;
+        s.clone()
+    };
+    save(cfg, project, &shots)?;
+    Ok(updated)
+}
+
+/// 去空、去重、截到 MAX_CAST——顺序按用户点选的先后保留。
+fn clean_ids(ids: Vec<String>) -> Vec<String> {
+    let mut out: Vec<String> = Vec::new();
+    for id in ids {
+        let id = id.trim().to_string();
+        if id.is_empty() || out.iter().any(|x| x == &id) {
+            continue;
+        }
+        if out.len() >= MAX_CAST {
+            break;
+        }
+        out.push(id);
+    }
+    out
+}
+
+/// 给一镜挂角色卡（存 id，不校验存在性：角色删了要能被体检报出来，而不是悄悄抹掉）。
+pub fn set_characters(cfg: &Path, project: &str, id: &str, ids: Vec<String>) -> Result<Shot, String> {
+    let mut shots = load(cfg, project)?;
+    let updated = {
+        let s = shots.iter_mut().find(|s| s.id == id).ok_or("镜头不存在")?;
+        s.characters = clean_ids(ids);
+        s.clone()
+    };
+    save(cfg, project, &shots)?;
+    Ok(updated)
+}
+
+/// 记下这次出图实际用到的角色与底板（体检据此判「跨格是不是同一张底板」）。
+pub fn set_cast(cfg: &Path, project: &str, id: &str, cast: Vec<CastRef>) -> Result<Shot, String> {
+    let mut shots = load(cfg, project)?;
+    let updated = {
+        let s = shots.iter_mut().find(|s| s.id == id).ok_or("镜头不存在")?;
+        let mut out: Vec<CastRef> = Vec::new();
+        for c in cast {
+            let cid = c.id.trim().to_string();
+            if cid.is_empty() || out.iter().any(|x| x.id == cid) {
+                continue;
+            }
+            if out.len() >= MAX_CAST {
+                break;
+            }
+            out.push(CastRef {
+                id: cid,
+                name: c.name.trim().to_string(),
+                plate: c.plate.map(|p| p.trim().to_string()).filter(|p| !p.is_empty()),
+            });
+        }
+        s.cast = out;
         s.clone()
     };
     save(cfg, project, &shots)?;
@@ -198,9 +281,21 @@ pub fn export_episode(
     let mut lines = vec![format!("# {} · 分镜导出", p.name), String::new()];
     let mut exported = 0usize;
     let mut missing = 0usize;
+    let mut cast_shots = 0usize;
     for s in &shots {
         lines.push(format!("## {:02}", s.index));
         lines.push(String::new());
+        let names: Vec<String> = s
+            .cast
+            .iter()
+            .map(|c| c.name.clone())
+            .filter(|n| !n.is_empty())
+            .collect();
+        if !names.is_empty() {
+            cast_shots += 1;
+            lines.push(format!("角色：{}", names.join("、")));
+            lines.push(String::new());
+        }
         lines.push(s.prompt.clone());
         lines.push(String::new());
         let Some(src) = s.images.last() else {
@@ -233,6 +328,7 @@ pub fn export_episode(
         "shots": shots.len(),
         "images": exported,
         "missing": missing,
+        "castShots": cast_shots,
         "createdAt": now_ms() / 1000,
     });
     let text = serde_json::to_string_pretty(&manifest).map_err(|e| e.to_string())?;

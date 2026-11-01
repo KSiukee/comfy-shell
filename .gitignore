@@ -20,4 +20,5 @@ dev/__pycache__/
 docs/
 .codex/
 AGENTS.md
+logs/
 

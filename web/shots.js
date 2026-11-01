@@ -46,7 +46,7 @@ function shotRow(s) {
       toast(String(e), true);
     }
   };
-  row.append(idx, prompt, count, fill, again, del);
+  row.append(idx, prompt, shotCastChips(s), count, fill, again, del);
   return row;
 }
 
@@ -56,10 +56,14 @@ async function shotsRefresh() {
   const p = shotProject();
   if (!p) {
     box.textContent = "先在项目栏选一个项目";
+    if ($("shotsSummary")) $("shotsSummary").textContent = "";
+    if ($("shotsCheckBox")) $("shotsCheckBox").hidden = true;
     return;
   }
   if (p.private) {
     box.textContent = "私密项目暂不支持镜头（先移出隐私区）";
+    if ($("shotsSummary")) $("shotsSummary").textContent = "";
+    if ($("shotsCheckBox")) $("shotsCheckBox").hidden = true;
     return;
   }
   try {
@@ -82,9 +86,11 @@ async function shotsRefresh() {
     };
     empty.append(t, b);
     box.appendChild(empty);
+    shotSummaryUpdate();
     return;
   }
   for (const s of shotsCache) box.appendChild(shotRow(s));
+  shotSummaryUpdate();
 }
 
 function fillShot(s) {
@@ -108,23 +114,11 @@ function fillShot(s) {
 async function regenerateShot(s) {
   const p = shotProject();
   if (!p) return;
-  fillShot(s);
-  // 重画换种子，否则 ComfyUI 会直接回缓存里的同一张图
-  $("seed").value = Math.floor(Math.random() * 1000000000);
   $("shotsModal").hidden = true;
-  const before = state.results.length;
-  try {
-    await generate();
-  } catch {}
-  const added = state.results.slice(0, Math.max(0, state.results.length - before));
-  for (const r of added) {
-    try {
-      await api.call("shot_add_image", { project: p.id, id: s.id, path: r.path });
-    } catch {}
-  }
+  const ok = await shotGenerate(s); // 挂的角色会一起带上（shotcast.js）
   await shotsRefresh();
   $("shotsModal").hidden = false;
-  toast(added.length ? `第 ${s.index} 格重画完成` : "没有新图（生成失败？）", !added.length);
+  toast(ok ? `第 ${s.index} 格重画完成` : "没有新图（生成失败？）", !ok);
 }
 
 $("shotsBtn").onclick = async () => {
