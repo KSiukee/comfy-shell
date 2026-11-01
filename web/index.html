@@ -602,7 +602,8 @@
       </div>
       <div class="row two">
         <div class="field"><label>蒙版羽化（px）</label><input type="number" id="inpaintFeather" min="0" max="96" step="2" value="12" /></div>
-        <div class="field"><label>参考图（放进洞里）</label><label class="check"><input type="checkbox" id="inpaintUseRef" /> 带上当前参考图</label></div>
+        <div class="field"><label>参考图（Qwen 放进洞里 / FLUX.3 用来锁人）</label><label class="check"><input type="checkbox" id="inpaintUseRef" /> 带上当前参考图</label></div>
+        <div class="muted" style="font-size:11px;margin:-4px 0 6px">想「只把脸换成角色卡上的人」：切 FLUX.3、涂住脸、勾上参考图（角色底板）、重绘强度 0.85-1.0（低于 0.7 参考图基本不起作用）。</div>
       </div>
       <div class="modal-actions">
         <button class="btn ghost" id="inpaintCancel">取消</button>

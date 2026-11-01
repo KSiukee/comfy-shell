@@ -1019,6 +1019,9 @@ pub fn build_inpaint(req: &InpaintReq) -> Result<Value, String> {
     if !p.supports_edit {
         return Err("这个模型不支持局部改图".into());
     }
+    if req.profile == "mossedit" {
+        return Err("MOSS 二编目前只做整图编辑；局部重绘请切到 FLUX.3".into());
+    }
     let steps = req.steps.max(1);
     let denoise = if req.denoise > 0.0 { req.denoise } else { 1.0 };
     let mut g: BTreeMap<String, Value> = BTreeMap::new();
@@ -1044,11 +1047,16 @@ pub fn build_inpaint(req: &InpaintReq) -> Result<Value, String> {
     } else {
         json!(["3", 0])
     };
-    g.insert(
-        "7".into(),
-        json!({"class_type": "VAEEncodeForInpaint",
-               "inputs": {"pixels": ["1", 0], "vae": ["4", 0], "mask": mask_src, "grow_mask_by": 8}}),
-    );
+    // FLUX.3（Flux2 VAE，16 通道）不吃 VAEEncodeForInpaint：实测画出来是一块纯色。
+    // 它走 InpaintModelConditioning（编码 + 噪声蒙版，任何 VAE 都能用）。
+    let flux_inpaint = req.profile.starts_with("flux3");
+    if !flux_inpaint {
+        g.insert(
+            "7".into(),
+            json!({"class_type": "VAEEncodeForInpaint",
+                   "inputs": {"pixels": ["1", 0], "vae": ["4", 0], "mask": mask_src.clone(), "grow_mask_by": 8}}),
+        );
+    }
 
     let (pos, neg): (Value, Value) = if req.profile == "qwen21" {
         let mut te = serde_json::Map::new();
@@ -1064,16 +1072,44 @@ pub fn build_inpaint(req: &InpaintReq) -> Result<Value, String> {
         }
         g.insert("8".into(), json!({"class_type": "TextEncodeQwenImage21", "inputs": Value::Object(te)}));
         (json!(["8", 0]), json!(["8", 1]))
+    } else if flux_inpaint {
+        // FLUX.3 局部重绘：底板走 ReferenceMultiLatent 进 conditioning，
+        // 再用 InpaintModelConditioning 把「原图 + 蒙版」编成带噪声蒙版的 latent。
+        // 这就是「只重画脸、保住底图质感」的那条路（#57）。
+        g.insert("8".into(), json!({"class_type": "CLIPTextEncode", "inputs": {"clip": ["6", 0], "text": req.prompt}}));
+        g.insert("9".into(), json!({"class_type": "CLIPTextEncode", "inputs": {"clip": ["6", 0], "text": req.negative}}));
+        let (cond_pos, cond_neg): (Value, Value) = match &req.ref_image {
+            Some(refname) => {
+                g.insert("16".into(), json!({"class_type": "LoadImage", "inputs": {"image": refname}}));
+                let mut rm = serde_json::Map::new();
+                rm.insert("positive".into(), json!(["8", 0]));
+                rm.insert("negative".into(), json!(["9", 0]));
+                rm.insert("vae".into(), json!(["4", 0]));
+                rm.insert("resolution".into(), json!("keep resolution"));
+                rm.insert("images.image0".into(), json!(["16", 0]));
+                g.insert("17".into(), json!({"class_type": "ReferenceMultiLatent", "inputs": Value::Object(rm)}));
+                (json!(["17", 0]), json!(["17", 1]))
+            }
+            None => (json!(["8", 0]), json!(["9", 0])),
+        };
+        g.insert(
+            "18".into(),
+            json!({"class_type": "InpaintModelConditioning", "inputs": {
+                "positive": cond_pos, "negative": cond_neg, "vae": ["4", 0],
+                "pixels": ["1", 0], "mask": mask_src.clone(), "noise_mask": true}}),
+        );
+        (json!(["18", 0]), json!(["18", 1]))
     } else {
         g.insert("8".into(), json!({"class_type": "CLIPTextEncode", "inputs": {"clip": ["6", 0], "text": req.prompt}}));
         g.insert("9".into(), json!({"class_type": "CLIPTextEncode", "inputs": {"clip": ["6", 0], "text": req.negative}}));
         (json!(["8", 0]), json!(["9", 0]))
     };
 
+    let latent_ref: Value = if flux_inpaint { json!(["18", 2]) } else { json!(["7", 0]) };
     g.insert(
         "10".into(),
         json!({"class_type": "KSampler", "inputs": {
-            "model": ["5", 0], "positive": pos, "negative": neg, "latent_image": ["7", 0],
+            "model": ["5", 0], "positive": pos, "negative": neg, "latent_image": latent_ref,
             "seed": pick_seed(req.seed), "steps": steps, "cfg": req.cfg,
             "sampler_name": p.sampler, "scheduler": "simple", "denoise": denoise}}),
     );
@@ -1302,6 +1338,43 @@ mod tests {
         assert_eq!(g["8"]["inputs"]["model"], json!(["30", 0]), "KSampler 必须用到挂了 Turbo 的模型");
         // 没挂参考图：走普通文生图两路编码
         assert_eq!(g["5"]["class_type"], "CLIPTextEncode");
+    }
+
+    #[test]
+    fn flux_inpaint_with_plate_uses_reference_latents() {
+        let base = |ref_image: Option<&str>| InpaintReq {
+            profile: "flux3".into(),
+            prompt: "同一个人".into(),
+            negative: String::new(),
+            source: "src.png".into(),
+            mask: "mask.png".into(),
+            steps: 16,
+            cfg: 1.0,
+            seed: 1,
+            denoise: 0.55,
+            feather: 12,
+            ref_image: ref_image.map(|s| s.to_string()),
+        };
+        let g = build_inpaint(&base(Some("plate.png"))).unwrap();
+        assert_eq!(g["17"]["class_type"], "ReferenceMultiLatent");
+        assert_eq!(g["17"]["inputs"]["images.image0"], json!(["16", 0]));
+        // FLUX 的 Flux2 VAE 不吃 VAEEncodeForInpaint（实测出纯色块），必须走 InpaintModelConditioning
+        assert!(g.get("7").is_none(), "FLUX 不该再用 VAEEncodeForInpaint");
+        assert_eq!(g["18"]["class_type"], "InpaintModelConditioning");
+        assert_eq!(g["10"]["inputs"]["positive"], json!(["18", 0]));
+        assert_eq!(g["10"]["inputs"]["latent_image"], json!(["18", 2]));
+        assert_eq!(g["10"]["inputs"]["denoise"], 0.55, "重绘强度要透传");
+
+        // 不带底板：仍然走 InpaintModelConditioning，只是没有 ReferenceMultiLatent
+        let g2 = build_inpaint(&base(None)).unwrap();
+        assert!(g2.get("17").is_none());
+        assert_eq!(g2["18"]["inputs"]["positive"], json!(["8", 0]));
+        assert_eq!(g2["10"]["inputs"]["latent_image"], json!(["18", 2]));
+
+        // MOSS 二编不支持局部重绘：要给明确错误，而不是悄悄画坏
+        let mut r = base(None);
+        r.profile = "mossedit".into();
+        assert!(build_inpaint(&r).is_err());
     }
 
     #[test]
