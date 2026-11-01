@@ -277,9 +277,9 @@ generate = async function charGenerate() {
   const wasRefs = state.refs.slice();
   ta.value = resolved.text;
   try {
-    // 先切模型再挂参考：换模型会清空 state.refs、并把尺寸重置成该模型的默认值
+    // 只有「不能吃参考图」的模型才强制切走；能编辑的（qwen21 / flux3base）尊重用户选择
     const p0 = profile();
-    if (p0 && p0.id !== "flux3") {
+    if (p0 && !p0.supportsEdit) {
       const w0 = $("width").value;
       const h0 = $("height").value;
       $("model").value = "flux3";
@@ -287,7 +287,9 @@ generate = async function charGenerate() {
       await new Promise((r) => setTimeout(r, 300));
       $("width").value = w0;
       $("height").value = h0;
-      toast("角色卡走 FLUX.3 编辑（保脸最稳）");
+      toast(`${p0.label || p0.id} 不能吃参考图，已切到 FLUX.3 编辑`);
+    } else if (p0 && p0.id === "qwen21") {
+      toast("Qwen 编辑也能保造型，但比 FLUX.3 慢很多（约 2-4 分钟/张）");
     }
     const plates = await charAttachPlates(resolved.matched);
     if (plates.length) {

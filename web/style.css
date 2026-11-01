@@ -698,6 +698,12 @@ body.mode-pro .simple-only { display: none !important; }
 .shot-pick-row .mono { flex: 0 0 auto; font-size: 11px; }
 
 /* 提示词框内联补全 */
+.char-test-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; max-height: 62vh; overflow-y: auto; }
+.char-test-cell { position: relative; min-height: 120px; border: 1px solid #232b3a; border-radius: 8px; overflow: hidden; cursor: pointer; background: #10141c; }
+.char-test-cell img { width: 100%; display: block; }
+.char-test-cell.ok { border-color: #4f7f52; box-shadow: 0 0 0 1px #4f7f52 inset; }
+.char-test-cell.no { border-color: #7f4f4f; opacity: .55; }
+.char-test-cell span { position: absolute; left: 6px; bottom: 5px; font-size: 10.5px; color: #cfd8e8; background: rgba(0,0,0,.5); padding: 1px 5px; border-radius: 4px; }
 .char-wrap { display: flex; gap: 12px; min-height: 380px; }
 .char-side { width: 220px; flex: 0 0 220px; }
 .char-list { display: flex; flex-direction: column; gap: 4px; max-height: 460px; overflow-y: auto; }
