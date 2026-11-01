@@ -210,6 +210,102 @@ function charOpen() {
   charRefresh(charCurrent && charCurrent.id);
 }
 
+// ---------------------------------------------------------------- @角色 引用（#54）
+
+/// 确保角色列表已加载（第一次用到时才拉，不在启动时打扰）。
+async function charEnsureLoaded() {
+  if (charList.length) return charList;
+  try {
+    charList = await api.call("character_list", { project: charProjectId() || null });
+  } catch {
+    charList = [];
+  }
+  return charList;
+}
+
+/// 把提示词里的 @名字 换成身份描述，返回 {text, matched:[角色...], missing:[名字...]}。
+async function charResolveTokens(raw) {
+  const cats = await charEnsureLoaded();
+  const matched = [];
+  const missing = [];
+  const text = raw.replace(/@([\u4e00-\u9fa5A-Za-z0-9_\-]{1,20})/g, (whole, name) => {
+    const hit = cats.find((c) => c.name === name) || cats.find((c) => c.name.startsWith(name));
+    if (!hit) {
+      missing.push(name);
+      return whole;
+    }
+    if (!matched.some((c) => c.id === hit.id)) matched.push(hit);
+    const bits = [hit.identityZh];
+    const outfit = hit.outfits && hit.outfits[0] && hit.outfits[0].desc;
+    if (outfit) bits.push(`服装：${outfit}`);
+    return bits.filter(Boolean).join("，");
+  });
+  return { text, matched, missing };
+}
+
+/// 把角色的身份底板挂成参考图（最多 3 张）。
+async function charAttachPlates(chars) {
+  const plates = chars.map((c) => c.identityPlate).filter(Boolean).slice(0, 3);
+  if (!plates.length) return [];
+  const names = [];
+  for (const p of plates) {
+    const dataUrl = await api.call("image_data_url", { path: p });
+    names.push(await api.call("save_ref_image", { name: "char_plate.png", dataUrl }));
+  }
+  return names;
+}
+
+// 包一层 generate：有 @角色 就展开身份、挂底板、切到 FLUX.3 编辑
+const charBaseGenerate = generate;
+generate = async function charGenerate() {
+  const ta = $("prompt");
+  const raw = ta.value;
+  if (!raw.includes("@")) return charBaseGenerate();
+
+  let resolved;
+  try {
+    resolved = await charResolveTokens(raw);
+  } catch {
+    return charBaseGenerate();
+  }
+  if (resolved.missing.length) {
+    toast(`没有叫「${resolved.missing.join("、")}」的角色卡`, true);
+  }
+  if (!resolved.matched.length) return charBaseGenerate();
+
+  const wasMode = state.mode;
+  const wasRefs = state.refs.slice();
+  ta.value = resolved.text;
+  try {
+    // 先切模型再挂参考：换模型会清空 state.refs、并把尺寸重置成该模型的默认值
+    const p0 = profile();
+    if (p0 && p0.id !== "flux3") {
+      const w0 = $("width").value;
+      const h0 = $("height").value;
+      $("model").value = "flux3";
+      $("model").dispatchEvent(new Event("change"));
+      await new Promise((r) => setTimeout(r, 300));
+      $("width").value = w0;
+      $("height").value = h0;
+      toast("角色卡走 FLUX.3 编辑（保脸最稳）");
+    }
+    const plates = await charAttachPlates(resolved.matched);
+    if (plates.length) {
+      state.refs = plates;
+      renderRefs();
+      if (profile() && profile().supportsEdit && state.mode !== "edit") setMode("edit");
+    } else {
+      toast(`「${resolved.matched[0].name}」还没有底板，这次只注入了文字（点「出底板」会更稳）`);
+    }
+    return await charBaseGenerate();
+  } finally {
+    ta.value = raw;
+    state.refs = wasRefs;
+    renderRefs();
+    if (wasMode !== state.mode) setMode(wasMode);
+  }
+};
+
 function charInit() {
   $("charBtn").onclick = () => charOpen();
   $("charClose").onclick = () => ($("charModal").hidden = true);
@@ -225,6 +321,20 @@ function charInit() {
   $("charDeleteBtn").onclick = () => charDelete();
   $("charPlateBtn").onclick = () => charMakePlate();
   $("charUsePlateBtn").onclick = () => charUsePlate();
+  $("charRefBtn").onclick = () => {
+    const name = $("charName").value.trim();
+    if (!name) {
+      toast("先填角色名", true);
+      return;
+    }
+    const box = $("prompt");
+    const cur = box.value.trim();
+    box.value = cur ? `${cur}，@${name}` : `@${name}`;
+    box.focus();
+    box.setSelectionRange(box.value.length, box.value.length);
+    $("charModal").hidden = true;
+    toast(`已插入 @${name}`);
+  };
 }
 
 charInit();
