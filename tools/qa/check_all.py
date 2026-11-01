@@ -176,7 +176,7 @@ def layer_ratchet() -> tuple[bool, str, int]:
 
 
 def layer_js() -> tuple[bool, str, int]:
-    files = ["web/app.js", "web/results.js", "web/recipes.js", "web/grid.js", "web/models.js", "web/expressions.js", "web/workflowparams.js", "web/promptfx.js", "web/stylepick.js", "web/promptlint.js", "web/promptextra.js", "web/prompthelper.js", "web/store.js", "web/projects.js", "web/vault.js", "web/layout.js", "web/layoutio.js", "web/data.js", "web/shots.js", "web/versions.js", "web/prompts.js", "web/library.js", "web/batch.js", "web/train.js", "web/inpaint.js", "web/layout-editor.js", "web/tools.js", "web/region.js", "web/meta.js", "web/detail.js", "web/ab.js", "web/workspace.js", "web/problems.js", "web/help.js", "web/boot.js", "dev/smoke.mjs"]
+    files = ["web/app.js", "web/results.js", "web/recipes.js", "web/grid.js", "web/models.js", "web/expressions.js", "web/promptbox.js", "web/workflowparams.js", "web/promptfx.js", "web/stylepick.js", "web/promptlint.js", "web/promptextra.js", "web/prompthelper.js", "web/store.js", "web/projects.js", "web/vault.js", "web/layout.js", "web/layoutio.js", "web/data.js", "web/shots.js", "web/versions.js", "web/prompts.js", "web/library.js", "web/batch.js", "web/train.js", "web/inpaint.js", "web/layout-editor.js", "web/tools.js", "web/region.js", "web/meta.js", "web/detail.js", "web/ab.js", "web/workspace.js", "web/problems.js", "web/help.js", "web/boot.js", "dev/smoke.mjs"]
     bad = []
     for p in files:
         code, out = run(["node", "--check", p])

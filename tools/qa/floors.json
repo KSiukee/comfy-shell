@@ -1,6 +1,6 @@
 {
   "min_tests": 55,
-  "min_smoke_checks": 40,
+  "min_smoke_checks": 41,
   "max_god_files": 6,
   "god_file_lines": 400,
   "max_lines": {
