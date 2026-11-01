@@ -48,6 +48,10 @@ await call("Runtime.enable");
 let out;
 if (cmd === "eval") {
   out = await evaluate(rest.join(" "));
+} else if (cmd === "eval-file") {
+  // 从文件读 JS：避免 PowerShell 把 $() 当子表达式展开（踩过一次，调了半天）
+  const { readFileSync } = await import("node:fs");
+  out = await evaluate(readFileSync(rest[0], "utf8"));
 } else if (cmd === "shot") {
   const r = await call("Page.captureScreenshot", { format: "png" });
   const { writeFileSync, mkdirSync } = await import("node:fs");

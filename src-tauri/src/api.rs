@@ -292,13 +292,31 @@ pub fn profile(name: &str) -> Option<Profile> {
             label: "MOSS-Image Base（底模，可对比）",
             shift: None,
         },
+        // MOSS 二编（ComfyUI 0.43 官方 MOSS-Image Edit 通路）：
+        // 文本编码器必须带 Qwen3.5 视觉权重，所以这里用官方的 qwen3.5_9b，
+        // 不跟其他 MOSS 档共用 heretic 版。见 docs/58-MOSS二编-接入-20261101.md
+        "mossedit" => Profile {
+            unet: "moss_image_sft_int8_convrot.safetensors",
+            clip: "qwen3.5_9b_int8_convrot.safetensors",
+            clip_type: "moss_image",
+            vae: "flux2-vae_small.safetensors",
+            sampler: "euler",
+            steps: 30,
+            cfg: 4.0,
+            turbo_lora: None,
+            turbo_steps: 30,
+            supports_edit: true,
+            default_negative: "nsfw, worst quality, bad anatomy, watermark, jpeg artifact",
+            label: "MOSS-Image 编辑（指令改衣/改色/改光）",
+            shift: None,
+        },
         _ => return None,
     })
 }
 
 pub fn profiles_json() -> Value {
     let mut out = Vec::new();
-    for name in ["qwen21", "flux3", "flux3base", "moss", "mossbase", "mossimagine"] {
+    for name in ["qwen21", "flux3", "flux3base", "moss", "mossbase", "mossimagine", "mossedit"] {
         if let Some(p) = profile(name) {
             out.push(json!({
                 "id": name,
@@ -314,6 +332,9 @@ pub fn profiles_json() -> Value {
     }
     Value::Array(out)
 }
+
+/// MOSS 二编用的编辑 LoRA（Comfy-Org 打包版，从 chinoll/Moss-Image-Edit 转来）。
+pub const MOSS_EDIT_LORA: &str = "moss_image_edit_lora_rank_64_bf16.safetensors";
 
 /// Resolve the effective LoRA: explicit pick wins, otherwise the turbo LoRA when asked.
 fn lora_node(model_src: &str, req: &GenReq, p: &Profile, turbo: bool) -> (Option<String>, String) {
@@ -376,6 +397,22 @@ pub fn build_graph(req: &GenReq, turbo: bool) -> Result<Value, String> {
             json!({"class_type": "QwenImage21Cache", "inputs": {"model": ["1", 0], "device": "auto", "dtype": "default"}}),
         );
         model_src = "2".into();
+    }
+    // MOSS 二编（官方 0.43 通路）：编辑 LoRA 先挂，再走 SLG 的 Simple 版。
+    // 顺序照官方示例：UNET -> LoRA -> SkipLayerGuidanceDiTSimple -> KSampler。
+    if req.profile == "mossedit" && !req.ref_images.is_empty() {
+        g.insert(
+            "31".into(),
+            json!({"class_type": "LoraLoaderModelOnly", "inputs": {
+                "model": [model_src.clone(), 0], "lora_name": MOSS_EDIT_LORA, "strength_model": 1.0}}),
+        );
+        g.insert(
+            "32".into(),
+            json!({"class_type": "SkipLayerGuidanceDiTSimple", "inputs": {
+                "model": ["31", 0], "double_layers": "", "single_layers": req.slg_layers.clone(),
+                "start_percent": 0.0, "end_percent": 1.0}}),
+        );
+        model_src = "32".into();
     }
     if let Some(shift) = p.shift {
         g.insert(
@@ -465,6 +502,51 @@ pub fn build_graph(req: &GenReq, turbo: bool) -> Result<Value, String> {
             );
             json!(["7", 0])
         }
+        // MOSS 二编：参考图既是「要改的那张图」，也编码成 reference latents。
+        // edit_format 必须选 Moss-Image-Edit——那是 chinoll 这批 LoRA 训练用的
+        // index_timestep_zero_frame0 布局；选错（比如默认的 ai-toolkit 布局）
+        // 指令会完全失效、输出只是原图复刻（实测见 docs/58）。
+        ("mossedit", true) => {
+            let neg = if req.negative.is_empty() { p.default_negative } else { req.negative.as_str() };
+            for (i, img) in req.ref_images.iter().take(4).enumerate() {
+                g.insert(format!("{}", 20 + i), json!({"class_type": "LoadImage", "inputs": {"image": img}}));
+            }
+            for (nid, text) in [("5", pos_text.clone()), ("6", neg.to_string())] {
+                let mut te = Map::new();
+                te.insert("clip".into(), json!(["3", 0]));
+                te.insert("vae".into(), json!(["4", 0]));
+                te.insert("prompt".into(), json!(text));
+                te.insert("edit_format".into(), json!("Moss-Image-Edit"));
+                te.insert("image_strength".into(), json!(1.0));
+                for i in 0..req.ref_images.len().min(4) {
+                    te.insert(format!("images.image_{}", i), json!([format!("{}", 20 + i), 0]));
+                }
+                g.insert(nid.into(), json!({"class_type": "TextEncodeMOSSImageEdit", "inputs": Value::Object(te)}));
+            }
+            // MOSS 要求宽高都是 16 的倍数（镜头里常见的 1365 这种会被截到 1360）
+            let w = (req.width / 16).max(1) * 16;
+            let h = (req.height / 16).max(1) * 16;
+            g.insert(
+                "7".into(),
+                json!({"class_type": "EmptyFlux2LatentImage",
+                       "inputs": {"width": w, "height": h, "batch_size": batch}}),
+            );
+            json!(["7", 0])
+        }
+        ("mossedit", false) => {
+            // 没挂参考图就是普通 MOSS 文生图（同一个底模、官方文本编码器）
+            g.insert("5".into(), json!({"class_type": "CLIPTextEncode", "inputs": {"clip": ["3", 0], "text": pos_text.clone()}}));
+            let neg = if req.negative.is_empty() { p.default_negative } else { req.negative.as_str() };
+            g.insert("6".into(), json!({"class_type": "CLIPTextEncode", "inputs": {"clip": ["3", 0], "text": neg}}));
+            let w = (req.width / 16).max(1) * 16;
+            let h = (req.height / 16).max(1) * 16;
+            g.insert(
+                "7".into(),
+                json!({"class_type": "EmptyFlux2LatentImage",
+                       "inputs": {"width": w, "height": h, "batch_size": batch}}),
+            );
+            json!(["7", 0])
+        }
         (_, false) => {
             g.insert("5".into(), json!({"class_type": "CLIPTextEncode", "inputs": {"clip": ["3", 0], "text": pos_text.clone()}}));
             g.insert("6".into(), json!({"class_type": "CLIPTextEncode", "inputs": {"clip": ["3", 0], "text": req.negative}}));
@@ -508,7 +590,7 @@ pub fn build_graph(req: &GenReq, turbo: bool) -> Result<Value, String> {
     // gets them back from ReferenceMultiLatent; everything else uses two text encodes.
     let (pos, neg): (Value, Value) = if req.profile == "qwen21" {
         (json!(["5", 0]), json!(["5", 1]))
-    } else if edit {
+    } else if edit && req.profile != "mossedit" {
         (json!(["7", 0]), json!(["7", 1]))
     } else {
         (json!(["5", 0]), json!(["6", 0]))
@@ -1126,6 +1208,66 @@ pub fn run_raw(port: u16, graph: Value, timeout_secs: u64) -> Result<Value, Stri
         if completed {
             return Ok(entry.get("outputs").cloned().unwrap_or(Value::Null));
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn req(json_text: &str) -> GenReq {
+        serde_json::from_str(json_text).expect("GenReq 反序列化")
+    }
+
+    fn base(profile: &str, refs: &[&str]) -> GenReq {
+        req(&format!(
+            r#"{{"profile":"{profile}","mode":"edit","prompt":"换成皮夹克","width":1024,"height":1365,
+                 "steps":30,"cfg":4.0,"seed":1,"refImages":{}}}"#,
+            serde_json::to_string(refs).unwrap()
+        ))
+    }
+
+    #[test]
+    fn moss_edit_graph_uses_official_nodes() {
+        let g = build_graph(&base("mossedit", &["ref.png"]), false).unwrap();
+        // 文本编码走官方的 TextEncodeMOSSImageEdit，且 edit_format 必须是这个 LoRA 训练时的布局
+        for nid in ["5", "6"] {
+            let n = &g[nid];
+            assert_eq!(n["class_type"], "TextEncodeMOSSImageEdit");
+            assert_eq!(n["inputs"]["edit_format"], "Moss-Image-Edit");
+            assert_eq!(n["inputs"]["images.image_0"], json!(["20", 0]));
+            assert_eq!(n["inputs"]["vae"], json!(["4", 0]));
+        }
+        // 模型链：UNET -> 编辑 LoRA -> SLG(DiT Simple)
+        assert_eq!(g["31"]["class_type"], "LoraLoaderModelOnly");
+        assert_eq!(g["31"]["inputs"]["lora_name"], MOSS_EDIT_LORA);
+        assert_eq!(g["32"]["class_type"], "SkipLayerGuidanceDiTSimple");
+        assert_eq!(g["8"]["inputs"]["model"], json!(["32", 0]));
+        // 采样器拿到的是两个 TextEncodeMOSSImageEdit，不是 FLUX 那条 ReferenceMultiLatent
+        assert_eq!(g["8"]["inputs"]["positive"], json!(["5", 0]));
+        assert_eq!(g["8"]["inputs"]["negative"], json!(["6", 0]));
+        assert!(g.get("7").is_some());
+        // 1365 不是 16 的倍数：MOSS 会拒，必须被截到 1360
+        assert_eq!(g["7"]["inputs"]["height"], 1360);
+        assert_eq!(g["7"]["inputs"]["width"], 1024);
+    }
+
+
+    #[test]
+    fn moss_edit_without_refs_falls_back_to_t2i() {
+        let g = build_graph(&base("mossedit", &[]), false).unwrap();
+        assert_eq!(g["5"]["class_type"], "CLIPTextEncode");
+        assert_eq!(g["6"]["class_type"], "CLIPTextEncode");
+        assert!(g.get("31").is_none(), "没参考图就不该挂编辑 LoRA");
+        assert_eq!(g["7"]["inputs"]["height"], 1360);
+    }
+
+    #[test]
+    fn flux_edit_keeps_its_own_path() {
+        // 回归：别的档不能因为这次改动走到 MOSS 的节点上
+        let g = build_graph(&base("flux3", &["ref.png"]), false).unwrap();
+        assert_eq!(g["7"]["class_type"], "ReferenceMultiLatent");
+        assert!(g.get("31").is_none());
     }
 }
 

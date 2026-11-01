@@ -22,3 +22,6 @@ docs/
 AGENTS.md
 logs/
 
+
+# scratch probes / 临时脚本
+.scratch/
