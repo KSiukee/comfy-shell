@@ -81,6 +81,114 @@
         { "n": "双人合照", "zh": "双人同框，一前一后", "en": "two-shot, one in front of the other" },
         { "n": "头顶视角", "zh": "正上方俯拍，像无人机", "en": "top-down drone view" }
       ]
+    },
+    {
+      "key": "outfit",
+      "label": "服装",
+      "items": [
+        { "n": "校服", "zh": "白色衬衫配藏青百褶裙，校服领带", "en": "white shirt with navy pleated skirt, school tie" },
+        { "n": "水手服", "zh": "水手服，白色上衣配蓝色衣领", "en": "sailor uniform, white top with blue collar" },
+        { "n": "白衬衫", "zh": "白衬衫，袖口挽到小臂", "en": "white dress shirt, sleeves rolled to the forearm" },
+        { "n": "西装", "zh": "合身西装套装，领口挺括", "en": "tailored suit with crisp lapels" },
+        { "n": "旗袍", "zh": "深色旗袍，侧边开衩", "en": "dark qipao with a side slit" },
+        { "n": "汉服", "zh": "宽袖汉服，衣带垂落", "en": "loose-sleeved hanfu, sash hanging down" },
+        { "n": "毛衣", "zh": "粗针织毛衣，衣领松垮", "en": "chunky knit sweater with a loose collar" },
+        { "n": "风衣", "zh": "米色风衣，腰带半系", "en": "beige trench coat, belt half tied" },
+        { "n": "皮夹克", "zh": "黑色皮夹克，拉链半开", "en": "black leather jacket, zipper half open" },
+        { "n": "针织长裙", "zh": "贴身针织长裙，垂坠感", "en": "fitted knit maxi dress with soft drape" },
+        { "n": "机能风", "zh": "机能风外套，多个口袋与绑带", "en": "techwear jacket with utility pockets and straps" },
+        { "n": "卫衣", "zh": "宽松卫衣，帽子扣在脑后", "en": "oversized hoodie, hood pushed back" },
+        { "n": "婚纱", "zh": "白色婚纱，薄纱裙摆铺开", "en": "white wedding gown, tulle skirt spread out" },
+        { "n": "护士服", "zh": "复古护士服，白色围裙", "en": "vintage nurse uniform with white apron" },
+        { "n": "和服", "zh": "和服，腰带打成结", "en": "kimono with an obi tied in a knot" },
+        { "n": "运动装", "zh": "运动背心配短裤，汗湿", "en": "sports tank and shorts, sweat-damp" },
+        { "n": "军装大衣", "zh": "军装风长大衣，肩章清晰", "en": "long military coat with clear epaulettes" },
+        { "n": "吊带裙", "zh": "细吊带裙，锁骨露出", "en": "thin-strap slip dress, collarbones exposed" }
+      ]
+    },
+    {
+      "key": "material",
+      "label": "材质",
+      "items": [
+        { "n": "丝绸", "zh": "丝绸面料，光泽顺着褶皱流动", "en": "silk fabric, sheen flowing along the folds" },
+        { "n": "皮革", "zh": "皮革质感，表面有细密纹路", "en": "leather texture with fine grain" },
+        { "n": "针织", "zh": "针织纹理，毛线粗细可见", "en": "visible knit texture, yarn thickness clear" },
+        { "n": "薄纱", "zh": "半透明薄纱，边缘轻飘", "en": "translucent tulle, edges drifting" },
+        { "n": "牛仔", "zh": "水洗牛仔布，磨白处起毛", "en": "washed denim, frayed at the faded spots" },
+        { "n": "羊毛", "zh": "羊毛呢，表面一层细绒", "en": "wool felt with a fine nap" },
+        { "n": "金属", "zh": "金属反光，高光拉成一条", "en": "metallic reflection, highlights stretched into a line" },
+        { "n": "天鹅绒", "zh": "天鹅绒，光线压出深浅", "en": "velvet, light pressing depth into the nap" },
+        { "n": "亚麻", "zh": "亚麻布，褶皱自然", "en": "linen with natural creases" },
+        { "n": "蕾丝", "zh": "蕾丝花边，镂空透光", "en": "lace trim, cutouts letting light through" },
+        { "n": "漆面", "zh": "漆皮亮面，反光锐利", "en": "patent leather, sharp reflections" },
+        { "n": "羽毛", "zh": "羽毛质感，边缘蓬松", "en": "feathered texture with fluffy edges" },
+        { "n": "缎面", "zh": "缎面，垂坠带光", "en": "satin, draping with sheen" },
+        { "n": "粗花呢", "zh": "粗花呢，交织的粗线", "en": "tweed with coarse interwoven threads" },
+        { "n": "湿润", "zh": "潮湿的表面，水珠挂着", "en": "wet surface with clinging droplets" },
+        { "n": "磨砂", "zh": "磨砂质感，光被打散", "en": "frosted texture scattering the light" }
+      ]
+    },
+    {
+      "key": "style",
+      "label": "画风",
+      "items": [
+        { "n": "电影胶片", "zh": "电影胶片质感，轻微颗粒", "en": "cinematic film look with light grain" },
+        { "n": "宝丽来", "zh": "宝丽来相纸，边缘过曝", "en": "Polaroid print, edges blown out" },
+        { "n": "黑白胶片", "zh": "黑白胶片，银盐颗粒", "en": "black and white film, silver grain" },
+        { "n": "油画", "zh": "厚涂油画，笔触明显", "en": "thick oil painting, visible brushwork" },
+        { "n": "水彩", "zh": "水彩晕染，边界化开", "en": "watercolor wash, edges bleeding" },
+        { "n": "素描", "zh": "铅笔素描，排线清晰", "en": "pencil sketch with clear hatching" },
+        { "n": "漫画分镜", "zh": "漫画分镜，速度线与网点", "en": "manga panel with speed lines and screentone" },
+        { "n": "复古插画", "zh": "美式复古插画，印刷颗粒", "en": "vintage American illustration, print grain" },
+        { "n": "3D渲染", "zh": "3D 渲染，柔和全局光", "en": "3D render with soft global illumination" },
+        { "n": "黏土动画", "zh": "黏土定格动画质感", "en": "claymation stop-motion look" },
+        { "n": "概念图", "zh": "CG 概念设定图，光影强烈", "en": "CG concept art with strong lighting" },
+        { "n": "赛博霓虹", "zh": "赛博朋克霓虹配色", "en": "cyberpunk neon palette" },
+        { "n": "浮世绘", "zh": "浮世绘版画，平涂色块", "en": "ukiyo-e woodblock, flat color blocks" },
+        { "n": "像素画", "zh": "像素画，有限色板", "en": "pixel art with a limited palette" },
+        { "n": "双重曝光", "zh": "双重曝光，人影与风景叠合", "en": "double exposure, figure merged with landscape" },
+        { "n": "长曝光", "zh": "长曝光，光轨拖尾", "en": "long exposure with trailing light streaks" },
+        { "n": "极简海报", "zh": "极简海报，大面积留白", "en": "minimal poster with large empty space" },
+        { "n": "蒸汽波", "zh": "蒸汽波，紫粉渐变与网格", "en": "vaporwave, purple-pink gradient and grid" }
+      ]
+    },
+    {
+      "key": "era",
+      "label": "年代",
+      "items": [
+        { "n": "80年代港风", "zh": "八十年代港风，霓虹与胶片色", "en": "1980s Hong Kong style, neon and film color" },
+        { "n": "90年代日系", "zh": "九十年代日系，柔光与低饱和", "en": "1990s Japanese style, soft light, low saturation" },
+        { "n": "千禧Y2K", "zh": "千禧年 Y2K，金属与亮色", "en": "Y2K look with chrome and bright color" },
+        { "n": "民国上海", "zh": "民国上海，旗袍与老招牌", "en": "Republican-era Shanghai, qipao and old shop signs" },
+        { "n": "昭和喫茶店", "zh": "昭和喫茶店，暖灯与深色木", "en": "Showa-era kissaten, warm lamps and dark wood" },
+        { "n": "赛博未来", "zh": "赛博未来，全息与湿地面", "en": "cyber future with holograms and wet ground" },
+        { "n": "废土", "zh": "废土，锈迹与扬尘", "en": "wasteland with rust and blowing dust" },
+        { "n": "太空歌剧", "zh": "太空歌剧，巨大舱体与冷光", "en": "space opera, vast hulls and cold light" },
+        { "n": "北欧极简", "zh": "北欧极简，白墙与原木", "en": "Scandinavian minimal, white walls and raw wood" },
+        { "n": "地中海", "zh": "地中海，白墙蓝顶与强日照", "en": "Mediterranean, white walls, blue domes, harsh sun" },
+        { "n": "京都町屋", "zh": "京都町屋，木格栅与石板路", "en": "Kyoto machiya, wooden lattice and stone paving" },
+        { "n": "构成主义", "zh": "苏联构成主义，红黑斜向构图", "en": "Soviet constructivism, red-black diagonals" },
+        { "n": "装饰艺术", "zh": "装饰艺术 Art Deco，几何金线", "en": "Art Deco with geometric gold lines" },
+        { "n": "巴洛克", "zh": "巴洛克，繁复金饰与暗部", "en": "Baroque, ornate gilding and deep shadow" }
+      ]
+    },
+    {
+      "key": "weather",
+      "label": "天气",
+      "items": [
+        { "n": "雨", "zh": "下雨，雨丝斜落", "en": "rain falling at a slant" },
+        { "n": "暴雨", "zh": "暴雨，水花溅起", "en": "downpour, splashes rising" },
+        { "n": "雪", "zh": "落雪，雪片清晰", "en": "falling snow, flakes distinct" },
+        { "n": "薄雾", "zh": "薄雾，远处轮廓化开", "en": "thin mist, distant shapes softened" },
+        { "n": "晨雾", "zh": "晨雾，脚下留下浅印", "en": "morning fog, shallow footprints behind" },
+        { "n": "沙尘", "zh": "沙尘，空气泛黄", "en": "dust haze, the air turning yellow" },
+        { "n": "雷雨", "zh": "雷雨前压，云层低垂", "en": "storm front, low heavy clouds" },
+        { "n": "雾凇", "zh": "雾凇，枝条挂满白霜", "en": "rime ice coating the branches" },
+        { "n": "热浪", "zh": "热浪，空气扭曲", "en": "heat haze distorting the air" },
+        { "n": "极光", "zh": "极光，绿色帷幕垂落", "en": "aurora, green curtains hanging down" },
+        { "n": "湿地面", "zh": "湿地面反着灯", "en": "wet ground mirroring the lights" },
+        { "n": "炊烟", "zh": "炊烟，一缕升起", "en": "a thread of cooking smoke rising" }
+      ]
     }
   ]
 }
