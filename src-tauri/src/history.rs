@@ -30,6 +30,9 @@ pub struct HistoryItem {
     pub seed: i64,
     pub seconds: f64,
     pub images: Vec<HistoryImage>,
+    /// 生成时所在项目。私密项目根本不写历史；老记录没有这个字段 = 全局/未知。
+    #[serde(default)]
+    pub project: Option<String>,
 }
 
 const MAX_ITEMS: usize = 300;

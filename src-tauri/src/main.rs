@@ -6,6 +6,7 @@ mod dataio;
 mod enhance;
 mod fsutil;
 mod history;
+mod hints;
 mod imgmeta;
 mod layouts;
 mod library;
@@ -148,6 +149,7 @@ fn main() {
             commands::system::models_scan,
             commands::system::model_toggle,
             commands::system::model_preview,
+            commands::system::phrase_mine,
             commands::system::layout_tpl_list,
             commands::system::layout_tpl_load,
             commands::system::layout_tpl_save,

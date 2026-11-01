@@ -21,6 +21,7 @@ pub fn push_history(
     mode: &str,
     prompt: &str,
     negative: &str,
+    project: Option<String>,
     width: u32,
     height: u32,
     steps: u32,
@@ -44,6 +45,7 @@ pub fn push_history(
         cfg,
         seed,
         seconds: out.seconds,
+        project,
         images: out
             .images
             .iter()
@@ -150,7 +152,7 @@ pub async fn generate(app: tauri::AppHandle, mut req: api::GenReq, turbo: bool) 
         } else {
             push_history(
                 &handle, &req.profile, &label, &req.mode, &req.prompt, &req.negative,
-                req.width, req.height, req.steps, req.cfg, req.seed, &out,
+                req.project.clone(), req.width, req.height, req.steps, req.cfg, req.seed, &out,
             )
         };
 

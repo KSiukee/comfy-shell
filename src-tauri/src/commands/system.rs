@@ -357,6 +357,17 @@ pub fn model_preview(app: tauri::AppHandle, name: String) -> Result<String, Stri
     models::preview_data(&models_root(&app), &name)
 }
 
+/// 从历史提示词里挖「你反复写的短语」。`project` 为 Some 时只看那个项目自己生成的记录。
+#[tauri::command]
+pub fn phrase_mine(
+    app: tauri::AppHandle,
+    project: Option<String>,
+    hidden: Vec<String>,
+) -> Vec<hints::Phrase> {
+    let items = history::load(&cfg_dir(&app));
+    hints::mine(&items, project.as_deref(), &hidden)
+}
+
 // ---------------------------------------------------------------------------
 // Saved MOSS layout templates
 // ---------------------------------------------------------------------------

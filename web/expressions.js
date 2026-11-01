@@ -6,7 +6,28 @@ let adderData = null; // [{key,label,items:[{n,zh,en,g}]}]
 let adderCat = "";
 let adderQuery = "";
 let adderLang = localStorage.getItem("cs.adderLang") || "zh";
+let adderMineAll = false;
 const ADDER_FAV = "cs.adderFav";
+const PHRASE_HIDE = "cs.phraseHide";
+
+function phraseHidden() {
+  try {
+    const v = JSON.parse(localStorage.getItem(PHRASE_HIDE) || "[]");
+    return Array.isArray(v) ? v : [];
+  } catch {
+    return [];
+  }
+}
+
+function phraseHide(text) {
+  const list = phraseHidden();
+  if (!list.includes(text)) list.push(text);
+  localStorage.setItem(PHRASE_HIDE, JSON.stringify(list));
+}
+
+function adderProjectId() {
+  return window.projectUI && window.projectUI.current ? window.projectUI.current() : "";
+}
 
 function adderFavs() {
   try {
@@ -111,7 +132,11 @@ async function renderAdders() {
   if (!adderCat) adderCat = "expr";
   tabs.textContent = "";
   const favN = adderFavs().length;
-  const buttons = [{ key: "fav", label: `★ 收藏 ${favN}` }, ...cats.map((c) => ({ key: c.key, label: `${c.label} ${c.items.length}` }))];
+  const buttons = [
+    { key: "fav", label: `★ 收藏 ${favN}` },
+    { key: "mine", label: "我的用语" },
+    ...cats.map((c) => ({ key: c.key, label: `${c.label} ${c.items.length}` })),
+  ];
   for (const b of buttons) {
     const btn = document.createElement("button");
     btn.type = "button";
@@ -136,7 +161,23 @@ async function renderAdders() {
     tabs.appendChild(btn);
   }
 
-  const items = adderItems();
+  let items;
+  if (adderCat === "mine") {
+    try {
+      const rows = await api.call("phrase_mine", {
+        project: adderMineAll ? null : adderProjectId() || null,
+        hidden: phraseHidden(),
+      });
+      items = (rows || [])
+        .map((r) => ({ n: r.text, zh: r.text, en: r.text, g: "", cat: "mine", mine: true, count: r.count, sources: r.sources }))
+        .filter(adderMatches);
+    } catch (e) {
+      items = [];
+      toast(String(e), true);
+    }
+  } else {
+    items = adderItems();
+  }
   const box = $("exprList");
   box.textContent = "";
   $("exprCount").textContent = `${items.length} 个`;
@@ -144,8 +185,23 @@ async function renderAdders() {
     const d = document.createElement("div");
     d.className = "muted";
     d.style.cssText = "padding:14px 2px;font-size:12px";
-    d.textContent = adderCat === "fav" ? "还没有收藏：点卡片右上角的 ☆" : "没有匹配的条目";
+    if (adderCat === "fav") d.textContent = "还没有收藏：点卡片右上角的 ☆";
+    else if (adderCat === "mine" && !adderMineAll) d.textContent = "这个项目里还没有重复出现 3 次以上的短语。多写几条提示词，或者先看看全部项目。";
+    else if (adderCat === "mine") d.textContent = "还挖不到常用短语：同一个小片段至少要在 2 条提示词里出现 3 次。";
+    else d.textContent = "没有匹配的条目";
     box.appendChild(d);
+    if (adderCat === "mine" && !adderMineAll) {
+      const b = document.createElement("button");
+      b.type = "button";
+      b.className = "btn small ghost";
+      b.style.marginTop = "8px";
+      b.textContent = "看看全部项目";
+      b.onclick = () => {
+        adderMineAll = true;
+        renderAdders();
+      };
+      box.appendChild(b);
+    }
     return;
   }
   for (const it of items) {
@@ -155,17 +211,28 @@ async function renderAdders() {
     const name = document.createElement("b");
     name.textContent = it.n;
     const desc = document.createElement("span");
-    desc.textContent = adderText(it);
+    desc.textContent = it.mine ? `出现 ${it.count} 次 · 跨 ${it.sources} 条提示词` : adderText(it);
     const star = document.createElement("button");
     star.type = "button";
-    star.className = "expr-star" + (adderIsFav(it.cat, it) ? " on" : "");
-    star.textContent = adderIsFav(it.cat, it) ? "★" : "☆";
-    star.title = "收藏";
-    star.onclick = (e) => {
-      e.stopPropagation();
-      adderToggleFav(it.cat, it);
-      renderAdders();
-    };
+    if (it.mine) {
+      star.className = "expr-star";
+      star.textContent = "×";
+      star.title = "不是我的词：不再出现";
+      star.onclick = (e) => {
+        e.stopPropagation();
+        phraseHide(it.n);
+        renderAdders();
+      };
+    } else {
+      star.className = "expr-star" + (adderIsFav(it.cat, it) ? " on" : "");
+      star.textContent = adderIsFav(it.cat, it) ? "★" : "☆";
+      star.title = "收藏";
+      star.onclick = (e) => {
+        e.stopPropagation();
+        adderToggleFav(it.cat, it);
+        renderAdders();
+      };
+    }
     card.append(name, desc, star);
     card.onclick = () => adderApply(it);
     box.appendChild(card);

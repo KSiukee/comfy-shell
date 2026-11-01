@@ -228,7 +228,7 @@ pub async fn inpaint_image(app: tauri::AppHandle, req: InpaintCall) -> Result<Ge
             .unwrap_or((0, 0));
         let id = push_history(
             &handle, &req.profile, &label, "inpaint", &req.prompt, &req.negative,
-            w, h, req.steps, req.cfg, req.seed, &out,
+            None, w, h, req.steps, req.cfg, req.seed, &out,
         );
         Ok(GenResp { out, turbo: false, label, history_id: id })
     })
