@@ -1,6 +1,7 @@
 //! 设置 / 引擎 / 模型 / 素材 / 模板 / 系统杂项。
 
 use crate::*;
+use crate::characters;
 use serde::{Deserialize, Serialize};
 use serde_json::json;
 use tauri::State;
@@ -268,6 +269,49 @@ pub fn ref_preview(state: State<AppState>, name: String) -> Result<String, Strin
         "image/png"
     };
     Ok(format!("data:{mime};base64,{b64}"))
+}
+
+/// 任意本地图片 → dataURL（角色卡拿身份底板当参考图要用）。
+#[tauri::command]
+pub fn image_data_url(path: String) -> Result<String, String> {
+    let p = std::path::PathBuf::from(&path);
+    let meta = std::fs::metadata(&p).map_err(|e| format!("读不到图片: {e}"))?;
+    if !meta.is_file() {
+        return Err("不是文件".into());
+    }
+    if meta.len() > 40 * 1024 * 1024 {
+        return Err("图片太大（>40MB）".into());
+    }
+    let lower = path.to_lowercase();
+    let mime = if lower.ends_with(".jpg") || lower.ends_with(".jpeg") {
+        "image/jpeg"
+    } else if lower.ends_with(".webp") {
+        "image/webp"
+    } else {
+        "image/png"
+    };
+    let bytes = std::fs::read(&p).map_err(|e| e.to_string())?;
+    use base64::Engine as _;
+    Ok(format!(
+        "data:{mime};base64,{}",
+        base64::engine::general_purpose::STANDARD.encode(bytes)
+    ))
+}
+
+/// 角色卡（#43）：列表 / 保存 / 删除。`project` 为空给全部，否则给「全局 + 该项目」。
+#[tauri::command]
+pub fn character_list(app: tauri::AppHandle, project: Option<String>) -> Vec<characters::Character> {
+    characters::visible(characters::list(&cfg_dir(&app)), project.as_deref())
+}
+
+#[tauri::command]
+pub fn character_save(app: tauri::AppHandle, character: characters::Character) -> Result<characters::Character, String> {
+    characters::save(&cfg_dir(&app), character)
+}
+
+#[tauri::command]
+pub fn character_delete(app: tauri::AppHandle, id: String) -> Result<(), String> {
+    characters::delete(&cfg_dir(&app), &id)
 }
 
 

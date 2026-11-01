@@ -7,6 +7,7 @@ mod enhance;
 mod fsutil;
 mod history;
 mod hints;
+mod characters;
 mod imgmeta;
 mod layouts;
 mod library;
@@ -132,6 +133,10 @@ fn main() {
             commands::system::profiles,
             commands::system::save_ref_image,
             commands::system::ref_preview,
+            commands::system::image_data_url,
+            commands::system::character_list,
+            commands::system::character_save,
+            commands::system::character_delete,
             commands::system::read_input_image,
             pose::pose_pack_list,
             pose::poses_catalog,

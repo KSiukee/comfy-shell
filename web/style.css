@@ -698,6 +698,14 @@ body.mode-pro .simple-only { display: none !important; }
 .shot-pick-row .mono { flex: 0 0 auto; font-size: 11px; }
 
 /* 提示词框内联补全 */
+.char-wrap { display: flex; gap: 12px; min-height: 380px; }
+.char-side { width: 220px; flex: 0 0 220px; }
+.char-list { display: flex; flex-direction: column; gap: 4px; max-height: 460px; overflow-y: auto; }
+.char-row { display: flex; flex-direction: column; align-items: flex-start; gap: 1px; padding: 6px 9px; border: 1px solid #232b3a; border-radius: 7px; background: #131922; color: var(--text); cursor: pointer; text-align: left; font: inherit; }
+.char-row.on { border-color: #3d5480; background: #1b2334; }
+.char-row b { font-size: 12.5px; font-weight: 500; }
+.char-row span { font-size: 10.5px; color: #7f8ca4; }
+.char-main { flex: 1; min-width: 0; }
 .pb-panel { position: absolute; z-index: 80; min-width: 300px; max-width: 460px; max-height: 260px; overflow-y: auto; padding: 4px; border: 1px solid #2c3446; border-radius: 9px; background: #10141c; box-shadow: 0 10px 28px rgba(0,0,0,.45); }
 .pb-row { display: grid; grid-template-columns: auto 1fr; gap: 2px 8px; width: 100%; text-align: left; padding: 5px 8px; border: 0; border-radius: 6px; background: none; color: var(--text); cursor: pointer; font: inherit; }
 .pb-row.on { background: #1c2534; }
