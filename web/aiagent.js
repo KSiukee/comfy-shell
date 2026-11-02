@@ -2,6 +2,9 @@
 // 口径：AI 只能碰 ComfyUI 与设置；项目/图库不给摸；不许改显影程序文件（工具里也没有）。
 
 let aiPlanData = null;
+let aiCtx = [];
+let aiLastRequest = "";
+let aiReplanning = false;
 
 function aiSetText(id, text) {
   const el = $(id);
@@ -112,7 +115,6 @@ function aiRenderPlan(data) {
     ok.className = "hint";
     ok.textContent = "没有需要执行的动作。";
     box.appendChild(ok);
-    return;
   }
   steps.forEach((step, i) => {
     const card = document.createElement("div");
@@ -136,30 +138,63 @@ function aiRenderPlan(data) {
     } else {
       const btn = document.createElement("button");
       btn.className = "btn small";
-      btn.textContent = "执行这一步";
+      btn.textContent = step.action === "inspect" ? "查一下" : "执行这一步";
       btn.onclick = () => aiExecuteStep(step, btn);
       card.appendChild(btn);
     }
     box.appendChild(card);
   });
+
+  if (aiCtx.length) {
+    const foot = document.createElement("div");
+    foot.className = "ai-replan";
+    const btn = document.createElement("button");
+    btn.className = "btn small primary";
+    btn.textContent = "把执行结果给 AI，继续";
+    btn.onclick = () => aiReplan("把刚才的结果给它看");
+    foot.appendChild(btn);
+    box.appendChild(foot);
+  }
+}
+
+async function runPlanCall(extra, stateText) {
+  const btn = $("aiPlanBtn");
+  if (btn) btn.disabled = true;
+  aiSetText("aiPlanState", stateText);
+  try {
+    const data = await api.call("ai_plan", {
+      request: aiLastRequest,
+      extra: extra || null,
+    });
+    aiPlanData = data;
+    aiRenderPlan(data);
+    aiSetText("aiPlanState", `完成 · ${Math.round((data.ms || 0) / 1000)} 秒`);
+    return data;
+  } catch (e) {
+    aiSetText("aiPlanState", "失败");
+    toast(String(e), true);
+    return null;
+  } finally {
+    if (btn) btn.disabled = false;
+  }
 }
 
 async function aiPlan() {
   const req = ($("aiRequest") ? $("aiRequest").value : "").trim();
   if (!req) return toast("先说一句要它做什么", true);
-  const btn = $("aiPlanBtn");
-  btn.disabled = true;
-  aiSetText("aiPlanState", "体检 + 让 Pi 出方案…");
+  aiLastRequest = req;
+  aiCtx = [];
+  await runPlanCall(null, "体检 + 让 Pi 出方案…");
+}
+
+async function aiReplan(reason) {
+  if (!aiLastRequest || aiReplanning) return;
+  aiReplanning = true;
   try {
-    const data = await api.call("ai_plan", { request: req });
-    aiPlanData = data;
-    aiRenderPlan(data);
-    aiSetText("aiPlanState", `完成 · ${Math.round((data.ms || 0) / 1000)} 秒`);
-  } catch (e) {
-    aiSetText("aiPlanState", "失败");
-    toast(String(e), true);
+    const extra = aiCtx.join("\n").slice(-6000);
+    await runPlanCall(extra, `${reason}，等它更新方案…`);
   } finally {
-    btn.disabled = false;
+    aiReplanning = false;
   }
 }
 
@@ -252,14 +287,29 @@ async function aiExecuteStep(step, btn) {
       } finally {
         if (typeof setBusy === "function") setBusy(false);
       }
+    } else if (action === "inspect") {
+      const target = String(args.target || "logs");
+      btn.textContent = "查询中…";
+      const r = await api.call("ai_inspect", {
+        target,
+        lines: Number(args.lines) || 120,
+      });
+      aiCtx.push(`查询 ${target} 的最新结果：` + JSON.stringify(r).slice(0, 4000));
+      btn.textContent = "已查";
+      await aiReplan(`已拿到最新 ${target}`);
+      return;
     } else {
       toast("这个动作还不支持：" + action, true);
       return;
     }
+    aiCtx.push(`已执行「${aiStepLabel(step)}」（${action}）成功`);
     btn.textContent = "已执行";
+    aiRenderPlan(aiPlanData);
   } catch (e) {
+    aiCtx.push(`执行「${aiStepLabel(step)}」（${action}）失败：${String(e).slice(0, 300)}`);
     btn.disabled = false;
     btn.textContent = "重试";
+    aiRenderPlan(aiPlanData);
     toast(String(e), true);
   }
 }

@@ -359,6 +359,68 @@ pub fn install_engine(cfg: &Path, target: &Path, prog: EngineProgress) -> Result
 
 // ---------------------------------------------------------------- 体检
 
+/// 只读查询（L2）：AI 计划里的 `inspect` 步用，查完把结果补给它重新出方案。
+pub fn inspect(s: &Settings, target: &str, lines: usize) -> Result<serde_json::Value, String> {
+    let root = PathBuf::from(&s.comfy_root);
+    match target {
+        "logs" => {
+            let n = lines.clamp(10, 400);
+            let text = tail_text(&root.join("comfyshell-server.log"), n, 60_000);
+            Ok(serde_json::json!({
+                "target": "logs",
+                "lines": text.lines().count(),
+                "tail": text,
+            }))
+        }
+        "models" => {
+            let scanned = models::scan(&root.join("ComfyUI").join("models"));
+            let items: Vec<serde_json::Value> = scanned
+                .iter()
+                .take(400)
+                .map(|m| serde_json::json!({"name": m.name, "kind": m.kind, "size": m.size}))
+                .collect();
+            Ok(serde_json::json!({"target": "models", "count": scanned.len(), "items": items}))
+        }
+        "nodes" => {
+            let dir = root.join("ComfyUI").join("custom_nodes");
+            let mut items = Vec::new();
+            if let Ok(rd) = std::fs::read_dir(&dir) {
+                for e in rd.flatten() {
+                    if e.path().is_dir() {
+                        let name = e.file_name().to_string_lossy().to_string();
+                        if !name.starts_with("__") {
+                            items.push(name);
+                        }
+                    }
+                }
+            }
+            Ok(serde_json::json!({"target": "nodes", "count": items.len(), "items": items}))
+        }
+        "status" => {
+            let health = api::health(s.port);
+            let vram = health
+                .as_ref()
+                .and_then(|h| h.get("devices"))
+                .and_then(|d| d.as_array())
+                .and_then(|a| a.first())
+                .map(|d| {
+                    serde_json::json!({
+                        "vram_total": d.get("vram_total"),
+                        "vram_free": d.get("vram_free"),
+                    })
+                });
+            Ok(serde_json::json!({
+                "target": "status",
+                "healthy": health.is_some(),
+                "version": api::version(s.port).unwrap_or_default(),
+                "port": s.port,
+                "vram": vram,
+            }))
+        }
+        _ => Err("target 只能是 logs / models / nodes / status".into()),
+    }
+}
+
 fn tail_text(path: &Path, max_lines: usize, max_bytes: usize) -> String {
     let Ok(bytes) = std::fs::read(path) else {
         return String::new();
@@ -495,6 +557,8 @@ const PLAN_SYSTEM: &str = r#"你是「显影」（本地 ComfyUI 生图/改图�
   - open_folder   args: {"path":string}   （只用于提示用户去看某个文件夹）
   - install_node  args: {"url":"https://github.com/<owner>/<repo>"}（装自定义节点：clone 到 custom_nodes 并装 requirements；只支持 GitHub https）
   - generate_test args: {"profile"?:string,"prompt"?:string,"width"?:number,"height"?:number}（真跑一张验收图，约 1 分钟、占 GPU）
+  - inspect       args: {"target":"logs"|"models"|"nodes"|"status","lines"?:number}（只读；查完壳会把结果补给你、让你重新出方案）
+- 体检报告只是快照；需要看最新日志/模型/节点/显存时，先给一步 inspect，别猜。
 - 装完自定义节点记得加一步 restart_comfy 让它生效；generate_test 每轮最多一次。
 - 最多 6 步；不要给删除项目、读写图片库、执行任意命令之类的动作（你也没有这些工具）。
 - **绝对不许尝试修改、替换、重编译显影自己的程序或源码**；你只能通过上面这些动作改 ComfyUI 的配置与环境。
@@ -568,7 +632,13 @@ pub struct PlanResult {
     pub ms: u64,
 }
 
-pub fn run_plan(cfg: &Path, s: &Settings, report: &EnvReport, request: &str) -> Result<PlanResult, String> {
+pub fn run_plan(
+    cfg: &Path,
+    s: &Settings,
+    report: &EnvReport,
+    request: &str,
+    extra: Option<&str>,
+) -> Result<PlanResult, String> {
     let key = load_key(cfg).ok_or("还没填 API key（设置 → AI 助手）")?;
     let eng = resolve_engine(cfg, s);
     if !eng.found {
@@ -589,9 +659,13 @@ pub fn run_plan(cfg: &Path, s: &Settings, report: &EnvReport, request: &str) -> 
     let _ = std::fs::create_dir_all(&tmp);
     let prompt_path = tmp.join("system.md");
     let report_json = serde_json::to_string_pretty(report).unwrap_or_default();
+    let extra_block = match extra.map(str::trim).filter(|x| !x.is_empty()) {
+        Some(e) => format!("\n\n## 补充信息（刚刚查到的，以此为准）\n{e}"),
+        None => String::new(),
+    };
     let sys = format!(
-        "{}\n\n## 体检报告\n```json\n{}\n```\n\n## 用户请求\n{}",
-        PLAN_SYSTEM, report_json, request
+        "{}\n\n## 体检报告\n```json\n{}\n```\n\n## 用户请求\n{}{}",
+        PLAN_SYSTEM, report_json, request, extra_block
     );
     crate::fsutil::atomic_write_str(&prompt_path, &sys)?;
 

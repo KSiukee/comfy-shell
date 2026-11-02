@@ -38,6 +38,7 @@ pub fn ai_env_check(app: tauri::AppHandle) -> agent::EnvReport {
 pub async fn ai_plan(
     app: tauri::AppHandle,
     request: String,
+    extra: Option<String>,
 ) -> Result<serde_json::Value, String> {
     let handle = app.clone();
     tauri::async_runtime::spawn_blocking(move || {
@@ -45,7 +46,7 @@ pub async fn ai_plan(
         let s = state.settings.lock().unwrap().clone();
         let cfg = cfg_dir(&handle);
         let report = agent::env_report(&cfg, &s);
-        let r = agent::run_plan(&cfg, &s, &report, &request)?;
+        let r = agent::run_plan(&cfg, &s, &report, &request, extra.as_deref())?;
         Ok(serde_json::json!({
             "plan": r.plan,
             "raw": r.raw,
@@ -81,4 +82,15 @@ pub async fn ai_engine_install(
     })
     .await
     .map_err(|e| format!("引擎安装失败：{e}"))?
+}
+
+#[tauri::command]
+pub fn ai_inspect(
+    app: tauri::AppHandle,
+    target: String,
+    lines: Option<usize>,
+) -> Result<serde_json::Value, String> {
+    let state = app.state::<AppState>();
+    let s = state.settings.lock().unwrap().clone();
+    agent::inspect(&s, &target, lines.unwrap_or(120))
 }

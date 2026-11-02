@@ -3,6 +3,11 @@
 > 本文件是补写的更新历史：最早十二个版本没有当时的发布记录，依据 `dev/test_*.py`、截图、README 旧版与代码痕迹重建，
 > 标注「推断」的条目细节可能有偏差；有发布记录之后为当时实测记录。
 
+## v0.104.0
+- **L2 只读查询（inspect）**：AI 计划里能写 `{"action":"inspect","target":"logs|models|nodes|status"}`，壳真去读最新日志/模型/节点/显存，把结果作为「补充信息」塞回去，**自动重新出方案**。不再只靠体检快照猜。
+- **执行结果回喂**：每次动作成功/失败都记一条上下文，计划下方出现「把执行结果给 AI，继续」，点一下让它基于真实结果决定下一步（装完节点→重启→跑验收）。
+- 新命令：`ai_inspect(target, lines)`；`ai_plan` 增加可选 `extra` 补充信息。
+- 实测：status 读出 17GB 显存/2.1GB 空闲、nodes 2、logs 10 行、models 84；把日志尾喂回去后模型准确复述「最后一张 FLUX3 16 步 9.82 秒」；UI 点「查一下」自动重出方案成功。详见 `docs/104-节点来源调研与L2只读查询-20261102.md`。
 ## v0.103.0
 - **AI 助手能装自定义节点了**：新动作 `install_node`——只允许 `https://github.com/owner/repo`，`git clone --depth 1` 到 `ComfyUI/custom_nodes/<repo>`，有 `requirements.txt` 就用 `python_embeded` 装依赖；300/900 秒超时、超时 `taskkill /T` 清进程树；执行前二次确认并显示完整 URL。
 - **AI 助手能跑验收图了**：新动作 `generate_test`——按当前 profile/尺寸真跑一张（默认 flux3 1024、16 步），结果并入图区；执行前确认「约 1 分钟、占 GPU」。
