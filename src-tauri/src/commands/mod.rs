@@ -1,4 +1,5 @@
 pub mod ai;
+pub mod download;
 pub mod gallery;
 pub mod generation;
 pub mod luts;

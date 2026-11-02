@@ -1,0 +1,24 @@
+显影（ComfyShell）
+Copyright 2026 the 显影 contributors
+
+This product includes software developed by third parties:
+
+1. ComfyUI (https://github.com/comfyanonymous/ComfyUI), licensed under GPL-3.0.
+   显影 does NOT link against ComfyUI. It launches the user's own ComfyUI
+   installation as a separate process and talks to it over HTTP/WebSocket.
+   If you redistribute a ComfyUI build together with 显影, that copy remains
+   under GPL-3.0 and you must comply with its terms (source offer, notices).
+
+2. Tauri (https://tauri.app), Apache-2.0 / MIT.
+3. Rust crates listed in src-tauri/Cargo.lock, each under its own license.
+
+4. Model weights. 显影 ships NO model weights. Every model (UNet, text
+   encoder, VAE, LoRA) is downloaded by the user and governed by its own
+   license — see MODELS.md. FLUX models are typically released under the
+   FLUX [dev] Non-Commercial License or the FLUX Kommunity License and are
+   not Apache-2.0.
+
+5. Fonts, icons and example images: see the individual files/commits.
+
+The Apache-2.0 license in LICENSE applies to the source code of 显影 itself,
+not to third-party components or model weights.

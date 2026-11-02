@@ -5,7 +5,7 @@ Rust（Tauri 2）后端 + 纯静态前端（无 node 构建）。
 
 > 第一次用？先看 [使用说明（人话版）](web/使用说明.md)——一分钟出第一张图、提示词辅助怎么用、镜头和排版怎么上手。
 
-## 现状（v0.97.0）
+## 现状（v0.98.0）
 
 | 能力 | 状态 |
 |---|---|
@@ -36,6 +36,7 @@ Rust（Tauri 2）后端 + 纯静态前端（无 node 构建）。
 | 出图目录 | ✅ 设置里可自定义（留空 = `ComfyUI\output`）；图库/另存/超分/训练/私密暂存统一跟随 |
 | 快捷键 | ✅ `C` 裁剪 / `E` 调色 / `L` 套 LUT / `U` 超分 / `Del` 删除；设置里可录制改键 |
 | 设置 | ✅ 左侧分类（通用 / ComfyUI / 工作流 / 快捷键 / 关于）；**工作流页逐档检查模型依赖**，缺什么列什么 |
+| ComfyUI 更新 | ✅ 设置里下载/更新：官方 + 4 个国内镜像**测速选最快**、多线程分块、进度/取消；源码更新保留 models 等用户数据 |
 | 超分 | ✅ 4x ESRGAN 四个模型 + SeedVR2 3B（AI 修复）；支持图库批量与外部文件夹；**图区/灯箱一键超分，生成中自动排队** |
 | 局部重绘 | ✅ 画笔蒙版、羽化、洞里塞参考图（Qwen 2.1） |
 | 训练（LoRA） | ✅ 内置（FLUX）与 kohya（MOSS/大分辨率）双引擎；逐图标注/绿红圈选/自动 caption/续训/固定评测/实验记录 |
@@ -155,6 +156,12 @@ python dev\probe_slg.py        # MOSS SLG 开关对比
 配置：`%APPDATA%\com.dsh.comfyshell\{settings.json, history.json, stars.json, library_cache.json, workflows\, experiments\, kohya_runs\}`
 
 模型目录：`ComfyUI\models\{diffusion_models, text_encoders, vae, loras, upscale_models}`
+
+## 许可
+
+代码：**Apache-2.0**（见 `LICENSE`）。
+第三方：ComfyUI 以独立进程方式调用，本体是 GPL-3.0；打包分发它的便携版时那一份仍按 GPL 走（见 `NOTICE`）。
+模型：**本仓库不含任何权重**，每个模型遵循它自己的许可（见 `MODELS.md`）。
 
 ## 后续（接筑光）
 

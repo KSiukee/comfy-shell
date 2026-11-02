@@ -12,6 +12,7 @@ mod imgmeta;
 mod layouts;
 mod library;
 mod models;
+mod netdl;
 mod commands;
 mod pose;
 mod project;
@@ -126,6 +127,10 @@ fn main() {
             commands::system::server_stop,
             commands::system::models_list,
             commands::system::profiles,
+            commands::download::dl_probe,
+            commands::download::dl_cancel,
+            commands::download::comfy_install,
+            commands::download::file_download,
             commands::system::app_version,
             commands::system::config_dir_path,
             commands::system::save_ref_image,

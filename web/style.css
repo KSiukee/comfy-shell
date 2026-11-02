@@ -930,6 +930,11 @@ body.mode-pro .simple-only { display: none !important; }
 .set-about { display: flex; flex-direction: column; gap: 12px; }
 .set-about-name { font-size: 18px; font-weight: 600; }
 
+/* 下载进度条 */
+.dl-bar { height: 8px; border-radius: 999px; background: #0f1219; border: 1px solid var(--line); overflow: hidden; }
+.dl-bar .fill { height: 100%; width: 0%; background: linear-gradient(90deg, #4f6ce0, #6d8dff); transition: width .2s linear; }
+.dl-bar .fill.pulse { width: 40%; animation: upPulse 1.6s ease-in-out infinite; }
+
 /* ---------------- photo editor：裁切 / LUT / 调色 ---------------- */
 #peModal { z-index: 88; }
 .pe-card {

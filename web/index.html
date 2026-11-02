@@ -909,7 +909,26 @@
                 <button class="btn small ghost" id="setRestartComfy" type="button" title="保存配置后重启，出图目录/端口改动才生效">重启 ComfyUI</button>
               </div>
             </div>
-            <div class="hint" style="margin-top:6px">下载 / 更新 ComfyUI 的入口在开源版里预留（见 docs/99），目前先支持「指向已有的便携版」。</div>
+            <div class="set-sep"></div>
+            <div class="set-field">
+              <label>下载 / 更新</label>
+              <div class="row tight">
+                <select id="dlMode" style="flex:0 0 190px">
+                  <option value="source">只更新源码（约 15MB）</option>
+                  <option value="portable">完整便携版（约 2GB）</option>
+                </select>
+                <input id="dlDir" placeholder="目标目录" style="flex:1" spellcheck="false" />
+                <button class="btn small" id="dlDirPick" type="button">选择…</button>
+              </div>
+              <div class="row tight" style="margin-top:6px">
+                <select id="dlMirror" style="flex:1" title="下载源（可先测速）"></select>
+                <button class="btn small ghost" id="dlProbe" type="button">测速</button>
+                <button class="btn small primary" id="dlStart" type="button">开始</button>
+                <button class="btn small ghost" id="dlStop" type="button" disabled>取消</button>
+              </div>
+              <div class="dl-bar" id="dlBar" hidden><div class="fill" id="dlFill"></div></div>
+              <div class="hint" id="dlState">源码更新会保留 models / input / output / custom_nodes，并把旧版留成 ComfyUI.bak-时间。</div>
+            </div>
           </section>
 
           <section class="set-pane" data-pane="workflows">
@@ -935,7 +954,7 @@
               <div class="muted" style="font-size:12.5px;line-height:1.7">
                 本地生图/改图壳：静默拉起 ComfyUI，只留提示词、参数和结果。<br>
                 后端 Rust（Tauri 2），前端纯静态、无构建。<br>
-                开源协议尚未定稿（见 docs/99 的选型建议）。
+                开源协议：<b>Apache-2.0</b>（模型与工作流资产各自遵循其许可，见仓库 MODELS.md）。
               </div>
             </div>
           </section>
