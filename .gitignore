@@ -40,3 +40,10 @@ tools/qa/
 
 # 构建日志
 *.log
+
+# 生成的多端图标（只有 Windows 用得到）
+src-tauri/icons/android/
+src-tauri/icons/ios/
+src-tauri/icons/Square*.png
+src-tauri/icons/StoreLogo.png
+src-tauri/icons/source.png
