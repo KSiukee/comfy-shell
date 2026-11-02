@@ -989,8 +989,13 @@ async function renderWorkflowPresets() {
   if (!box) return;
   box.innerHTML = '<div class="muted" style="font-size:12px">检查依赖中…</div>';
   try {
-    const [profs, models] = await Promise.all([api.call("profiles"), api.call("models_scan")]);
+    const [profs, models, man] = await Promise.all([
+      api.call("profiles"),
+      api.call("models_scan"),
+      api.call("models_manifest"),
+    ]);
     const have = new Set((models || []).map((m) => String(m.name || "").split("/").pop().toLowerCase()));
+    const byTarget = new Map((man || []).map((m) => [m.target.toLowerCase(), m]));
     box.innerHTML = "";
     for (const p of profs || []) {
       const req = [p.unet, p.clip, p.vae].filter(Boolean);
@@ -1002,21 +1007,107 @@ async function renderWorkflowPresets() {
       head.innerHTML = `<i class="set-wf-dot ${missing.length ? "miss" : "ok"}"></i><b></b><span class="muted" style="font-size:11.5px"></span>`;
       head.querySelector("b").textContent = p.label || p.id;
       head.querySelector("span").textContent = `${p.steps} 步 · CFG ${p.cfg}${p.supportsEdit ? " · 支持改图" : ""}`;
-      const sub = document.createElement("div");
-      sub.className = "set-wf-sub";
-      if (missing.length) {
-        sub.innerHTML = `缺 ${missing.length} 个模型：<span class="bad"></span>`;
-        sub.querySelector(".bad").textContent = missing.join("、");
+      item.appendChild(head);
+
+      if (!missing.length) {
+        const ok = document.createElement("div");
+        ok.className = "set-wf-sub";
+        ok.textContent = "依赖齐全，可直接开跑";
+        item.appendChild(ok);
       } else {
-        sub.textContent = "依赖齐全，可直接开跑";
+        for (const f of missing) {
+          const m = byTarget.get(String(f).toLowerCase());
+          const row = document.createElement("div");
+          row.className = "set-wf-sub";
+          const name = document.createElement("span");
+          name.textContent = f;
+          row.appendChild(name);
+          if (m && m.size) {
+            const sz = document.createElement("span");
+            sz.className = "muted";
+            sz.textContent = " · " + dlFmt(m.size);
+            row.appendChild(sz);
+          }
+          if (m && (m.sources || []).length) {
+            const btn = document.createElement("button");
+            btn.className = "btn small ghost";
+            btn.type = "button";
+            btn.style.marginLeft = "8px";
+            btn.textContent = "下载";
+            btn.onclick = () => downloadModel(m, btn);
+            row.appendChild(btn);
+            if (m.note) {
+              const note = document.createElement("div");
+              note.className = "muted";
+              note.style.fontSize = "11px";
+              note.textContent = m.note;
+              row.appendChild(note);
+            }
+          } else {
+            const none = document.createElement("span");
+            none.className = "muted";
+            none.textContent = " · 无公开源（本机定制）";
+            row.appendChild(none);
+          }
+          item.appendChild(row);
+        }
       }
-      item.append(head, sub);
       box.appendChild(item);
     }
   } catch (e) {
     box.textContent = "检查失败：" + e;
   }
 }
+
+async function downloadModel(entry, btn) {
+  if (!confirm(`下载 ${entry.target}？\n约 ${dlFmt(entry.size)}，下到 ${entry.kind}/\n来源：hf-mirror（失败自动回退 HF）`)) return;
+  btn.disabled = true;
+  btn.textContent = "下载中…";
+  const bar = $("wfBar");
+  const fill = $("wfFill");
+  const st = $("wfState");
+  if (bar) bar.hidden = false;
+  if (fill) fill.style.width = "0%";
+  if (st) {
+    st.hidden = false;
+    st.textContent = `下载 ${entry.target}…`;
+  }
+  try {
+    await api.call("model_download", {
+      target: entry.target,
+      kind: entry.kind,
+      urls: entry.sources || [],
+    });
+    toast(`已下载：${entry.target}`);
+  } catch (e) {
+    toast(String(e), true);
+  } finally {
+    if (bar) bar.hidden = true;
+    if (st) st.hidden = true;
+    renderWorkflowPresets();
+  }
+}
+
+listen("model-progress", (ev) => {
+  const p = ev.payload || {};
+  const st = $("wfState");
+  const fill = $("wfFill");
+  if (st) {
+    st.hidden = false;
+    const parts = [p.phase || "下载中", p.target || ""];
+    if (p.got) parts.push(`${dlFmt(p.got)} / ${p.total ? dlFmt(p.total) : "?"}`);
+    if (p.mbps) parts.push(`${p.mbps.toFixed(1)} MB/s`);
+    if (p.error) parts.push(p.error.slice(0, 160));
+    st.textContent = parts.filter(Boolean).join(" · ");
+  }
+  if (fill && p.total) fill.style.width = Math.min(100, (p.got / p.total) * 100).toFixed(1) + "%";
+  if (p.phase === "完成") {
+    setTimeout(() => {
+      if ($("wfState")) $("wfState").hidden = true;
+      if ($("wfBar")) $("wfBar").hidden = true;
+    }, 1800);
+  }
+});
 
 $("btnSettings").onclick = () => {
   if (window.shortcuts) window.shortcuts.build();

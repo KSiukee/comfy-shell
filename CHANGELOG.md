@@ -3,6 +3,11 @@
 > 本文件是补写的更新历史：最早十二个版本没有当时的发布记录，依据 `dev/test_*.py`、截图、README 旧版与代码痕迹重建，
 > 标注「推断」的条目细节可能有偏差；有发布记录之后为当时实测记录。
 
+## v0.101.0
+- **模型清单 + 点着下载**：内置 16 条公开模型（Qwen-Image 2.1 / FLUX.3 Klein / MOSS-Image / Kromoss 的 unet、VAE、TE、LoRA），每条带大小与 **hf-mirror + HuggingFace 双源**。设置 → 工作流 里缺哪个就列哪一行，点「下载」下到 `<ComfyUI>/models/<kind>/`，有进度/速度、多源回退、失败显示原因。
+- 本机定制的 `*_heretic_*` TE 没有公开源：用**同架构公开版**替代落盘，并在界面标注「公开版（非本机 heretic 微调），架构相同、可直接用」。
+- 新命令：`models_manifest`、`model_download`（文件名/kind 校验，防路径穿越）。
+- 实测：清单 16 条全命中本机文件；用 HF `README.md` 作探针下载成功；临时改名 VAE 后 5 个档位各出现「238 MB [下载]」行，恢复后回到「依赖齐全」。详见 `docs/102-模型清单与下载-20261102.md`。
 ## v0.100.0
 - **AI 引擎一键安装**：设置 → AI 助手 →「下载引擎…」自动下载便携 Node（npmmirror 优先，失败回退 nodejs.org，35MB）+ npm 安装 Pi 到应用数据目录（`agent/`），带进度/速度/最后一行 npm 输出。实测 26 秒装完，装完自动检测到。
   - 用了 `--ignore-scripts`：Node 22.20 自带 npm 在跑依赖的 preinstall 时有个 `node-gyp/bin/node-gyp.js` 解析 bug，跳过脚本即可（Pi 是纯 JS/ WASM，不依赖原生编译）。

@@ -13,6 +13,7 @@ mod imgmeta;
 mod layouts;
 mod library;
 mod models;
+mod models_manifest;
 mod netdl;
 mod commands;
 mod pose;
@@ -139,6 +140,8 @@ fn main() {
             commands::download::dl_cancel,
             commands::download::comfy_install,
             commands::download::file_download,
+            commands::download::models_manifest,
+            commands::download::model_download,
             commands::system::app_version,
             commands::system::config_dir_path,
             commands::system::save_ref_image,

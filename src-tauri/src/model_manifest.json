@@ -1,0 +1,150 @@
+[
+  {
+    "target": "qwen_image_2.1_int8_convrot.safetensors",
+    "kind": "diffusion_models",
+    "size": 7259000000,
+    "sources": [
+      "https://hf-mirror.com/Comfy-Org/Qwen-Image-2.1/resolve/main/diffusion_models/qwen_image_2.1_int8_convrot.safetensors",
+      "https://huggingface.co/Comfy-Org/Qwen-Image-2.1/resolve/main/diffusion_models/qwen_image_2.1_int8_convrot.safetensors"
+    ]
+  },
+  {
+    "target": "qwen_image_2.1_vae_bf16.safetensors",
+    "kind": "vae",
+    "size": 675000000,
+    "sources": [
+      "https://hf-mirror.com/Comfy-Org/Qwen-Image-2.1/resolve/main/vae/qwen_image_2.1_vae_bf16.safetensors",
+      "https://huggingface.co/Comfy-Org/Qwen-Image-2.1/resolve/main/vae/qwen_image_2.1_vae_bf16.safetensors"
+    ]
+  },
+  {
+    "target": "qwen_image_2.1_turbo_lora_avg_rank_178_bf16.safetensors",
+    "kind": "loras",
+    "size": 913000000,
+    "sources": [
+      "https://hf-mirror.com/Comfy-Org/Qwen-Image-2.1/resolve/main/loras/qwen_image_2.1_turbo_lora_avg_rank_178_bf16.safetensors",
+      "https://huggingface.co/Comfy-Org/Qwen-Image-2.1/resolve/main/loras/qwen_image_2.1_turbo_lora_avg_rank_178_bf16.safetensors"
+    ]
+  },
+  {
+    "target": "qwen3vl_8b_int8_convrot_heretic.safetensors",
+    "kind": "text_encoders",
+    "size": 9352000000,
+    "note": "公开版 qwen3vl_8b_int8_convrot（非本机 heretic 微调），架构相同、可直接用",
+    "sources": [
+      "https://hf-mirror.com/Comfy-Org/Qwen-Image-2.1/resolve/main/text_encoders/qwen3vl_8b_int8_convrot.safetensors",
+      "https://huggingface.co/Comfy-Org/Qwen-Image-2.1/resolve/main/text_encoders/qwen3vl_8b_int8_convrot.safetensors"
+    ]
+  },
+  {
+    "target": "flux3-image-klein-int8-convrot.safetensors",
+    "kind": "diffusion_models",
+    "size": 5828000000,
+    "sources": [
+      "https://hf-mirror.com/black-forest-labs/flux-3-image-klein-comfy/resolve/main/diffusion_models/flux3-image-klein-int8-convrot.safetensors",
+      "https://huggingface.co/black-forest-labs/flux-3-image-klein-comfy/resolve/main/diffusion_models/flux3-image-klein-int8-convrot.safetensors"
+    ]
+  },
+  {
+    "target": "flux3-image-klein-base-int8-convrot.safetensors",
+    "kind": "diffusion_models",
+    "size": 5807000000,
+    "sources": [
+      "https://hf-mirror.com/black-forest-labs/flux-3-image-klein-comfy/resolve/main/diffusion_models/flux3-image-klein-base-int8-convrot.safetensors",
+      "https://huggingface.co/black-forest-labs/flux-3-image-klein-comfy/resolve/main/diffusion_models/flux3-image-klein-base-int8-convrot.safetensors"
+    ]
+  },
+  {
+    "target": "flux2-vae.safetensors",
+    "kind": "vae",
+    "size": 336500000,
+    "sources": [
+      "https://hf-mirror.com/black-forest-labs/flux-3-image-klein-comfy/resolve/main/vae/flux2-vae.safetensors",
+      "https://huggingface.co/black-forest-labs/flux-3-image-klein-comfy/resolve/main/vae/flux2-vae.safetensors"
+    ]
+  },
+  {
+    "target": "flux3-klein-te-heretic-bf16.safetensors",
+    "kind": "text_encoders",
+    "size": 4859000000,
+    "note": "公开版 qwen3vl_4b_int8_convrot（非本机 heretic bf16），架构相同、可直接用",
+    "sources": [
+      "https://hf-mirror.com/black-forest-labs/flux-3-image-klein-comfy/resolve/main/text_encoders/qwen3vl_4b_int8_convrot.safetensors",
+      "https://huggingface.co/black-forest-labs/flux-3-image-klein-comfy/resolve/main/text_encoders/qwen3vl_4b_int8_convrot.safetensors"
+    ]
+  },
+  {
+    "target": "moss_image_sft_int8_convrot.safetensors",
+    "kind": "diffusion_models",
+    "size": 5414000000,
+    "sources": [
+      "https://hf-mirror.com/Comfy-Org/MOSS-Image/resolve/main/diffusion_models/moss_image_sft_int8_convrot.safetensors",
+      "https://huggingface.co/Comfy-Org/MOSS-Image/resolve/main/diffusion_models/moss_image_sft_int8_convrot.safetensors"
+    ]
+  },
+  {
+    "target": "moss_image_base_int8_convrot.safetensors",
+    "kind": "diffusion_models",
+    "size": 5414000000,
+    "sources": [
+      "https://hf-mirror.com/Comfy-Org/MOSS-Image/resolve/main/diffusion_models/moss_image_base_int8_convrot.safetensors",
+      "https://huggingface.co/Comfy-Org/MOSS-Image/resolve/main/diffusion_models/moss_image_base_int8_convrot.safetensors"
+    ]
+  },
+  {
+    "target": "flux2-vae_small.safetensors",
+    "kind": "vae",
+    "size": 249600000,
+    "sources": [
+      "https://hf-mirror.com/Comfy-Org/MOSS-Image/resolve/main/vae/flux2-vae_small.safetensors",
+      "https://huggingface.co/Comfy-Org/MOSS-Image/resolve/main/vae/flux2-vae_small.safetensors"
+    ]
+  },
+  {
+    "target": "moss_image_edit_lora_rank_64_bf16.safetensors",
+    "kind": "loras",
+    "size": 297800000,
+    "sources": [
+      "https://hf-mirror.com/Comfy-Org/MOSS-Image/resolve/main/loras/moss_image_edit_lora_rank_64_bf16.safetensors",
+      "https://huggingface.co/Comfy-Org/MOSS-Image/resolve/main/loras/moss_image_edit_lora_rank_64_bf16.safetensors"
+    ]
+  },
+  {
+    "target": "moss_te_heretic_full_int8_convrot.safetensors",
+    "kind": "text_encoders",
+    "size": 9748000000,
+    "note": "公开版 qwen3.5_9b_int8_convrot（非本机 heretic 微调），架构相同、可直接用",
+    "sources": [
+      "https://hf-mirror.com/Comfy-Org/MOSS-Image/resolve/main/text_encoders/qwen3.5_9b_int8_convrot.safetensors",
+      "https://huggingface.co/Comfy-Org/MOSS-Image/resolve/main/text_encoders/qwen3.5_9b_int8_convrot.safetensors"
+    ]
+  },
+  {
+    "target": "qwen3.5_9b_int8_convrot.safetensors",
+    "kind": "text_encoders",
+    "size": 9748000000,
+    "sources": [
+      "https://hf-mirror.com/Comfy-Org/MOSS-Image/resolve/main/text_encoders/qwen3.5_9b_int8_convrot.safetensors",
+      "https://huggingface.co/Comfy-Org/MOSS-Image/resolve/main/text_encoders/qwen3.5_9b_int8_convrot.safetensors"
+    ]
+  },
+  {
+    "target": "kromoss_int8_convrot.safetensors",
+    "kind": "diffusion_models",
+    "size": 5414000000,
+    "sources": [
+      "https://hf-mirror.com/lodestones/Kromoss/resolve/main/diffusion_models/kromoss_int8_convrot.safetensors",
+      "https://huggingface.co/lodestones/Kromoss/resolve/main/diffusion_models/kromoss_int8_convrot.safetensors"
+    ]
+  },
+  {
+    "target": "kromoss_8steps_dmd_lora.safetensors",
+    "kind": "loras",
+    "size": 1189000000,
+    "note": "公开文件名 8-steps-dmd-lora.safetensors",
+    "sources": [
+      "https://hf-mirror.com/lodestones/Kromoss/resolve/main/8-steps-dmd-lora.safetensors",
+      "https://huggingface.co/lodestones/Kromoss/resolve/main/8-steps-dmd-lora.safetensors"
+    ]
+  }
+]

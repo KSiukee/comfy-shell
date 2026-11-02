@@ -243,3 +243,79 @@ pub async fn file_download(
     .await
     .map_err(|e| format!("下载任务失败：{e}"))?
 }
+
+// ---------------------------------------------------------------- 模型清单 / 下载
+
+#[tauri::command]
+pub fn models_manifest(app: tauri::AppHandle) -> Vec<serde_json::Value> {
+    let state = app.state::<AppState>();
+    let root = {
+        let s = state.settings.lock().unwrap();
+        PathBuf::from(&s.comfy_root).join("ComfyUI").join("models")
+    };
+    models_manifest::with_status(&root)
+}
+
+/// 下载一个模型文件到 `<models>/<kind>/<target>`，多个源依次尝试。
+#[tauri::command]
+pub async fn model_download(
+    app: tauri::AppHandle,
+    target: String,
+    kind: String,
+    urls: Vec<String>,
+) -> Result<String, String> {
+    let handle = app.clone();
+    tauri::async_runtime::spawn_blocking(move || {
+        models_manifest::safe_name(&target)?;
+        if !models_manifest::valid_kind(&kind) {
+            return Err(format!("未知模型类型：{kind}"));
+        }
+        let root = {
+            let state = handle.state::<AppState>();
+            let s = state.settings.lock().unwrap();
+            PathBuf::from(&s.comfy_root).join("ComfyUI").join("models")
+        };
+        let dir = root.join(&kind);
+        std::fs::create_dir_all(&dir).map_err(|e| format!("建目录失败：{e}"))?;
+        let dest = dir.join(&target);
+        DL_CANCEL.store(false, Ordering::SeqCst);
+        let mut last_err = String::new();
+        for url in urls.iter().filter(|u| u.starts_with("https://")) {
+            let app2 = handle.clone();
+            let fname = target.clone();
+            let on_progress: Arc<dyn Fn(u64, u64, f64) + Send + Sync> =
+                Arc::new(move |got, total, mbps| {
+                    let _ = app2.emit(
+                        "model-progress",
+                        serde_json::json!({"target": fname, "phase": "下载中", "got": got, "total": total, "mbps": mbps}),
+                    );
+                });
+            let cancel: Arc<dyn Fn() -> bool + Send + Sync> = Arc::new(cancelled);
+            let cfg = netdl::DlCfg {
+                url,
+                dest: &dest,
+                threads: 6,
+                proxy: netdl::detect_proxy(),
+                cancel,
+                on_progress,
+            };
+            match netdl::download(cfg) {
+                Ok(p) => {
+                    let _ = handle.emit(
+                        "model-progress",
+                        serde_json::json!({"target": target, "phase": "完成", "got": 0, "total": 0, "mbps": 0}),
+                    );
+                    return Ok(p.to_string_lossy().to_string());
+                }
+                Err(e) => last_err = format!("{url} → {e}"),
+            }
+        }
+        let _ = handle.emit(
+            "model-progress",
+            serde_json::json!({"target": target, "phase": "失败", "error": last_err}),
+        );
+        Err(format!("下载失败：{last_err}"))
+    })
+    .await
+    .map_err(|e| format!("下载任务失败：{e}"))?
+}
