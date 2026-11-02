@@ -549,7 +549,7 @@
 
   <!-- lightbox -->
   <div class="lightbox" id="lightbox" hidden>
-    <img id="lightboxImg" alt="" />
+    <img id="lightboxImg" alt="" draggable="false" />
     <div class="lightbox-bar">
       <button class="btn ghost small" id="lbPrev" title="上一张（←）">←</button>
       <span class="mono" id="lbPos"></span>
@@ -619,7 +619,7 @@
   <!-- image viewer -->
   <div class="viewer" id="viewer" hidden>
     <div class="viewer-stage" id="viewerStage">
-      <img id="viewerImg" alt="" />
+      <img id="viewerImg" alt="" draggable="false" />
       <canvas id="maskCanvas" hidden></canvas>
     </div>
     <div class="mask-bar" id="maskBar" hidden>

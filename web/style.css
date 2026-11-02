@@ -289,6 +289,7 @@ label.row.tight .btn { flex: 0 0 auto; white-space: nowrap; }
 .lightbox { background: rgba(4,6,10,.92); flex-direction: column; }
 .lightbox img { max-width: 94vw; max-height: calc(100vh - 90px); border-radius: 10px; box-shadow: 0 20px 60px rgba(0,0,0,.6); cursor: zoom-in; }
 .lightbox img.zoomed { cursor: grab; }
+.lightbox img, #viewerImg { -webkit-user-drag: none; user-select: none; }
 /* 超分没有进度回调：进度条用脉冲表示「在跑」 */
 .bar .fill.pulse { animation: upPulse 1.6s ease-in-out infinite; width: 40%; }
 @keyframes upPulse { 0%, 100% { width: 12%; } 50% { width: 88%; } }

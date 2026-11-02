@@ -1502,6 +1502,7 @@ $("viewerStage").addEventListener("wheel", (e) => {
     dragging = !!onImg;
     moved = false;
     if (!onImg) return;
+    e.preventDefault(); // 关掉浏览器原生图片拖拽，否则拖两下就断
     startX = e.clientX;
     startY = e.clientY;
     sx = e.clientX - viewer.pan.x;

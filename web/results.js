@@ -176,6 +176,7 @@ $("lbNext").onclick = () => lightboxStep(1);
     if (e.target.closest && e.target.closest(".lightbox-bar")) return;
     const img = $("lightboxImg");
     const onImg = e.target === img && img.complete;
+    if (onImg) e.preventDefault(); // 别让浏览器把图片当成 HTML5 拖拽（会让拖动只走几像素）
     drag = {
       onImg: !!onImg,
       moved: false,
