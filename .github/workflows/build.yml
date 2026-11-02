@@ -3,6 +3,12 @@ name: build
 on:
   push:
     branches: [main]
+    paths-ignore:
+      - "**.md"
+      - "assets/**"
+      - "LICENSE"
+      - "NOTICE"
+      - ".gitignore"
   workflow_dispatch:
 
 permissions:
@@ -16,7 +22,6 @@ jobs:
   windows:
     runs-on: windows-latest
     env:
-      # 在 Settings → Secrets and variables → Actions 里加这个名字；不加也能构建
       FEEDBACK_SMTP_CODE: ${{ secrets.FEEDBACK_SMTP_CODE }}
     steps:
       - uses: actions/checkout@v4
