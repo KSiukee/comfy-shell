@@ -204,6 +204,54 @@ async function aiExecuteStep(step, btn) {
       await refreshSettingsInfo();
     } else if (action === "open_folder") {
       await api.call("open_folder", { path: String(args.path || "") });
+    } else if (action === "install_node") {
+      const url = String(args.url || "");
+      if (!/^https:\/\/github\.com\/[^/]+\/[^/]+/.test(url)) {
+        throw new Error("只支持 https://github.com/owner/repo 的仓库");
+      }
+      if (!confirm(`安装自定义节点？\n\n${url}\n\n会执行：\ngit clone --depth 1 到 ComfyUI/custom_nodes\n然后 pip install -r requirements.txt（如果有）\n\n第三方节点会执行任意 Python，确认仓库可信再继续。`)) return;
+      btn.textContent = "安装中…";
+      const p = await api.call("node_install", { url });
+      toast("节点已装：" + p + "（记得重启 ComfyUI）");
+    } else if (action === "generate_test") {
+      const prof = args.profile || "flux3";
+      const p = (state.profiles || []).find((x) => x.id === prof);
+      const w = Number(args.width) || 1024;
+      const h = Number(args.height) || 1024;
+      if (!confirm(`跑一张验收图？\n\n尺寸 ${w}×${h}\n模型 ${p ? p.label : prof}\n约 1 分钟、会占用显卡。`)) return;
+      btn.textContent = "生成中…";
+      const req = {
+        profile: prof,
+        mode: "t2i",
+        prompt: args.prompt || "a photo of a cat sitting by the window, soft natural light, 50mm",
+        negative: "",
+        width: w,
+        height: h,
+        steps: p ? p.steps : 16,
+        cfg: p ? p.cfg : 1,
+        seed: -1,
+        project: (window.projectUI && window.projectUI.current()) || null,
+      };
+      if (typeof setBusy === "function") setBusy(true);
+      try {
+        const res = await api.call("generate", { req, turbo: false });
+        const items = res.images.map((im) => ({
+          path: im.path,
+          filename: im.filename,
+          width: im.width,
+          height: im.height,
+          label: res.label,
+          seconds: res.seconds,
+          ts: Date.now(),
+          prompt: req.prompt,
+          mode: req.mode,
+          dataUrl: im.dataUrl,
+        }));
+        if (typeof mergeResults === "function") mergeResults(items);
+        toast(`验收图完成：${Math.round(res.seconds)} 秒`);
+      } finally {
+        if (typeof setBusy === "function") setBusy(false);
+      }
     } else {
       toast("这个动作还不支持：" + action, true);
       return;
@@ -257,6 +305,11 @@ async function downloadEngine() {
     if (bar) bar.hidden = true;
   }
 }
+
+listen("node-progress", (ev) => {
+  const p = ev.payload || {};
+  aiSetText("aiPlanState", `${p.phase || "安装"} · ${(p.line || "").slice(0, 110)}`);
+});
 
 listen("ai-progress", (ev) => {
   const p = ev.payload || {};

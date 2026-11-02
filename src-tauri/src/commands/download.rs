@@ -5,6 +5,7 @@
 
 use crate::*;
 use std::path::{Path, PathBuf};
+use std::process::{Command, Stdio};
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
 use tauri::Emitter;
@@ -318,4 +319,167 @@ pub async fn model_download(
     })
     .await
     .map_err(|e| format!("下载任务失败：{e}"))?
+}
+
+// ---------------------------------------------------------------- 自定义节点安装
+
+fn run_with_timeout(
+    mut cmd: std::process::Command,
+    secs: u64,
+    on_line: &dyn Fn(&str),
+) -> Result<(), String> {
+    use std::io::BufRead;
+    cmd.stdout(Stdio::piped()).stderr(Stdio::piped());
+    #[cfg(windows)]
+    {
+        use std::os::windows::process::CommandExt;
+        cmd.creation_flags(0x0800_0000);
+    }
+    let mut child = cmd.spawn().map_err(|e| format!("启动失败：{e}"))?;
+    let streams: Vec<Box<dyn std::io::Read + Send>> = [
+        child
+            .stdout
+            .take()
+            .map(|s| Box::new(s) as Box<dyn std::io::Read + Send>),
+        child
+            .stderr
+            .take()
+            .map(|s| Box::new(s) as Box<dyn std::io::Read + Send>),
+    ]
+    .into_iter()
+    .flatten()
+    .collect();
+    let lines: Arc<std::sync::Mutex<Vec<String>>> = Arc::new(std::sync::Mutex::new(Vec::new()));
+    let mut handles = Vec::new();
+    for s in streams {
+        let sink = lines.clone();
+        handles.push(std::thread::spawn(move || {
+            let reader = std::io::BufReader::new(s);
+            for line in reader.lines().map_while(Result::ok) {
+                if !line.trim().is_empty() {
+                    if let Ok(mut v) = sink.lock() {
+                        v.push(line);
+                    }
+                }
+            }
+        }));
+    }
+    let deadline = std::time::Instant::now() + std::time::Duration::from_secs(secs);
+    loop {
+        {
+            let mut v = lines.lock().map(|mut v| std::mem::take(&mut *v)).unwrap_or_default();
+            for line in v.drain(..) {
+                on_line(&line);
+            }
+        }
+        match child.try_wait().map_err(|e| e.to_string())? {
+            Some(st) => {
+                for h in handles {
+                    let _ = h.join();
+                }
+                let mut v = lines.lock().map(|mut v| std::mem::take(&mut *v)).unwrap_or_default();
+                for line in v.drain(..) {
+                    on_line(&line);
+                }
+                if !st.success() {
+                    return Err(format!("命令失败（退出码 {:?}）", st.code()));
+                }
+                return Ok(());
+            }
+            None => {
+                if std::time::Instant::now() > deadline {
+                    // git clone 会派生子进程，单杀父进程会留下残留
+                    #[cfg(windows)]
+                    {
+                        let _ = Command::new("taskkill")
+                            .args(["/PID", &child.id().to_string(), "/T", "/F"])
+                            .output();
+                    }
+                    let _ = child.kill();
+                    return Err(format!("超时（{secs} 秒）"));
+                }
+                std::thread::sleep(std::time::Duration::from_millis(300));
+            }
+        }
+    }
+}
+
+/// 安装自定义节点：只允许 GitHub https 仓库，clone 到 custom_nodes，再装 requirements。
+#[tauri::command]
+pub async fn node_install(app: tauri::AppHandle, url: String) -> Result<String, String> {
+    let handle = app.clone();
+    tauri::async_runtime::spawn_blocking(move || {
+        let url = url.trim();
+        if !url.starts_with("https://github.com/") {
+            return Err("只支持 https://github.com/… 的仓库".into());
+        }
+        let repo = url
+            .trim_end_matches('/')
+            .rsplit('/')
+            .next()
+            .unwrap_or("")
+            .trim_end_matches(".git")
+            .to_string();
+        if repo.is_empty()
+            || !repo
+                .chars()
+                .all(|c| c.is_ascii_alphanumeric() || c == '-' || c == '_' || c == '.')
+        {
+            return Err("认不出仓库名".into());
+        }
+        let (root, comfy) = {
+            let state = handle.state::<AppState>();
+            let s = state.settings.lock().unwrap();
+            let root = PathBuf::from(&s.comfy_root);
+            (root.clone(), root.join("ComfyUI"))
+        };
+        let target = comfy.join("custom_nodes").join(&repo);
+        if target.exists() {
+            return Err(format!("已经存在：{}", target.display()));
+        }
+        std::fs::create_dir_all(comfy.join("custom_nodes")).map_err(|e| e.to_string())?;
+        let emit = |phase: &str, line: &str| {
+            let _ = handle.emit(
+                "node-progress",
+                serde_json::json!({"phase": phase, "line": line, "repo": repo}),
+            );
+        };
+        emit("git clone", url);
+        let mut g = Command::new("git");
+        g.arg("clone")
+            .arg("--depth")
+            .arg("1")
+            .arg(url)
+            .arg(&target)
+            .current_dir(comfy.join("custom_nodes"));
+        if let Some(p) = netdl::detect_proxy() {
+            g.env("HTTPS_PROXY", &p).env("HTTP_PROXY", &p);
+        }
+        let f = |line: &str| emit("git clone", line);
+        run_with_timeout(g, 300, &f).map_err(|e| format!("git clone 失败：{e}"))?;
+
+        let req = target.join("requirements.txt");
+        if req.is_file() {
+            let py = root.join("python_embeded").join("python.exe");
+            if !py.is_file() {
+                return Err("缺 python_embeded，装不了依赖（节点已 clone，可手动 pip install）".into());
+            }
+            emit("pip install", "requirements.txt");
+            let mut p = Command::new(&py);
+            p.arg("-m")
+                .arg("pip")
+                .arg("install")
+                .arg("-r")
+                .arg(&req);
+            if let Some(proxy) = netdl::detect_proxy() {
+                p.env("HTTPS_PROXY", &proxy).env("HTTP_PROXY", &proxy);
+            }
+            let f2 = |line: &str| emit("pip install", line);
+            run_with_timeout(p, 900, &f2).map_err(|e| format!("pip install 失败：{e}"))?;
+        }
+        emit("完成", &target.to_string_lossy());
+        Ok(target.to_string_lossy().to_string())
+    })
+    .await
+    .map_err(|e| format!("装节点失败：{e}"))?
 }

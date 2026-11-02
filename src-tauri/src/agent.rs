@@ -493,6 +493,9 @@ const PLAN_SYSTEM: &str = r#"你是「显影」（本地 ComfyUI 生图/改图�
   - restart_comfy args: {}
   - install_comfy args: {"mode":"source"} 或 {"mode":"portable"}（portable 需要空目录，慎用）
   - open_folder   args: {"path":string}   （只用于提示用户去看某个文件夹）
+  - install_node  args: {"url":"https://github.com/<owner>/<repo>"}（装自定义节点：clone 到 custom_nodes 并装 requirements；只支持 GitHub https）
+  - generate_test args: {"profile"?:string,"prompt"?:string,"width"?:number,"height"?:number}（真跑一张验收图，约 1 分钟、占 GPU）
+- 装完自定义节点记得加一步 restart_comfy 让它生效；generate_test 每轮最多一次。
 - 最多 6 步；不要给删除项目、读写图片库、执行任意命令之类的动作（你也没有这些工具）。
 - **绝对不许尝试修改、替换、重编译显影自己的程序或源码**；你只能通过上面这些动作改 ComfyUI 的配置与环境。
 - 说话要短：summary 不超过 80 个汉字；每步的 why 不超过 30 个汉字；advice 的 text 不超过 120 个汉字。

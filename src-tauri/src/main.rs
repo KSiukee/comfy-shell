@@ -142,6 +142,7 @@ fn main() {
             commands::download::file_download,
             commands::download::models_manifest,
             commands::download::model_download,
+            commands::download::node_install,
             commands::system::app_version,
             commands::system::config_dir_path,
             commands::system::save_ref_image,
