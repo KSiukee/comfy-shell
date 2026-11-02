@@ -94,3 +94,8 @@ pub fn ai_inspect(
     let s = state.settings.lock().unwrap().clone();
     agent::inspect(&s, &target, lines.unwrap_or(120))
 }
+
+#[tauri::command]
+pub fn registry_resolve(id: String) -> Result<serde_json::Value, String> {
+    agent::registry_resolve(&id)
+}

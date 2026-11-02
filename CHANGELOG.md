@@ -3,6 +3,10 @@
 > 本文件是补写的更新历史：最早十二个版本没有当时的发布记录，依据 `dev/test_*.py`、截图、README 旧版与代码痕迹重建，
 > 标注「推断」的条目细节可能有偏差；有发布记录之后为当时实测记录。
 
+## v0.105.0
+- **按 Comfy Registry 的 id 装节点**：`install_node` 现在支持 `{"registry":"comfyui-impact-pack"}`——壳调 `api.comfy.org` 解析成 GitHub 仓库，确认框里显示名称/版本/下载量。实测 Impact Pack v8.30.0（359 万下载）。**只认 id 完全一致**，找不到会给相近建议，不会装错节点。
+- **发给云端前脱敏**：体检报告 + inspect 补充信息统一 `redact()`——`D:\secret\abc.txt` → `<path>/abc.txt`，UNC 同理，URL/中文不误伤。端到端实测：让模型复述绝对路径，它只能看到 `<path>/abc.txt`。
+- 新命令：`registry_resolve(id)`；单测 +3（脱敏）。
 ## v0.104.0
 - **L2 只读查询（inspect）**：AI 计划里能写 `{"action":"inspect","target":"logs|models|nodes|status"}`，壳真去读最新日志/模型/节点/显存，把结果作为「补充信息」塞回去，**自动重新出方案**。不再只靠体检快照猜。
 - **执行结果回喂**：每次动作成功/失败都记一条上下文，计划下方出现「把执行结果给 AI，继续」，点一下让它基于真实结果决定下一步（装完节点→重启→跑验收）。

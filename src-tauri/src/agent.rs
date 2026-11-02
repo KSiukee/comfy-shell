@@ -359,6 +359,125 @@ pub fn install_engine(cfg: &Path, target: &Path, prog: EngineProgress) -> Result
 
 // ---------------------------------------------------------------- 体检
 
+/// 发给云端前的脱敏：Windows 盘符路径/UNC 只留文件名，URL 不动。
+pub fn redact(text: &str) -> String {
+    let chars: Vec<char> = text.chars().collect();
+    let delim = |c: char| {
+        c.is_whitespace()
+            || matches!(c, '"' | '\'' | ',' | ';' | ')' | ']' | '}' | '|' | '<' | '>' | '`')
+    };
+    let mut out = String::with_capacity(text.len());
+    let mut i = 0;
+    while i < chars.len() {
+        let c = chars[i];
+        let is_drive = i + 2 < chars.len()
+            && (i == 0 || !chars[i - 1].is_alphanumeric())
+            && c.is_ascii_alphabetic()
+            && chars[i + 1] == ':'
+            && (chars[i + 2] == '\\' || chars[i + 2] == '/');
+        let is_unc = c == '\\' && i + 1 < chars.len() && chars[i + 1] == '\\';
+        if is_drive || is_unc {
+            let mut j = i + 2;
+            while j < chars.len() && !delim(chars[j]) {
+                j += 1;
+            }
+            let segment: String = chars[i..j].iter().collect();
+            let base = segment.rsplit(['\\', '/']).next().unwrap_or("");
+            if !base.is_empty() && base.chars().count() <= 80 && !base.contains(':') {
+                out.push_str("<path>/");
+                out.push_str(base);
+            } else {
+                out.push_str("<path>");
+            }
+            i = j;
+            continue;
+        }
+        out.push(c);
+        i += 1;
+    }
+    out
+}
+
+/// Comfy Registry 的节点 id → GitHub 仓库（官方 API，2026 实测可用）。
+pub fn registry_resolve(id: &str) -> Result<serde_json::Value, String> {
+    let id = id.trim();
+    if id.is_empty()
+        || id.len() > 100
+        || !id
+            .chars()
+            .all(|c| c.is_ascii_alphanumeric() || c == '-' || c == '_' || c == '.')
+    {
+        return Err("Registry id 不合法（只允许字母数字和 - _ .）".into());
+    }
+    let mut b = reqwest::blocking::Client::builder()
+        .timeout(std::time::Duration::from_secs(25))
+        .user_agent("xianying/0.105");
+    if let Some(p) = netdl::detect_proxy() {
+        b = b.proxy(reqwest::Proxy::all(&p).map_err(|e| e.to_string())?);
+    }
+    let client = b.build().map_err(|e| e.to_string())?;
+    let base = "https://api.comfy.org";
+    let fetch = |url: String| -> Option<serde_json::Value> {
+        let r = client.get(&url).send().ok()?;
+        if !r.status().is_success() {
+            return None;
+        }
+        r.json::<serde_json::Value>().ok()
+    };
+
+    let node = match fetch(format!("{base}/nodes/{id}")) {
+        Some(n) => Some(n),
+        None => {
+            // 精确匹配才认；搜索只是拿来给建议，不能把相近的节点装上去
+            let s = fetch(format!("{base}/nodes/search?query={id}&limit=5"));
+            let exact = s
+                .as_ref()
+                .and_then(|s| s.get("nodes"))
+                .and_then(|x| x.as_array())
+                .and_then(|a| {
+                    a.iter()
+                        .find(|n| n.get("id").and_then(|x| x.as_str()) == Some(id))
+                        .cloned()
+                });
+            if exact.is_none() {
+                let names: Vec<String> = s
+                    .as_ref()
+                    .and_then(|s| s.get("nodes"))
+                    .and_then(|x| x.as_array())
+                    .map(|a| {
+                        a.iter()
+                            .filter_map(|n| n.get("id").and_then(|x| x.as_str()).map(str::to_string))
+                            .take(3)
+                            .collect()
+                    })
+                    .unwrap_or_default();
+                return Err(if names.is_empty() {
+                    format!("Registry 里没找到「{id}」")
+                } else {
+                    format!("Registry 里没找到「{id}」，相近的有：{}", names.join("、"))
+                });
+            }
+            exact
+        }
+    };
+    let node = node.ok_or_else(|| format!("Registry 里没找到「{id}」"))?;
+    let repo = node
+        .get("repository")
+        .and_then(|x| x.as_str())
+        .unwrap_or("")
+        .to_string();
+    if !repo.starts_with("https://github.com/") {
+        return Err(format!("「{id}」没有可用的 GitHub 仓库（可能只发布在 Registry）"));
+    }
+    Ok(serde_json::json!({
+        "id": node.get("id").cloned().unwrap_or(serde_json::json!(id)),
+        "name": node.get("name").cloned().unwrap_or(serde_json::json!("")),
+        "repository": repo,
+        "version": node.get("latest_version").and_then(|v| v.get("version")).cloned().unwrap_or(serde_json::json!("")),
+        "downloads": node.get("downloads").cloned().unwrap_or(serde_json::json!(0)),
+    }))
+}
+
 /// 只读查询（L2）：AI 计划里的 `inspect` 步用，查完把结果补给它重新出方案。
 pub fn inspect(s: &Settings, target: &str, lines: usize) -> Result<serde_json::Value, String> {
     let root = PathBuf::from(&s.comfy_root);
@@ -555,7 +674,8 @@ const PLAN_SYSTEM: &str = r#"你是「显影」（本地 ComfyUI 生图/改图�
   - restart_comfy args: {}
   - install_comfy args: {"mode":"source"} 或 {"mode":"portable"}（portable 需要空目录，慎用）
   - open_folder   args: {"path":string}   （只用于提示用户去看某个文件夹）
-  - install_node  args: {"url":"https://github.com/<owner>/<repo>"}（装自定义节点：clone 到 custom_nodes 并装 requirements；只支持 GitHub https）
+  - install_node  args: {"url":"https://github.com/<owner>/<repo>"} 或 {"registry":"<Comfy Registry 的 id，如 comfyui-impact-pack>"}
+    （装自定义节点：clone 到 custom_nodes 并装 requirements；url 只支持 GitHub https，registry 由壳解析成 GitHub 地址）
   - generate_test args: {"profile"?:string,"prompt"?:string,"width"?:number,"height"?:number}（真跑一张验收图，约 1 分钟、占 GPU）
   - inspect       args: {"target":"logs"|"models"|"nodes"|"status","lines"?:number}（只读；查完壳会把结果补给你、让你重新出方案）
 - 体检报告只是快照；需要看最新日志/模型/节点/显存时，先给一步 inspect，别猜。
@@ -658,9 +778,9 @@ pub fn run_plan(
     let tmp = cfg.join("agent_tmp");
     let _ = std::fs::create_dir_all(&tmp);
     let prompt_path = tmp.join("system.md");
-    let report_json = serde_json::to_string_pretty(report).unwrap_or_default();
+    let report_json = redact(&serde_json::to_string_pretty(report).unwrap_or_default());
     let extra_block = match extra.map(str::trim).filter(|x| !x.is_empty()) {
-        Some(e) => format!("\n\n## 补充信息（刚刚查到的，以此为准）\n{e}"),
+        Some(e) => format!("\n\n## 补充信息（刚刚查到的，以此为准）\n{}", redact(e)),
         None => String::new(),
     };
     let sys = format!(
@@ -799,4 +919,30 @@ pub fn run_plan(
         raw: assistant,
         ms: t0.elapsed().as_millis() as u64,
     })
+}
+
+#[cfg(test)]
+mod redact_tests {
+    use super::redact;
+
+    #[test]
+    fn redacts_drive_paths_but_keeps_filename() {
+        let s = redact("open D:\\ai\\out\\x.png now");
+        assert!(s.contains("<path>/x.png"), "{s}");
+        assert!(!s.contains("D:\\"), "{s}");
+    }
+
+    #[test]
+    fn keeps_urls_and_chinese() {
+        let u = "https://hf-mirror.com/Comfy-Org/x/resolve/main/a.safetensors";
+        assert_eq!(redact(u), u);
+        assert_eq!(redact("中文 正常"), "中文 正常");
+    }
+
+    #[test]
+    fn redacts_unc_shares() {
+        let s = redact("share \\\\nas\\share\\file.txt end");
+        assert!(s.contains("<path>/file.txt"), "{s}");
+        assert!(!s.contains("nas\\share"), "{s}");
+    }
 }

@@ -240,11 +240,20 @@ async function aiExecuteStep(step, btn) {
     } else if (action === "open_folder") {
       await api.call("open_folder", { path: String(args.path || "") });
     } else if (action === "install_node") {
-      const url = String(args.url || "");
+      let url = String(args.url || "");
+      let regInfo = null;
+      if (!url && args.registry) {
+        btn.textContent = "查 Registry…";
+        regInfo = await api.call("registry_resolve", { id: String(args.registry) });
+        url = regInfo.repository;
+      }
       if (!/^https:\/\/github\.com\/[^/]+\/[^/]+/.test(url)) {
         throw new Error("只支持 https://github.com/owner/repo 的仓库");
       }
-      if (!confirm(`安装自定义节点？\n\n${url}\n\n会执行：\ngit clone --depth 1 到 ComfyUI/custom_nodes\n然后 pip install -r requirements.txt（如果有）\n\n第三方节点会执行任意 Python，确认仓库可信再继续。`)) return;
+      const regLine = regInfo
+        ? `\nRegistry：${regInfo.name || regInfo.id} v${regInfo.version || "?"}（${regInfo.downloads || 0} 下载）`
+        : "";
+      if (!confirm(`安装自定义节点？${regLine}\n\n${url}\n\n会执行：\ngit clone --depth 1 到 ComfyUI/custom_nodes\n然后 pip install -r requirements.txt（如果有）\n\n第三方节点会执行任意 Python，确认仓库可信再继续。`)) return;
       btn.textContent = "安装中…";
       const p = await api.call("node_install", { url });
       toast("节点已装：" + p + "（记得重启 ComfyUI）");
