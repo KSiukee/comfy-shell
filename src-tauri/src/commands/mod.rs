@@ -1,6 +1,7 @@
 pub mod ai;
 pub mod gallery;
 pub mod generation;
+pub mod luts;
 pub mod projects;
 pub mod promptfx;
 pub mod system;

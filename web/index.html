@@ -446,6 +446,89 @@
     </div>
   </div>
 
+  <!-- photo editor: crop / LUT / color -->
+  <div class="modal pe" id="peModal" hidden>
+    <div class="modal-card pe-card">
+      <div class="pe-head">
+        <h3>调色 · 裁切 <span class="muted mono" id="peTitle" style="font-size:12px"></span></h3>
+        <span class="spacer"></span>
+        <span class="muted mono" id="peSize"></span>
+        <button class="btn ghost small" id="peClose">关闭</button>
+      </div>
+      <div class="pe-body">
+        <div class="pe-stage" id="peStage">
+          <canvas id="peCanvas"></canvas>
+          <div class="pe-crop" id="peCrop" hidden>
+            <div class="pe-crop-box" id="peCropBox">
+              <i class="pe-h" data-h="nw"></i>
+              <i class="pe-h" data-h="ne"></i>
+              <i class="pe-h" data-h="sw"></i>
+              <i class="pe-h" data-h="se"></i>
+            </div>
+          </div>
+          <div class="pe-badge" id="peBusy" hidden>处理中…</div>
+        </div>
+        <aside class="pe-side">
+          <div class="tabs mini" id="peTabs">
+            <button class="tab active" data-tab="light">调色</button>
+            <button class="tab" data-tab="lut">LUT</button>
+            <button class="tab" data-tab="crop">裁切</button>
+          </div>
+
+          <div class="pe-pane" data-pane="light">
+            <div class="pe-presets" id="pePresets"></div>
+            <div class="pe-sliders" id="peSliders"></div>
+            <div class="row tight">
+              <button class="btn ghost small" id="peResetAdj">重置调色</button>
+              <span class="spacer"></span>
+              <span class="muted" style="font-size:11px">双击滑杆复位</span>
+            </div>
+          </div>
+
+          <div class="pe-pane" data-pane="lut" hidden>
+            <div class="field">
+              <label>套一个 LUT（.cube）</label>
+              <select id="peLutSelect"></select>
+            </div>
+            <div class="field">
+              <label>强度 <span class="mono" id="peLutStrVal">100%</span></label>
+              <input type="range" id="peLutStr" min="0" max="100" step="1" value="100" />
+            </div>
+            <div class="row tight" style="flex-wrap:wrap;row-gap:6px">
+              <button class="btn small" id="peLutImport" title="把 .cube 复制进壳的 luts 目录">导入…</button>
+              <button class="btn ghost small" id="peLutFolder">LUT 文件夹</button>
+              <button class="btn ghost small" id="peLutRefresh">刷新</button>
+              <button class="btn ghost small" id="peLutDelete">删除</button>
+            </div>
+            <div class="hint" id="peLutHint"></div>
+            <input type="file" id="peLutFile" accept=".cube,text/plain" hidden />
+          </div>
+
+          <div class="pe-pane" data-pane="crop" hidden>
+            <div class="pe-aspects" id="peAspects"></div>
+            <div class="row tight">
+              <button class="btn ghost small" id="peRotL" title="左转 90°">↺ 左转</button>
+              <button class="btn ghost small" id="peRotR" title="右转 90°">↻ 右转</button>
+              <button class="btn ghost small" id="peCropReset">重置裁切</button>
+            </div>
+            <div class="hint" id="peCropHint">拖动框选，拖四角调整比例</div>
+          </div>
+
+          <div class="pe-foot">
+            <select id="peFormat" class="mini-select" title="另存格式">
+              <option value="png">PNG</option>
+              <option value="jpg">JPG</option>
+            </select>
+            <button class="btn ghost small" id="peResetAll">全部重置</button>
+            <span class="spacer"></span>
+            <button class="btn primary small" id="peSave">另存为新图</button>
+          </div>
+          <div class="hint" style="margin-top:-2px">原图不动，按上面的尺寸另存为新文件</div>
+        </aside>
+      </div>
+    </div>
+  </div>
+
   <!-- lightbox -->
   <div class="lightbox" id="lightbox" hidden>
     <img id="lightboxImg" alt="" />
@@ -455,6 +538,7 @@
       <button class="btn ghost small" id="lbNext" title="下一张（→）">→</button>
       <span class="mono" id="lightboxMeta"></span>
       <div class="spacer"></div>
+      <button class="btn ghost small" id="lbEdit" title="裁切 / LUT / 调色">调色</button>
       <button class="btn ghost small" id="lbShot" title="把这张图存进某个镜头格">存为镜头</button>
       <button class="btn ghost small" id="lightboxRef">用作参考图</button>
       <button class="btn ghost small" id="lightboxReveal">在文件夹中显示</button>
@@ -543,6 +627,7 @@
       <button class="btn ghost small" id="vwZoomIn">+</button>
       <button class="btn ghost small" id="vwFit">适应</button>
       <select id="vwUpModel" class="mini-select" title="超分模型"></select>
+      <button class="btn ghost small" id="vwEdit" title="裁切 / LUT / 调色">调色</button>
       <button class="btn primary small" id="vwUpscale">超分 4×</button>
       <button class="btn ghost small" id="vwInpaint">局部重绘</button>
       <button class="btn ghost small" id="vwRef">用作参考图</button>
@@ -1171,6 +1256,7 @@
   <script src="region.js"></script>
   <script src="meta.js"></script>
   <script src="detail.js"></script>
+<script src="photoedit.js"></script>
   <script src="ab.js"></script>
   <script src="workspace.js"></script>
   <script src="problems.js"></script>

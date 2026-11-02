@@ -185,9 +185,55 @@ pub fn scan(models: &Path) -> Vec<ModelFile> {
     out
 }
 
+/// 递归列出 `loras/` 下的 `.safetensors`，名字是相对 `loras/` 的路径（`/` 分隔）。
+///
+/// 为什么需要它：ComfyUI 的节点信息是**缓存**的，新丢进 loras 的文件要等它重启才出现；
+/// 壳里补这一份，才能「下载完立刻在下拉里选到」。**必须递归**——LoRA 常常按风格分文件夹放
+/// （模型卡自己也建议 `loras/flux3 image klein/`），只扫顶层会漏掉整类。
+pub fn loras_recursive(dir: &Path) -> Vec<String> {
+    fn walk(base: &Path, dir: &Path, depth: usize, out: &mut Vec<String>) {
+        if depth > 3 {
+            return;
+        }
+        let Ok(rd) = std::fs::read_dir(dir) else {
+            return;
+        };
+        for e in rd.flatten() {
+            let p = e.path();
+            if p.is_dir() {
+                // `_trash` / `.tmp` 这类目录是回收站或临时区，别放进下拉
+                let skip = e
+                    .file_name()
+                    .to_string_lossy()
+                    .starts_with(|c| c == '_' || c == '.');
+                if !skip {
+                    walk(base, &p, depth + 1, out);
+                }
+                continue;
+            }
+            if !p
+                .extension()
+                .and_then(|x| x.to_str())
+                .map(|x| x.eq_ignore_ascii_case("safetensors"))
+                .unwrap_or(false)
+            {
+                continue;
+            }
+            if let Ok(rel) = p.strip_prefix(base) {
+                let name = rel.to_string_lossy().replace('\\', "/");
+                if !name.is_empty() {
+                    out.push(name);
+                }
+            }
+        }
+    }
+    let mut out = Vec::new();
+    walk(dir, dir, 0, &mut out);
+    out
+}
+
 /// 只接受扫描会返回的扩展名，避免命令行被拿来当任意文件开关。
-pub fn toggle(models: &Path, rel: &str, enabled: bool) -> Result<bool, String> {
-    let path = models.join(rel.replace('/', std::path::MAIN_SEPARATOR_STR));
+pub fn toggle(models: &Path, rel: &str, enabled: bool) -> Result<bool, String> {    let path = models.join(rel.replace('/', std::path::MAIN_SEPARATOR_STR));
     let ext = path
         .extension()
         .and_then(|x| x.to_str())
@@ -241,6 +287,22 @@ mod tests {
         std::fs::write(d.join("loras/a.safetensors"), b"x").unwrap();
         std::fs::write(d.join("loras/sub/b.gguf"), b"y").unwrap();
         d
+    }
+
+    #[test]
+    fn loras_recursive_sees_subfolders_only_safetensors() {
+        let m = temp("loras_rec");
+        std::fs::create_dir_all(m.join("loras/flux3 image klein")).unwrap();
+        std::fs::write(m.join("loras/flux3 image klein/skin.safetensors"), b"z").unwrap();
+        std::fs::write(m.join("loras/notes.txt"), b"no").unwrap();
+        std::fs::create_dir_all(m.join("loras/_trash")).unwrap();
+        std::fs::write(m.join("loras/_trash/old.safetensors"), b"t").unwrap();
+        let list = loras_recursive(&m.join("loras"));
+        assert!(list.contains(&"a.safetensors".to_string()));
+        assert!(list.contains(&"flux3 image klein/skin.safetensors".to_string()), "{list:?}");
+        assert!(!list.iter().any(|x| x.ends_with(".txt") || x.ends_with(".gguf")));
+        assert!(!list.iter().any(|x| x.starts_with("_trash/")), "{list:?}");
+        let _ = std::fs::remove_dir_all(&m);
     }
 
     #[test]

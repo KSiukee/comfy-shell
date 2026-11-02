@@ -150,6 +150,12 @@ function ldRenderActions(box, it, meta, hist) {
     if (meta && typeof applyImageMeta === "function") await applyImageMeta(meta);
     else if (hist) ldFillHistory(hist);
   };
+  const edit = ld("button", "btn small ghost", "调色 / 裁切");
+  edit.disabled = String(it.path).startsWith("vault://");
+  edit.title = "裁切、套 LUT、调明暗（原图保留，另存新图）";
+  edit.onclick = () => {
+    if (window.photoEditor) window.photoEditor.open({ path: it.path, filename: it.filename });
+  };
   const ref = ld("button", "btn small ghost", "作参考图");
   ref.onclick = () => {
     if (typeof useAsReference === "function") useAsReference({ path: it.path, filename: it.filename });
@@ -161,7 +167,7 @@ function ldRenderActions(box, it, meta, hist) {
   folder.onclick = () => api.call("reveal_file", { path: it.path });
   const del = ld("button", "btn danger small", "删除");
   del.onclick = () => ldDelete(it);
-  row.append(fill, ref, copy, folder, del);
+  row.append(fill, edit, ref, copy, folder, del);
   box.appendChild(row);
 }
 
@@ -269,6 +275,10 @@ async function refreshLibDetail() {
 function libItemMenu(it) {
   return [
     { label: "详情（参数 / 项目 / 版本）", run: () => openLibDetail(it) },
+    {
+      label: "调色 / 裁切…",
+      run: () => window.photoEditor && window.photoEditor.open({ path: it.path, filename: it.filename }),
+    },
     { label: "用作参考图", run: () => useAsReference({ path: it.path, filename: it.filename }) },
     { label: "复制提示词", run: () => ldCopyPrompt(it) },
     { label: "在文件夹中显示", run: () => api.call("reveal_file", { path: it.path }) },
@@ -278,6 +288,15 @@ function libItemMenu(it) {
 
 /// 图库卡片上加「ⓘ 详情」入口与右键菜单（library.js 只调这一行，免得图库文件变上帝文件）。
 function attachLibItemDetail(card, it) {
+  const edit = document.createElement("button");
+  edit.className = "btn ghost small li-info";
+  edit.title = "调色 / 裁切（裁切、LUT、明暗）";
+  edit.textContent = "调";
+  edit.disabled = String(it.path).startsWith("vault://");
+  edit.onclick = (e) => {
+    e.stopPropagation();
+    if (window.photoEditor) window.photoEditor.open({ path: it.path, filename: it.filename });
+  };
   const info = document.createElement("button");
   info.className = "btn ghost small li-info";
   info.title = "详情：参数 / 项目 / 版本";
@@ -287,7 +306,7 @@ function attachLibItemDetail(card, it) {
     openLibDetail(it);
   };
   const meta = card.querySelector(".li-meta");
-  if (meta) meta.appendChild(info);
+  if (meta) meta.append(edit, info);
   card.oncontextmenu = (e) => {
     e.preventDefault();
     showCtxMenu(e.clientX, e.clientY, libItemMenu(it));

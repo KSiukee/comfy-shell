@@ -133,6 +133,7 @@ function buildModelSelect() {
 // Which LoRAs each image model can actually load, and the order to try them in.
 const LORA_DESC = [
   [/ultra_real/i, "去 AI 塑料感，给皮肤/布料加纹理，强度 0.6–0.8"],
+  [/natural facial skin texture|skin texture|lora_skin/i, "真实皮肤纹理（补毛孔/绒毛，改图用），强度 1.0"],
   [/beauty/i, "人像美化、柔和磨皮，强度 0.7"],
   [/nsfw/i, "训练者自己的成人影像风格，强度 0.7–0.9"],
   [/anything2real/i, "把任意画风转成真人照片（改图用，强度 0.8）"],
@@ -153,6 +154,13 @@ const LORA_RULES = [
   { test: /Qwen-Image-2512.*Pixel-Art/i, models: ["qwen21"], rank: 2, strength: 0.85, note: "像素风" },
   { test: /anything2real|Qwen2\.1_/i, models: ["qwen21"], rank: 2, strength: 0.8, note: "风格转真人（改图）" },
   { test: /moss/i, models: ["moss", "mossbase", "mossimagine"], rank: 3, strength: 0.8, note: "MOSS 生态 LoRA" },
+  {
+    test: /natural facial skin texture/i,
+    models: ["flux3", "flux3base"],
+    rank: 2,
+    strength: 1.0,
+    note: "皮肤纹理（FLUX.3 Klein 编辑，无触发词）",
+  },
   { test: /MOSS-Image-NSFW/i, models: ["moss", "mossbase", "mossimagine"], rank: 1, strength: 0.85, note: "NSFW 人像/场景" },
   { test: /folder_probe|ui_probe|low_probe|mirror_probe/i, models: ["flux3base", "flux3"], rank: 1, strength: 0.9, note: "你自训（FLUX.3 Base）" },
 ];
@@ -441,6 +449,12 @@ document.addEventListener("contextmenu", (e) => {
 
 function resultMenu(r) {
   return [
+    {
+      label: "调色 / 裁切…",
+      run: () =>
+        window.photoEditor &&
+        window.photoEditor.open({ path: r.path, filename: r.filename, dataUrl: r.dataUrl }),
+    },
     { label: "删除（移到回收站）", danger: true, run: () => deleteResults([r]) },
     { label: "在文件夹中显示", run: () => api.call("reveal_file", { path: r.path }) },
     { label: "用作参考图", run: () => useAsReference(r) },

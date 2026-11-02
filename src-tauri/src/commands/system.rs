@@ -184,16 +184,17 @@ pub async fn models_list(app: tauri::AppHandle) -> api::Models {
         };
         let mut m = api::models(port);
         // ComfyUI caches its node info, so freshly trained LoRAs are not in it yet.
+        // 递归扫（LoRA 常按风格分子文件夹放），见 models::loras_recursive 的注释。
+        // 名字必须和 ComfyUI 给的一模一样：Windows 上它返回的是反斜杠（`a\b.safetensors`），
+        // 这里按「分隔符无关」去重，已有的就保留 ComfyUI 的写法，缺的才补（补的时候用本机分隔符）。
         let lora_dir = std::path::PathBuf::from(&root)
             .join("ComfyUI")
             .join("models")
             .join("loras");
-        if let Ok(rd) = std::fs::read_dir(&lora_dir) {
-            for e in rd.flatten() {
-                let name = e.file_name().to_string_lossy().to_string();
-                if name.to_lowercase().ends_with(".safetensors") && !m.loras.contains(&name) {
-                    m.loras.push(name);
-                }
+        let norm = |s: &str| s.replace('\\', "/").to_lowercase();
+        for name in models::loras_recursive(&lora_dir) {
+            if !m.loras.iter().any(|x| norm(x) == norm(&name)) {
+                m.loras.push(name.replace('/', std::path::MAIN_SEPARATOR_STR));
             }
         }
         m.loras.sort();

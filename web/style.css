@@ -873,3 +873,61 @@ body.mode-pro .simple-only { display: none !important; }
 .queue-item .qt { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .queue-item button { padding: 0 4px; font-size: 11px; }
 .problem-row { border: 1px solid var(--line); border-radius: 6px; padding: 6px 8px; font-size: 12px; }
+
+/* ---------------- photo editor：裁切 / LUT / 调色 ---------------- */
+#peModal { z-index: 88; }
+.pe-card {
+  width: min(1240px, calc(100vw - 48px));
+  height: min(820px, calc(100vh - 48px));
+  padding: 0; gap: 0; overflow: hidden;
+}
+.pe-head { display: flex; align-items: center; gap: 10px; padding: 11px 14px; border-bottom: 1px solid var(--line); }
+.pe-head h3 { display: flex; align-items: baseline; gap: 8px; min-width: 0; }
+.pe-head #peTitle { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 46vw; }
+.pe-body { flex: 1 1 auto; display: flex; min-height: 0; }
+
+.pe-stage { position: relative; flex: 1 1 auto; min-width: 0; background: #06080c; overflow: hidden; }
+.pe-stage canvas { position: absolute; inset: 0; display: block; }
+.pe-badge {
+  position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);
+  padding: 7px 14px; border-radius: 999px; font-size: 12px;
+  background: rgba(28, 34, 49, .92); border: 1px solid #2e3a55; color: var(--text);
+  box-shadow: 0 10px 30px rgba(0,0,0,.45);
+}
+
+.pe-side {
+  flex: 0 0 312px; display: flex; flex-direction: column; gap: 10px;
+  padding: 12px; border-left: 1px solid var(--line); background: var(--panel);
+  overflow-y: auto;
+}
+.pe-pane { display: flex; flex-direction: column; gap: 10px; }
+.pe-presets, .pe-aspects { display: flex; flex-wrap: wrap; gap: 6px; }
+.pe-presets .btn.active, .pe-aspects .btn.active { border-color: #4a5e8f; background: #1b2233; color: var(--text); }
+
+.pe-sliders { display: flex; flex-direction: column; gap: 1px; }
+.pe-row { display: grid; grid-template-columns: 50px 1fr 40px; align-items: center; gap: 8px; padding: 2px 0; }
+.pe-row label { font-size: 11.5px; color: var(--muted); }
+.pe-row input[type="range"] { width: 100%; height: 16px; accent-color: #5d7bf0; }
+.pe-val { font-size: 10.5px; color: #6b7488; text-align: right; font-variant-numeric: tabular-nums; }
+.pe-val.on { color: var(--accent-2); }
+
+.pe-foot { margin-top: auto; display: flex; align-items: center; gap: 8px; padding-top: 10px; border-top: 1px solid var(--line); }
+.pe-foot .btn { white-space: nowrap; flex: 0 0 auto; }
+.pe-foot #peFormat { flex: 0 0 80px; width: 80px; }
+
+/* 裁切框：框外压暗靠 box-shadow 铺满整张图 */
+.pe-crop { position: absolute; cursor: crosshair; touch-action: none; }
+.pe-crop-box {
+  position: absolute; border: 1px solid #fff; cursor: move;
+  box-shadow: 0 0 0 9999px rgba(0, 0, 0, .55);
+  background-image:
+    linear-gradient(90deg, transparent 33.2%, rgba(255,255,255,.22) 33.2%, rgba(255,255,255,.22) 33.5%, transparent 33.5%,
+      transparent 66.2%, rgba(255,255,255,.22) 66.2%, rgba(255,255,255,.22) 66.5%, transparent 66.5%),
+    linear-gradient(180deg, transparent 33.2%, rgba(255,255,255,.22) 33.2%, rgba(255,255,255,.22) 33.5%, transparent 33.5%,
+      transparent 66.2%, rgba(255,255,255,.22) 66.2%, rgba(255,255,255,.22) 66.5%, transparent 66.5%);
+}
+.pe-h { position: absolute; width: 12px; height: 12px; background: #fff; border-radius: 2px; box-shadow: 0 1px 3px rgba(0,0,0,.6); }
+.pe-h[data-h="nw"] { left: -6px; top: -6px; cursor: nwse-resize; }
+.pe-h[data-h="ne"] { right: -6px; top: -6px; cursor: nesw-resize; }
+.pe-h[data-h="sw"] { left: -6px; bottom: -6px; cursor: nesw-resize; }
+.pe-h[data-h="se"] { right: -6px; bottom: -6px; cursor: nwse-resize; }

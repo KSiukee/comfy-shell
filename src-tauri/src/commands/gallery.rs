@@ -107,11 +107,29 @@ pub fn image_meta(state: State<AppState>, path: String) -> Option<serde_json::Va
     crate::imgmeta::read_meta_under(std::path::Path::new(&root), std::path::Path::new(&path))
 }
 
-/// Persist a PNG produced by the frontend (e.g. a composed comparison image).
+/// Persist an image composed by the frontend (comparison sheet, retouched photo).
+/// `subdir` 是 output 下的相对目录（比如 projects/<id>），调色另存时放回原图旁边；
+/// 只接受相对路径且不许出现 `..`——前端能传这个参数，必须当不可信输入处理。
 #[tauri::command]
-pub fn save_export(state: State<AppState>, name: String, data_url: String) -> Result<String, String> {
+pub fn save_export(
+    state: State<AppState>,
+    name: String,
+    data_url: String,
+    subdir: Option<String>,
+) -> Result<String, String> {
     let root = PathBuf::from(state.settings.lock().unwrap().comfy_root.clone());
-    let dir = root.join("ComfyUI").join("output");
+    let mut dir = root.join("ComfyUI").join("output");
+    if let Some(sub) = subdir.map(|s| s.trim().replace('\\', "/")).filter(|s| !s.is_empty()) {
+        let rel = std::path::Path::new(&sub);
+        let bad = rel.is_absolute()
+            || rel.components().any(|c| {
+                !matches!(c, std::path::Component::Normal(_))
+            });
+        if bad {
+            return Err("子目录不合法".into());
+        }
+        dir = dir.join(rel);
+    }
     std::fs::create_dir_all(&dir).map_err(|e| e.to_string())?;
 
     let b64 = data_url
@@ -134,7 +152,13 @@ pub fn save_export(state: State<AppState>, name: String, data_url: String) -> Re
         })
         .collect();
     let mut filename = safe.trim().to_string();
-    if !filename.to_lowercase().ends_with(".png") {
+    // 前端（调色/裁切的另存）可能送来 jpg/webp：按扩展名原样落盘，
+    // 只有不认识的后缀才补 .png——否则 JPEG 字节会被写成 .png 的假扩展名。
+    let lower = filename.to_lowercase();
+    let known = [".png", ".jpg", ".jpeg", ".webp"]
+        .iter()
+        .any(|ext| lower.ends_with(ext));
+    if !known {
         filename.push_str(".png");
     }
     if filename == ".png" {
