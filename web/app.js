@@ -25,6 +25,35 @@ const RATIOS = {
   "9:16": [768, 1344],
 };
 
+/// 让「比例 / 步数」快捷标签跟着真实数值走（切模型、还原表单、手改数字都要同步）。
+function syncRatioChips() {
+  const w = Number($("width") && $("width").value) || 0;
+  const h = Number($("height") && $("height").value) || 0;
+  if (!w || !h) return;
+  const r = w / h;
+  let best = null;
+  let bestD = 0.04;
+  for (const [k, [pw, ph]] of Object.entries(RATIOS)) {
+    const d = Math.abs(r - pw / ph);
+    if (d <= bestD) {
+      bestD = d;
+      best = k;
+    }
+  }
+  document.querySelectorAll("#ratioChips button").forEach((b) => b.classList.toggle("active", b.dataset.r === best));
+}
+
+function syncStepChips() {
+  if (!$("steps")) return;
+  // train.js 的 syncStepPresets 监听 input，这里补一刀让它按当前值高亮
+  $("steps").dispatchEvent(new Event("input", { bubbles: true }));
+}
+
+function syncQuickPicks() {
+  syncRatioChips();
+  syncStepChips();
+}
+
 // ---------------------------------------------------------------- utilities
 
 function toast(msg, isErr = false) {
@@ -228,6 +257,7 @@ function applyProfileDefaults(keepSize = false) {
   if (!p) return;
   const isCustom = !!p.custom;
   $("steps").value = p.steps;
+  syncStepChips();
   $("cfg").value = p.cfg;
   $("negative").value = p.defaultNegative || "";
 
@@ -265,8 +295,8 @@ function applyProfileDefaults(keepSize = false) {
   if (!keepSize) {
     $("width").value = 1024;
     $("height").value = 1024;
-    document.querySelectorAll("#ratioChips button").forEach((b) => b.classList.remove("active"));
   }
+  syncRatioChips();
   updateRefHint();
 }
 
@@ -755,6 +785,7 @@ function restoreLast() {
       $("loraStrength").value = r.loraStrength;
       $("loraStrengthText").textContent = Number(r.loraStrength).toFixed(2);
     }
+    syncQuickPicks();
   } catch {}
 }
 
@@ -791,6 +822,11 @@ document.querySelectorAll("#ratioChips button").forEach((b) => {
     $("height").value = h;
     document.querySelectorAll("#ratioChips button").forEach((x) => x.classList.toggle("active", x === b));
   };
+});
+
+// 手改宽高时，比例快捷标签跟着变（MOSS 预设/切模型已在 applyProfileDefaults 里同步）
+["width", "height"].forEach((id) => {
+  if ($(id)) $(id).addEventListener("input", syncRatioChips);
 });
 
 $("btnDice").onclick = () => ($("seed").value = -1);
@@ -849,6 +885,7 @@ $("btnMossPreset").onclick = () => {
   $("mossSlg").checked = true;
   $("slgTier").value = "22";
   state.slgTouched = true;
+  syncQuickPicks();
   toast("已套用 MOSS 官方采样：50 步 / CFG 3 / 1024² / SLG 22");
 };
 $("btnEnhance").onclick = enhance;

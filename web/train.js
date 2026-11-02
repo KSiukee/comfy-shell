@@ -295,7 +295,7 @@ listen("train-progress", (e) => {
 }).catch(() => {});
 
 // quick step presets (chips) for the main panel and the inpaint dialog
-const STEP_PRESETS = [30, 36, 42, 49, 25, 50];
+const STEP_PRESETS = [8, 16, 25, 30, 36, 42, 45, 49, 50];
 
 function syncStepPresets(container, input, values) {
   const current = Number(input.value);
