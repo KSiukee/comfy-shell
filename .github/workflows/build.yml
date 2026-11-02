@@ -1,22 +1,15 @@
 name: build
 
+# 只在需要出包时手动跑（Actions → build → Run workflow），平时推代码不构建。
 on:
-  push:
-    branches: [main]
-    paths-ignore:
-      - "**.md"
-      - "assets/**"
-      - "LICENSE"
-      - "NOTICE"
-      - ".gitignore"
   workflow_dispatch:
 
 permissions:
   contents: read
 
 concurrency:
-  group: build-${{ github.ref }}
-  cancel-in-progress: true
+  group: build-manual
+  cancel-in-progress: false
 
 jobs:
   windows:
