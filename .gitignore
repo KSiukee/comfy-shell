@@ -36,3 +36,6 @@ forbidden.txt
 # 内部开发脚本 / QA（不入公开仓）
 dev/
 tools/qa/
+
+# 构建日志
+*.log
