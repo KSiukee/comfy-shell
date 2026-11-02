@@ -653,6 +653,12 @@ body.mode-pro .simple-only { display: none !important; }
 /* 提示词效果行：风格 / 通配符 / 数组 / 内联 LoRA */
 .fx-row { display: flex; align-items: center; gap: 8px; margin-top: 6px; flex-wrap: wrap; }
 .fx-row select { width: auto; max-width: 220px; }
+.fx-help {
+  width: 18px; height: 18px; padding: 0; border-radius: 50%;
+  border: 1px solid var(--line); background: transparent; color: var(--muted);
+  font-size: 11px; line-height: 16px; cursor: pointer;
+}
+.fx-help:hover { color: var(--text); border-color: #33405c; }
 .fx-hint { font-size: 11px; line-height: 1.5; margin-top: 5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
 /* 风格选择器：分组 + 收藏 + 删除 */

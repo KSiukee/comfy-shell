@@ -6,6 +6,8 @@ const MAX_ARRAY_JOBS = 8;
 let stylePacks = [];
 let wildcardMap = {};
 let styleName = localStorage.getItem(STYLE_KEY) || "";
+let fxHintPinned = false;
+const FX_HINT_TEXT = "支持 [[甲|乙]] 随机二选一 · __通配符__ · <lora:名字:0.8> 内联 LoRA";
 
 // ---------------------------------------------------------------- 读取
 
@@ -261,10 +263,27 @@ function updateFxHint() {
   if (style) bits.push(`风格 · ${style.zh || style.name}`);
   if (loras) bits.push(`LoRA ${loras}`);
   if (wc) bits.push(`通配符 ${wc} 处`);
-  el.textContent = bits.length
-    ? bits.join(" · ")
-    : "支持 [[甲,乙]] 多组 · __通配符__ · <lora:名字:0.8>";
-  el.title = bits.length ? jobs.map((j, i) => `#${i + 1} ${j.prompt}`).join("\n\n") : "";
+  if (bits.length) {
+    el.hidden = false;
+    el.textContent = bits.join(" · ");
+    el.title = jobs.map((j, i) => `#${i + 1} ${j.prompt}`).join("\n\n");
+  } else if (fxHintPinned) {
+    el.hidden = false;
+    el.textContent = FX_HINT_TEXT;
+    el.title = "";
+  } else {
+    // 没用到这些写法就不占地方；想看说明点标题旁的「?」
+    el.hidden = true;
+    el.textContent = "";
+    el.title = "";
+  }
+}
+
+if ($("fxHelp")) {
+  $("fxHelp").onclick = () => {
+    fxHintPinned = !fxHintPinned;
+    updateFxHint();
+  };
 }
 
 $("styleDirBtn").addEventListener("click", async () => {
