@@ -961,9 +961,11 @@
               <div class="set-label">引擎<small id="aiEngineState">检测中…</small></div>
               <div class="row tight">
                 <button class="btn small ghost" id="aiEngineRecheck" type="button">重新检测</button>
-                <button class="btn small ghost" id="aiEngineDownload" type="button" title="下载 Node + Pi（下一步支持一键装）">下载引擎…</button>
+                <button class="btn small ghost" id="aiEngineDownload" type="button" title="下载便携 Node + 安装 Pi">下载引擎…</button>
               </div>
             </div>
+            <div class="dl-bar" id="aiBar" hidden><div class="fill" id="aiFill"></div></div>
+            <div class="hint" id="aiDlState" hidden></div>
             <div class="set-row">
               <div class="set-label">服务商 / 模型<small>OpenAI 兼容；默认 deepseek</small></div>
               <div class="row tight">

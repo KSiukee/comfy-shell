@@ -1,6 +1,9 @@
-//! AI 助手命令：引擎检测、key 存取、体检、规划。
+//! AI 助手命令：引擎检测、key 存取、体检、规划、引擎安装。
 
 use crate::*;
+use std::path::PathBuf;
+use std::sync::Arc;
+use tauri::Emitter;
 
 #[tauri::command]
 pub fn ai_engine_status(app: tauri::AppHandle) -> agent::EngineStatus {
@@ -52,4 +55,30 @@ pub async fn ai_plan(
     })
     .await
     .map_err(|e| format!("AI 任务失败：{e}"))?
+}
+
+/// 下载便携 Node + npm 安装 Pi 到应用数据目录（或指定目录）。
+#[tauri::command]
+pub async fn ai_engine_install(
+    app: tauri::AppHandle,
+    dir: Option<String>,
+) -> Result<String, String> {
+    let handle = app.clone();
+    tauri::async_runtime::spawn_blocking(move || {
+        let cfg = cfg_dir(&handle);
+        let target = dir.map(PathBuf::from).unwrap_or_else(|| cfg.join("agent"));
+        let app2 = handle.clone();
+        let prog: agent::EngineProgress =
+            Arc::new(move |phase: &str, got: u64, total: u64, mbps: f64, line: &str| {
+                let _ = app2.emit(
+                    "ai-progress",
+                    serde_json::json!({
+                        "phase": phase, "got": got, "total": total, "mbps": mbps, "line": line
+                    }),
+                );
+            });
+        agent::install_engine(&cfg, &target, prog)
+    })
+    .await
+    .map_err(|e| format!("引擎安装失败：{e}"))?
 }

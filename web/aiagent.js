@@ -216,6 +216,66 @@ async function aiExecuteStep(step, btn) {
   }
 }
 
+async function downloadEngine() {
+  if (
+    !confirm(
+      "下载便携 Node（约 35MB）并用 npm 安装 Pi（约 1–3 分钟），装到应用数据目录？\n装完会自动检测到引擎。"
+    )
+  )
+    return;
+  const btn = $("aiEngineDownload");
+  const bar = $("aiBar");
+  const fill = $("aiFill");
+  const st = $("aiDlState");
+  if (btn) {
+    btn.disabled = true;
+    btn.textContent = "安装中…";
+  }
+  if (bar) bar.hidden = false;
+  if (fill) {
+    fill.classList.add("pulse");
+    fill.style.width = "35%";
+  }
+  if (st) {
+    st.hidden = false;
+    st.textContent = "准备下载 Node…";
+  }
+  try {
+    const p = await api.call("ai_engine_install", {});
+    toast("引擎已装好");
+    if (st) st.textContent = "完成：" + p;
+    await refreshAiSettings();
+  } catch (e) {
+    if (st) st.textContent = "失败：" + e;
+    toast(String(e), true);
+  } finally {
+    if (btn) {
+      btn.disabled = false;
+      btn.textContent = "下载引擎…";
+    }
+    if (fill) fill.classList.remove("pulse");
+    if (bar) bar.hidden = true;
+  }
+}
+
+listen("ai-progress", (ev) => {
+  const p = ev.payload || {};
+  const st = $("aiDlState");
+  const fill = $("aiFill");
+  const parts = [p.phase || "处理中"];
+  if (p.got) parts.push(`${(p.got / 1048576).toFixed(1)}MB / ${p.total ? (p.total / 1048576).toFixed(0) + "MB" : "?"}`);
+  if (p.mbps) parts.push(`${p.mbps.toFixed(1)} MB/s`);
+  if (p.line) parts.push(p.line.slice(0, 120));
+  if (st) {
+    st.hidden = false;
+    st.textContent = parts.join(" · ");
+  }
+  if (fill && p.total) {
+    fill.classList.remove("pulse");
+    fill.style.width = Math.min(100, (p.got / p.total) * 100).toFixed(1) + "%";
+  }
+});
+
 (() => {
   const bind = (id, fn) => {
     const el = $(id);
@@ -228,7 +288,7 @@ async function aiExecuteStep(step, btn) {
   bind("aiPlanBtn", aiPlan);
   bind("aiClose", () => ($("aiModal").hidden = true));
   bind("aiEngineRecheck", refreshAiSettings);
-  bind("aiEngineDownload", () => toast("引擎一键安装是下一步；现在可先 npm i -g @earendil-works/pi-coding-agent", true));
+  bind("aiEngineDownload", downloadEngine);
 })();
 
 window.aiAgent = { refresh: refreshAiSettings, open: openAiAssistant, env: runAiEnvCheck };

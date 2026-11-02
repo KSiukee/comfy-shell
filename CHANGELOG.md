@@ -3,6 +3,11 @@
 > 本文件是补写的更新历史：最早十二个版本没有当时的发布记录，依据 `dev/test_*.py`、截图、README 旧版与代码痕迹重建，
 > 标注「推断」的条目细节可能有偏差；有发布记录之后为当时实测记录。
 
+## v0.100.0
+- **AI 引擎一键安装**：设置 → AI 助手 →「下载引擎…」自动下载便携 Node（npmmirror 优先，失败回退 nodejs.org，35MB）+ npm 安装 Pi 到应用数据目录（`agent/`），带进度/速度/最后一行 npm 输出。实测 26 秒装完，装完自动检测到。
+  - 用了 `--ignore-scripts`：Node 22.20 自带 npm 在跑依赖的 preinstall 时有个 `node-gyp/bin/node-gyp.js` 解析 bug，跳过脚本即可（Pi 是纯 JS/ WASM，不依赖原生编译）。
+- **真实报错能看到了**：Pi 的 `message_end.message.errorMessage` 现在会透传，填错 key 会直接显示 `401: Authentication Fails…`，不再是「没有返回内容」。
+- 实测：干净目录安装 26s、UI 点按钮装到 `%APPDATA%` 成功、假 key 调用返回 DeepSeek 401 原文。
 ## v0.99.0
 - **AI 配置助手（L1 规划器）**：设置 → AI 助手。填 API key（**DPAPI 加密**，不写 settings.json）、provider/model，点「打开 AI 助手」：输入一句话 → 壳把**体检报告**喂给 Pi（`pi -p --mode json`，**不给任何工具**）→ 模型只输出 JSON 计划 → 逐条显示「做什么 / 为什么 / 参数」→ 用户点「执行这一步」。
 - **动作白名单**：改设置（目录/出图目录/端口）、启停/重启 ComfyUI、安装/更新、打开目录、`advice`（只给建议不动手）。没有 shell、文件读写、项目/图库工具。

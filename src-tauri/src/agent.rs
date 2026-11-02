@@ -187,6 +187,176 @@ pub fn resolve_engine(cfg: &Path, s: &Settings) -> EngineStatus {
     }
 }
 
+// ---------------------------------------------------------------- 引擎安装（Node + Pi）
+
+pub type EngineProgress = Arc<dyn Fn(&str, u64, u64, f64, &str) + Send + Sync>;
+
+fn find_node_dir(dir: &Path, depth: usize) -> Option<PathBuf> {
+    if depth > 2 {
+        return None;
+    }
+    if dir.join("node.exe").is_file() {
+        return Some(dir.to_path_buf());
+    }
+    for e in std::fs::read_dir(dir).ok()?.flatten() {
+        let p = e.path();
+        if p.is_dir() {
+            if let Some(hit) = find_node_dir(&p, depth + 1) {
+                return Some(hit);
+            }
+        }
+    }
+    None
+}
+
+/// 下载便携 Node（npmmirror 优先）+ npm 安装 Pi 到 `target`。
+pub fn install_engine(cfg: &Path, target: &Path, prog: EngineProgress) -> Result<String, String> {
+    std::fs::create_dir_all(target).map_err(|e| format!("建目录失败：{e}"))?;
+    let node_exe = target.join("node.exe");
+    let npm_cli = target
+        .join("node_modules")
+        .join("npm")
+        .join("bin")
+        .join("npm-cli.js");
+
+    if !node_exe.is_file() || !npm_cli.is_file() {
+        let urls = [
+            "https://npmmirror.com/mirrors/node/v22.20.0/node-v22.20.0-win-x64.zip",
+            "https://nodejs.org/dist/v22.20.0/node-v22.20.0-win-x64.zip",
+        ];
+        let zip = target.join("_node.zip");
+        let mut last_err = String::new();
+        let mut ok = false;
+        for url in urls {
+            prog("下载 Node", 0, 0, 0.0, url);
+            let p = prog.clone();
+            let on_progress: Arc<dyn Fn(u64, u64, f64) + Send + Sync> = Arc::new(move |got, total, mbps| {
+                p("下载 Node", got, total, mbps, "");
+            });
+            let cfg_dl = netdl::DlCfg {
+                url,
+                dest: &zip,
+                threads: 6,
+                proxy: netdl::detect_proxy(),
+                cancel: Arc::new(|| false),
+                on_progress,
+            };
+            match netdl::download(cfg_dl) {
+                Ok(_) => {
+                    ok = true;
+                    break;
+                }
+                Err(e) => last_err = e,
+            }
+        }
+        if !ok {
+            return Err(format!("下载 Node 失败：{last_err}"));
+        }
+        prog("解压 Node", 0, 0, 0.0, "");
+        let unpack = target.join("_unpack");
+        let _ = std::fs::remove_dir_all(&unpack);
+        netdl::extract(&zip, &unpack)?;
+        let node_dir = find_node_dir(&unpack, 0).ok_or("Node 压缩包里没找到 node.exe")?;
+        for e in std::fs::read_dir(&node_dir).map_err(|e| e.to_string())?.flatten() {
+            let name = e.file_name();
+            if name == "_node.zip" || name == "_unpack" {
+                continue;
+            }
+            netdl::move_dir(&e.path(), &target.join(&name))?;
+        }
+        let _ = std::fs::remove_dir_all(&unpack);
+        let _ = std::fs::remove_file(&zip);
+    }
+
+    if !npm_cli.is_file() {
+        return Err("Node 里没有 npm（这个压缩包不完整）".into());
+    }
+
+    prog("安装 Pi", 0, 0, 0.0, "npm install @earendil-works/pi-coding-agent");
+    let mut cmd = Command::new(&node_exe);
+    cmd.arg(&npm_cli)
+        .arg("install")
+        .arg("--prefix")
+        .arg(target)
+        .arg("--ignore-scripts")
+        .arg("--registry=https://registry.npmmirror.com")
+        .arg("--no-audit")
+        .arg("--no-fund")
+        .arg("--loglevel=error")
+        .arg("@earendil-works/pi-coding-agent")
+        .current_dir(target)
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped());
+    if let Some(p) = netdl::detect_proxy() {
+        cmd.env("HTTPS_PROXY", &p)
+            .env("HTTP_PROXY", &p)
+            .env("https_proxy", &p)
+            .env("http_proxy", &p);
+    }
+    #[cfg(windows)]
+    {
+        use std::os::windows::process::CommandExt;
+        cmd.creation_flags(0x0800_0000);
+    }
+    let mut child = cmd.spawn().map_err(|e| format!("启动 npm 失败：{e}"))?;
+    let last_line: Arc<std::sync::Mutex<String>> = Arc::new(std::sync::Mutex::new(String::new()));
+    for stream in [
+        child.stdout.take().map(|s| Box::new(s) as Box<dyn std::io::Read + Send>),
+        child.stderr.take().map(|s| Box::new(s) as Box<dyn std::io::Read + Send>),
+    ]
+    .into_iter()
+    .flatten()
+    {
+        let ll = last_line.clone();
+        std::thread::spawn(move || {
+            use std::io::BufRead;
+            let reader = std::io::BufReader::new(stream);
+            for line in reader.lines().map_while(Result::ok) {
+                if !line.trim().is_empty() {
+                    if let Ok(mut l) = ll.lock() {
+                        *l = line;
+                    }
+                }
+            }
+        });
+    }
+    let deadline = std::time::Instant::now() + std::time::Duration::from_secs(600);
+    loop {
+        match child.try_wait().map_err(|e| e.to_string())? {
+            Some(status) => {
+                if !status.success() {
+                    let line = last_line.lock().map(|l| l.clone()).unwrap_or_default();
+                    return Err(format!("npm 安装失败（{}）：{}", status.code().unwrap_or(-1), line));
+                }
+                break;
+            }
+            None => {
+                if std::time::Instant::now() > deadline {
+                    let _ = child.kill();
+                    return Err("npm 安装超时（10 分钟）".into());
+                }
+                let line = last_line.lock().map(|l| l.clone()).unwrap_or_default();
+                prog("安装 Pi", 0, 0, 0.0, &line);
+                std::thread::sleep(std::time::Duration::from_millis(500));
+            }
+        }
+    }
+
+    let cli = target
+        .join("node_modules")
+        .join("@earendil-works")
+        .join("pi-coding-agent")
+        .join("dist")
+        .join("bundle")
+        .join("cli.js");
+    if !cli.is_file() {
+        return Err("装完了但没找到 pi 的 cli.js（npm 输出异常）".into());
+    }
+    prog("完成", 0, 0, 0.0, "");
+    let _ = cfg;
+    Ok(target.to_string_lossy().to_string())
+}
+
 // ---------------------------------------------------------------- 体检
 
 fn tail_text(path: &Path, max_lines: usize, max_bytes: usize) -> String {
@@ -440,6 +610,11 @@ pub fn run_plan(cfg: &Path, s: &Settings, report: &EnvReport, request: &str) -> 
             "message_end" => {
                 let msg = v.get("message");
                 if msg.and_then(|m| m.get("role")).and_then(|r| r.as_str()) == Some("assistant") {
+                    if let Some(err) = msg.and_then(|m| m.get("errorMessage")).and_then(|x| x.as_str()) {
+                        if !err.trim().is_empty() {
+                            last_err = err.to_string();
+                        }
+                    }
                     if let Some(c) = msg.and_then(|m| m.get("content")) {
                         let text = match c {
                             serde_json::Value::String(s) => s.clone(),
@@ -470,7 +645,10 @@ pub fn run_plan(cfg: &Path, s: &Settings, report: &EnvReport, request: &str) -> 
         return Err(if last_err.is_empty() {
             "Pi 没有返回内容（检查 key/provider/model）".into()
         } else {
-            format!("Pi 调用失败：{last_err}")
+            format!(
+                "Pi 调用失败：{}",
+                last_err.chars().take(400).collect::<String>()
+            )
         });
     }
 

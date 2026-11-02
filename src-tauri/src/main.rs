@@ -134,6 +134,7 @@ fn main() {
             commands::agent::ai_key_clear,
             commands::agent::ai_env_check,
             commands::agent::ai_plan,
+            commands::agent::ai_engine_install,
             commands::download::dl_probe,
             commands::download::dl_cancel,
             commands::download::comfy_install,
