@@ -712,9 +712,15 @@ async function boot() {
   applyProfileDefaults();
   restoreLast();
   renderResults();
-  setInterval(refreshStatus, 3000);
+  setInterval(() => {
+    // 设置/助手弹窗开着时，别再刷新底下的状态条：少一次 IPC + 重绘，弹窗更跟手
+    if ($("settingsModal") && !$("settingsModal").hidden) return;
+    if ($("aiModal") && !$("aiModal").hidden) return;
+    refreshStatus();
+  }, 3000);
 
   await listen("gen-progress", (ev) => {
+    if ($("settingsModal") && !$("settingsModal").hidden) return;
     const p = ev.payload;
     $("progressText").textContent = p.started
       ? `采样中 · ${p.elapsed.toFixed(0)}s`
@@ -1120,13 +1126,16 @@ listen("model-progress", (ev) => {
 });
 
 $("btnSettings").onclick = () => {
-  if (window.shortcuts) window.shortcuts.build();
+  // 先把弹窗画出来，再做填充/扫描这些后台活，避免「点了没反应」
   setSettingsTab("general");
   $("settingsModal").hidden = false;
-  if ($("dlDir")) $("dlDir").value = (state.settings && state.settings.comfyRoot) || "";
-  if (typeof dlFillMirrors === "function") dlFillMirrors();
-  if (window.aiAgent) window.aiAgent.refresh();
-  refreshSettingsInfo();
+  setTimeout(() => {
+    if (window.shortcuts) window.shortcuts.build();
+    if ($("dlDir")) $("dlDir").value = (state.settings && state.settings.comfyRoot) || "";
+    if (typeof dlFillMirrors === "function") dlFillMirrors();
+    if (window.aiAgent) window.aiAgent.refresh();
+    refreshSettingsInfo();
+  }, 16);
 };
 $("btnSettingsCancel").onclick = () => ($("settingsModal").hidden = true);
 if ($("btnSettingsCloseX")) $("btnSettingsCloseX").onclick = () => ($("settingsModal").hidden = true);
