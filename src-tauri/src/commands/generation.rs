@@ -88,9 +88,10 @@ pub async fn generate(app: tauri::AppHandle, mut req: api::GenReq, turbo: bool) 
     let handle = app.clone();
     tauri::async_runtime::spawn_blocking(move || -> Result<GenResp, String> {
         let state = handle.state::<AppState>();
-        let (port, root) = {
+        let (port, root, out_root) = {
             let s = state.settings.lock().unwrap().clone();
-            (s.port, s.comfy_root)
+            let out = crate::state::output_root(&s);
+            (s.port, s.comfy_root, out)
         };
         if api::health(port).is_none() {
             return Err("ComfyUI 没有在运行，请先点「启动」".into());
@@ -142,11 +143,7 @@ pub async fn generate(app: tauri::AppHandle, mut req: api::GenReq, turbo: bool) 
             for (img, url) in out.images.iter_mut().zip(sealed) {
                 img.path = url;
             }
-            let staging = std::path::Path::new(&root)
-                .join("ComfyUI")
-                .join("output")
-                .join("_private_staging")
-                .join(pid);
+            let staging = out_root.join("_private_staging").join(pid);
             let _ = std::fs::remove_dir_all(staging);
             String::new()
         } else {

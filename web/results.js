@@ -93,12 +93,49 @@ function renderResults() {
 }
 
 // ---------------------------------------------------------------- lightbox
+// v0.96.1：图区灯箱也支持「点图放大 / 拖动看细节」，点图外关闭（跟图库大图一致）。
 
 let lightboxItem = null;
+const lbView = { zoom: 100, pan: { x: 0, y: 0 } };
+
+function applyLbView() {
+  const img = $("lightboxImg");
+  if (!img) return;
+  img.style.transform = `translate(${lbView.pan.x}px, ${lbView.pan.y}px) scale(${lbView.zoom / 100})`;
+  img.classList.toggle("zoomed", lbView.zoom > 105);
+}
+
+function resetLbView() {
+  lbView.zoom = 100;
+  lbView.pan = { x: 0, y: 0 };
+  applyLbView();
+}
+
+/// 以光标为锚点缩放（100% ⇄ 260%）。
+function lbZoomAt(clientX, clientY) {
+  const img = $("lightboxImg");
+  if (!img) return;
+  const r = img.getBoundingClientRect();
+  const cx = r.left + r.width / 2;
+  const cy = r.top + r.height / 2;
+  const z0 = lbView.zoom;
+  const z1 = z0 < 140 ? 260 : 100;
+  if (z1 === 100) {
+    lbView.pan = { x: 0, y: 0 };
+  } else {
+    const k = z1 / z0;
+    const px = clientX - cx;
+    const py = clientY - cy;
+    lbView.pan = { x: px - (px - lbView.pan.x) * k, y: py - (py - lbView.pan.y) * k };
+  }
+  lbView.zoom = z1;
+  applyLbView();
+}
 
 async function openLightbox(r) {
   lightboxItem = r;
   $("lightbox").hidden = false;
+  resetLbView();
   await showLightbox(r);
 }
 
@@ -108,6 +145,7 @@ async function showLightbox(r) {
   const idx = list.findIndex((x) => x.path === r.path);
   $("lbPos").textContent = idx >= 0 ? `${idx + 1} / ${list.length}` : "";
   $("lightboxMeta").textContent = `${r.filename} · ${r.width}×${r.height} · ${(r.prompt || "").slice(0, 40)}`;
+  resetLbView();
   $("lightboxImg").src = r.dataUrl || "";
   if (!r.dataUrl) {
     try {
@@ -127,6 +165,52 @@ async function lightboxStep(delta) {
 
 $("lbPrev").onclick = () => lightboxStep(-1);
 $("lbNext").onclick = () => lightboxStep(1);
+
+// 单击图 = 定点放大 / 再点复位；按住拖 = 平移；点图外 = 关闭
+(() => {
+  const lb = $("lightbox");
+  let drag = null;
+  lb.addEventListener("pointerdown", (e) => {
+    if (lb.hidden || e.button !== 0) return;
+    // 底部工具条上的按钮不算「背景点击」，否则点「下一张」会把灯箱关掉
+    if (e.target.closest && e.target.closest(".lightbox-bar")) return;
+    const img = $("lightboxImg");
+    const onImg = e.target === img && img.complete;
+    drag = {
+      onImg: !!onImg,
+      moved: false,
+      sx: e.clientX,
+      sy: e.clientY,
+      px: e.clientX - lbView.pan.x,
+      py: e.clientY - lbView.pan.y,
+    };
+    if (onImg) {
+      try {
+        img.setPointerCapture(e.pointerId);
+      } catch {}
+    }
+  });
+  lb.addEventListener("pointermove", (e) => {
+    if (!drag || !drag.onImg) return;
+    if (!drag.moved && Math.abs(e.clientX - drag.sx) + Math.abs(e.clientY - drag.sy) > 5) drag.moved = true;
+    if (!drag.moved) return;
+    lbView.pan = { x: e.clientX - drag.px, y: e.clientY - drag.py };
+    applyLbView();
+  });
+  const end = (e) => {
+    if (!drag) return;
+    const d = drag;
+    drag = null;
+    if (!d.onImg) {
+      // 点在图上之外（背景）：关闭
+      lb.hidden = true;
+      return;
+    }
+    if (!d.moved && e && e.type === "pointerup") lbZoomAt(e.clientX, e.clientY);
+  };
+  lb.addEventListener("pointerup", end);
+  lb.addEventListener("pointercancel", () => (drag = null));
+})();
 
 $("lightbox").addEventListener(
   "wheel",

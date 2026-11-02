@@ -63,10 +63,10 @@ pub(crate) fn emit_status(app: &tauri::AppHandle) {
 
 /// Start ComfyUI if needed and wait for it to answer.
 pub(crate) fn ensure_server(app: tauri::AppHandle) -> Result<Status, String> {
-    let (port, root) = {
+    let (port, root, out_dir) = {
         let state = app.state::<AppState>();
         let s = state.settings.lock().unwrap().clone();
-        (s.port, s.comfy_root)
+        (s.port, s.comfy_root, s.output_dir)
     };
     if api::health(port).is_some() {
         return Ok(current_status(&app.state::<AppState>()));
@@ -83,7 +83,7 @@ pub(crate) fn ensure_server(app: tauri::AppHandle) -> Result<Status, String> {
             *guard = None;
         }
         if guard.is_none() {
-            let child = server::spawn(&root, port)?;
+            let child = server::spawn(&root, port, Some(out_dir.as_str()))?;
             *guard = Some(child);
         }
     }

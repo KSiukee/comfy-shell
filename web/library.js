@@ -382,14 +382,42 @@ function upscaleQueueLen() {
   return upQueue.length;
 }
 
+/// 超分没有后端进度回调：用顶部进度条的脉冲动画表示「在跑」，别让按钮看起来像坏了。
+function upscaleProgress(on, text) {
+  const wrap = $("progressWrap");
+  const fill = $("progressFill");
+  const txt = $("progressText");
+  if (!wrap || !fill || !txt) return;
+  if (on) {
+    wrap.hidden = false;
+    fill.classList.add("pulse");
+    fill.style.width = "";
+    txt.textContent = text || "超分中…";
+  } else {
+    // 生成任务在跑时别把它的进度条一起关掉
+    if (typeof state !== "undefined" && state.running) return;
+    fill.classList.remove("pulse");
+    fill.style.width = "0%";
+    txt.textContent = "";
+    wrap.hidden = true;
+  }
+}
+
+function upscaleButtons(busy, text) {
+  for (const id of ["vwUpscale", "lbUpscale"]) {
+    const b = $(id);
+    if (!b) continue;
+    b.disabled = busy;
+    b.textContent = busy ? text || "超分中…" : "超分 4×";
+  }
+}
+
 async function runUpscale(item) {
   if (!item) return;
   upBusy = true;
-  const btn = $("vwUpscale");
-  if (btn) {
-    btn.disabled = true;
-    btn.textContent = "超分中…";
-  }
+  upscaleButtons(true, "超分中…");
+  upscaleProgress(true, `超分中 · ${item.filename || "当前图"}（SeedVR2 约 1–2 分钟）`);
+  toast(`开始超分：${item.filename || "当前图"}（AI 修复模式约 1–2 分钟）`);
   try {
     const model = $("vwUpModel") && $("vwUpModel").value ? $("vwUpModel").value : null;
     const img = await api.call("upscale_image", { path: item.path, model });
@@ -426,10 +454,8 @@ async function runUpscale(item) {
     toast(`超分失败：${e}`, true);
   } finally {
     upBusy = false;
-    if (btn) {
-      btn.disabled = false;
-      btn.textContent = "超分 4×";
-    }
+    upscaleButtons(false);
+    upscaleProgress(false);
     setTimeout(() => drainUpscale(), 200);
   }
 }

@@ -24,9 +24,9 @@ pub fn train_run(
     eval_prompts: u32,
 ) -> Result<TrainOut, String> {
     let state = handle.state::<AppState>();
-    let (port, root) = {
+    let (port, root, out_root) = {
         let st = state.settings.lock().unwrap();
-        (st.port, st.comfy_root.clone())
+        (st.port, st.comfy_root.clone(), crate::state::output_root(&st))
     };
     if api::health(port).is_none() {
         return Err("ComfyUI 没有在运行".into());
@@ -109,7 +109,7 @@ pub fn train_run(
     let job = res?;
     let _ = started_instant;
 
-    let output_dir = std::path::PathBuf::from(&root).join("ComfyUI").join("output");
+    let output_dir = out_root;
     let lora_dir = std::path::PathBuf::from(&root)
         .join("ComfyUI")
         .join("models")

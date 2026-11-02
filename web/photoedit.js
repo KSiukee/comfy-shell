@@ -751,10 +751,15 @@ function peCropPointerDown(ev) {
   const inside = p.x >= b.x && p.x <= b.x + b.w && p.y >= b.y && p.y <= b.y + b.h;
 
   if (h) {
-    // 对角锚点：拖哪个角，对面那个角不动
-    const ax = h.includes("w") ? b.x + b.w : b.x;
-    const ay = h.includes("n") ? b.y + b.h : b.y;
-    peDrag = { mode: "corner", ax, ay, sx: h.includes("e") ? 1 : -1, sy: h.includes("s") ? 1 : -1 };
+    if (h.length === 2) {
+      // 四角：拖哪个角，对面那个角不动
+      const ax = h.includes("w") ? b.x + b.w : b.x;
+      const ay = h.includes("n") ? b.y + b.h : b.y;
+      peDrag = { mode: "corner", ax, ay, sx: h.includes("e") ? 1 : -1, sy: h.includes("s") ? 1 : -1 };
+    } else {
+      // 四条边：只动一条边，另一维保持（有比例时再围绕中心缩放另一维）
+      peDrag = { mode: "edge", edge: h, box: { ...b } };
+    }
   } else if (inside && !peCropFull()) {
     peDrag = { mode: "move", from: p, box: { ...b } };
   } else {
@@ -776,6 +781,43 @@ function peCropPointerMove(ev) {
     const nx = peDrag.box.x + (p.x - peDrag.from.x);
     const ny = peDrag.box.y + (p.y - peDrag.from.y);
     peEd.crop = peClampCrop({ x: nx, y: ny, w: peDrag.box.w, h: peDrag.box.h });
+    peSyncCrop();
+    return;
+  }
+
+  if (peDrag.mode === "edge") {
+    const b0 = peDrag.box;
+    const E = peDrag.edge;
+    const b = { x: b0.x, y: b0.y, w: b0.w, h: b0.h };
+    const min = 24;
+    if (E === "e") {
+      b.w = Math.min(W - b.x, Math.max(min, p.x - b.x));
+    } else if (E === "w") {
+      const right = b0.x + b0.w;
+      b.x = Math.min(right - min, Math.max(0, p.x));
+      b.w = right - b.x;
+    } else if (E === "s") {
+      b.h = Math.min(H - b.y, Math.max(min, p.y - b.y));
+    } else if (E === "n") {
+      const bottom = b0.y + b0.h;
+      b.y = Math.min(bottom - min, Math.max(0, p.y));
+      b.h = bottom - b.y;
+    }
+    const r = peEd.aspect === 0 ? 0 : peEd.aspect < 0 ? W / H : peEd.aspect;
+    if (r > 0) {
+      if (E === "e" || E === "w") {
+        const cy = b0.y + b0.h / 2;
+        b.h = b.w / r;
+        b.y = Math.round(cy - b.h / 2);
+        if (E === "w") b.x = b0.x + b0.w - b.w;
+      } else {
+        const cx = b0.x + b0.w / 2;
+        b.w = b.h * r;
+        b.x = Math.round(cx - b.w / 2);
+        if (E === "n") b.y = b0.y + b0.h - b.h;
+      }
+    }
+    peEd.crop = peClampCrop(b);
     peSyncCrop();
     return;
   }
@@ -1640,14 +1682,24 @@ function peBuildAspects() {
     ov.addEventListener("pointercancel", peCropPointerUp);
   }
 
-  // Esc：只关这一层，别顺手把下面的大图/图库也关了
+  // 编辑器里的键：Esc 关、Ctrl+S 直接保存（覆盖原图）、Ctrl+Shift+S 另存为
   window.addEventListener(
     "keydown",
     (e) => {
-      if (!peEd.open || e.key !== "Escape") return;
-      e.stopPropagation();
-      e.preventDefault();
-      peClose();
+      if (!peEd.open) return;
+      if (e.key === "Escape") {
+        e.stopPropagation();
+        e.preventDefault();
+        peClose();
+        return;
+      }
+      if ((e.ctrlKey || e.metaKey) && String(e.key).toLowerCase() === "s") {
+        e.stopPropagation();
+        e.preventDefault();
+        if (peEd.saving) return;
+        if (e.shiftKey) peSave();
+        else peSaveOver();
+      }
     },
     true
   );

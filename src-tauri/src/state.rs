@@ -46,6 +46,10 @@ pub(crate) struct Settings {
     pub(crate) kohya_python: String,
     #[serde(default = "default_kohya_dir")]
     pub(crate) kohya_dir: String,
+    /// 出图目录；留空 = `<comfy_root>\ComfyUI\output`。
+    /// 由壳托管 ComfyUI 时通过 `--output-directory` 传下去；外部进程不生效。
+    #[serde(default)]
+    pub(crate) output_dir: String,
 }
 
 impl Default for Settings {
@@ -60,7 +64,21 @@ impl Default for Settings {
             simple_ui: true,
             kohya_python: default_kohya_python(),
             kohya_dir: default_kohya_dir(),
+            output_dir: String::new(),
         }
+    }
+}
+
+/// 出图根目录：自定义优先，否则 `<comfy_root>\ComfyUI\output`。
+/// 所有读写图库的地方都必须走这里，别各自拼路径（v0.96 起支持自定义）。
+pub(crate) fn output_root(s: &Settings) -> PathBuf {
+    let custom = s.output_dir.trim();
+    if custom.is_empty() {
+        PathBuf::from(&s.comfy_root)
+            .join("ComfyUI")
+            .join("output")
+    } else {
+        PathBuf::from(custom)
     }
 }
 

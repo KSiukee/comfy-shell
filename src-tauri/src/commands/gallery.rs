@@ -141,9 +141,10 @@ pub fn save_over_image(
     path: String,
     data_url: String,
 ) -> Result<String, String> {
-    let root = PathBuf::from(state.settings.lock().unwrap().comfy_root.clone())
-        .join("ComfyUI")
-        .join("output");
+    let root = {
+        let s = state.settings.lock().unwrap();
+        crate::state::output_root(&s)
+    };
     let canon_root = std::fs::canonicalize(&root).map_err(|e| format!("输出目录不可用：{e}"))?;
     let canon = std::fs::canonicalize(&path).map_err(|_| "原图不存在（可能已被移走）".to_string())?;
     if !canon.starts_with(&canon_root) {
@@ -170,8 +171,11 @@ pub fn save_export(
     data_url: String,
     subdir: Option<String>,
 ) -> Result<String, String> {
-    let root = PathBuf::from(state.settings.lock().unwrap().comfy_root.clone());
-    let mut dir = root.join("ComfyUI").join("output");
+    let out_root = {
+        let s = state.settings.lock().unwrap();
+        crate::state::output_root(&s)
+    };
+    let mut dir = out_root;
     if let Some(sub) = subdir.map(|s| s.trim().replace('\\', "/")).filter(|s| !s.is_empty()) {
         let rel = std::path::Path::new(&sub);
         let bad = rel.is_absolute()

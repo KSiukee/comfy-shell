@@ -458,9 +458,13 @@
           <div class="pe-crop" id="peCrop" hidden>
             <div class="pe-crop-box" id="peCropBox">
               <i class="pe-h" data-h="nw"></i>
+              <i class="pe-h" data-h="n"></i>
               <i class="pe-h" data-h="ne"></i>
-              <i class="pe-h" data-h="sw"></i>
+              <i class="pe-h" data-h="e"></i>
               <i class="pe-h" data-h="se"></i>
+              <i class="pe-h" data-h="s"></i>
+              <i class="pe-h" data-h="sw"></i>
+              <i class="pe-h" data-h="w"></i>
             </div>
           </div>
           <div class="pe-badge" id="peBusy" hidden>处理中…</div>
@@ -521,7 +525,7 @@
             <button class="btn ghost small" id="peSaveOver" title="直接写回原文件（会丢 PNG 参数块，不能撤销）">覆盖原图</button>
             <button class="btn primary small" id="peSave">另存为新图</button>
           </div>
-          <div class="hint" style="margin-top:-2px">原图不动；炸图只留一小格时用「覆盖原图」</div>
+          <div class="hint" style="margin-top:-2px">Ctrl+S 保存（覆盖）· Ctrl+Shift+S 另存为 · Esc 关闭</div>
         </aside>
       </div>
     </div>
@@ -845,6 +849,14 @@
         <label>ComfyUI 便携版目录</label>
         <input type="text" id="setRoot" spellcheck="false" />
         <div class="hint">包含 python_embeded 与 ComfyUI 子目录的那个文件夹。</div>
+      </div>
+      <div class="field">
+        <label>出图目录</label>
+        <div class="row tight">
+          <input type="text" id="setOutputDir" spellcheck="false" placeholder="留空 = ComfyUI\output" style="flex:1" />
+          <button class="btn small" id="setOutputPick" type="button">选择…</button>
+        </div>
+        <div class="hint">可以放到别的盘；壳托管 ComfyUI 时用 <code>--output-directory</code> 传下去，<b>改完要重启 ComfyUI</b> 才生效。外部启动的 ComfyUI 不受此设置影响。</div>
       </div>
       <div class="row two">
         <div class="field">

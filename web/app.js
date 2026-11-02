@@ -682,6 +682,7 @@ async function boot() {
   state.settings = await api.call("settings_get");
   $("setRoot").value = state.settings.comfyRoot;
   $("setPort").value = state.settings.port;
+  if ($("setOutputDir")) $("setOutputDir").value = state.settings.outputDir || "";
   $("setAutoStart").checked = state.settings.autoStart;
   $("setStopOnExit").checked = state.settings.stopOnExit;
   $("setFreeEnhance").checked = !!state.settings.freeEnhance;
@@ -882,7 +883,9 @@ dz.ondrop = async (e) => {
 // lightbox
 $("lightboxClose").onclick = () => ($("lightbox").hidden = true);
 $("lightbox").onclick = (e) => {
-  if (e.target.id === "lightbox") $("lightbox").hidden = true;
+  // 背景点击的关闭交给 results.js 的 pointer 逻辑（它要区分「点图放大」和「点背景关闭」）；
+  // 这里只兜住键盘/程序化 click，避免重复处理导致拖拽松手时误关。
+  if (e.target.id === "lightbox" && e.detail === 0) $("lightbox").hidden = true;
 };
 $("lightboxReveal").onclick = () => lightboxItem && api.call("reveal_file", { path: lightboxItem.path });
 $("lightboxRef").onclick = async () => {
@@ -935,19 +938,33 @@ $("btnSettings").onclick = () => {
   $("settingsModal").hidden = false;
 };
 $("btnSettingsCancel").onclick = () => ($("settingsModal").hidden = true);
+if ($("setOutputPick")) {
+  $("setOutputPick").onclick = async () => {
+    try {
+      const dir = await api.call("pick_folder");
+      if (dir) $("setOutputDir").value = dir;
+    } catch (e) {
+      toast(String(e), true);
+    }
+  };
+}
 $("btnSettingsSave").onclick = async () => {
-  const next = {
+  const prevOut = (state.settings && state.settings.outputDir) || "";
+  // 从现有设置铺开再覆盖这几个字段：别把 simpleUi / kohya 路径之类的旧字段冲掉
+  const next = Object.assign({}, state.settings || {}, {
     comfyRoot: $("setRoot").value.trim(),
     port: Number($("setPort").value),
+    outputDir: $("setOutputDir") ? $("setOutputDir").value.trim() : prevOut,
     autoStart: $("setAutoStart").checked,
     stopOnExit: $("setStopOnExit").checked,
     freeEnhance: $("setFreeEnhance").checked,
-  };
+  });
   try {
     await api.call("settings_set", { settings: next });
     state.settings = await api.call("settings_get");
     $("settingsModal").hidden = true;
-    toast("已保存");
+    if (next.outputDir !== prevOut) toast("出图目录已保存：重启 ComfyUI 后生效");
+    else toast("已保存");
     refreshStatus();
   } catch (e) {
     toast(String(e), true);
@@ -1054,6 +1071,7 @@ $("viewerStage").addEventListener("wheel", (e) => {
   const stage = $("viewerStage");
   let dragging = false;
   let moved = false;
+  let outside = false;
   let sx = 0;
   let sy = 0;
   let startX = 0;
@@ -1061,8 +1079,15 @@ $("viewerStage").addEventListener("wheel", (e) => {
   stage.addEventListener("pointerdown", (e) => {
     if (e.button !== 0) return;
     if (typeof maskState !== "undefined" && maskState.active) return;
-    dragging = true;
+    // 点在图外 = 关掉查看器（跟灯箱一致）；点在图内才进入拖拽/放大
+    const img = $("viewerImg");
+    const r = img ? img.getBoundingClientRect() : null;
+    const onImg =
+      r && e.clientX >= r.left && e.clientX <= r.right && e.clientY >= r.top && e.clientY <= r.bottom;
+    outside = !onImg;
+    dragging = !!onImg;
     moved = false;
+    if (!onImg) return;
     startX = e.clientX;
     startY = e.clientY;
     sx = e.clientX - viewer.pan.x;
@@ -1082,6 +1107,13 @@ $("viewerStage").addEventListener("wheel", (e) => {
     applyViewer();
   });
   const end = (e) => {
+    if (outside) {
+      outside = false;
+      dragging = false;
+      moved = false;
+      if (e && e.type === "pointerup") $("viewer").hidden = true;
+      return;
+    }
     if (!dragging) return;
     const wasMoved = moved;
     dragging = false;

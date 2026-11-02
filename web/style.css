@@ -287,7 +287,11 @@ label.row.tight .btn { flex: 0 0 auto; white-space: nowrap; }
 .modal-actions { display: flex; justify-content: flex-end; gap: 8px; }
 
 .lightbox { background: rgba(4,6,10,.92); flex-direction: column; }
-.lightbox img { max-width: 94vw; max-height: calc(100vh - 90px); border-radius: 10px; box-shadow: 0 20px 60px rgba(0,0,0,.6); }
+.lightbox img { max-width: 94vw; max-height: calc(100vh - 90px); border-radius: 10px; box-shadow: 0 20px 60px rgba(0,0,0,.6); cursor: zoom-in; }
+.lightbox img.zoomed { cursor: grab; }
+/* 超分没有进度回调：进度条用脉冲表示「在跑」 */
+.bar .fill.pulse { animation: upPulse 1.6s ease-in-out infinite; width: 40%; }
+@keyframes upPulse { 0%, 100% { width: 12%; } 50% { width: 88%; } }
 .lightbox-bar {
   position: absolute; bottom: 16px; left: 16px; right: 16px;
   display: flex; align-items: center; gap: 8px;
@@ -976,3 +980,8 @@ body.mode-pro .simple-only { display: none !important; }
 .pe-h[data-h="ne"] { right: -6px; top: -6px; cursor: nesw-resize; }
 .pe-h[data-h="sw"] { left: -6px; bottom: -6px; cursor: nesw-resize; }
 .pe-h[data-h="se"] { right: -6px; bottom: -6px; cursor: nwse-resize; }
+/* 四边把手：只拖一条边，不用重新拉框 */
+.pe-h[data-h="n"] { left: 50%; top: -6px; margin-left: -6px; cursor: ns-resize; }
+.pe-h[data-h="s"] { left: 50%; bottom: -6px; margin-left: -6px; cursor: ns-resize; }
+.pe-h[data-h="w"] { top: 50%; left: -6px; margin-top: -6px; cursor: ew-resize; }
+.pe-h[data-h="e"] { top: 50%; right: -6px; margin-top: -6px; cursor: ew-resize; }

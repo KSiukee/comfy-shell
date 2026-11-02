@@ -50,9 +50,7 @@ fn now_ms() -> u64 {
 // ---------------------------------------------------------------------------
 
 fn output_dir(state: &AppState) -> PathBuf {
-    PathBuf::from(state.settings.lock().unwrap().comfy_root.clone())
-        .join("ComfyUI")
-        .join("output")
+    state::output_root(&state.settings.lock().unwrap())
 }
 
 fn main() {
@@ -96,10 +94,7 @@ fn main() {
                 cancel: Mutex::new(false),
             });
             // 私密封存没走完的残留只能是明文：启动直接清掉（宁可丢，不泄漏）。
-            let staging = std::path::PathBuf::from(&settings.comfy_root)
-                .join("ComfyUI")
-                .join("output")
-                .join("_private_staging");
+            let staging = state::output_root(&settings).join("_private_staging");
             let _ = std::fs::remove_dir_all(staging);
 
             // Silent auto-start in the background: the window shows up immediately.

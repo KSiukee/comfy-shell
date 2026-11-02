@@ -44,14 +44,14 @@ pub async fn upscale_image(
     let handle = app.clone();
     tauri::async_runtime::spawn_blocking(move || {
         let state = handle.state::<AppState>();
-        let (port, root) = {
-            let s = state.settings.lock().unwrap().clone();
-            (s.port, s.comfy_root)
+        let (port, root, out_root) = {
+            let s = state.settings.lock().unwrap();
+            (s.port, s.comfy_root.clone(), crate::state::output_root(&s))
         };
         if api::health(port).is_none() {
             return Err("ComfyUI 没有在运行".into());
         }
-        let out_dir = std::path::PathBuf::from(&root).join("ComfyUI").join("output");
+        let out_dir = out_root;
         let canon_out = out_dir.canonicalize().unwrap_or(out_dir.clone());
         let src = std::path::PathBuf::from(&path)
             .canonicalize()
@@ -127,16 +127,16 @@ pub async fn inpaint_image(app: tauri::AppHandle, req: InpaintCall) -> Result<Ge
     let handle = app.clone();
     tauri::async_runtime::spawn_blocking(move || -> Result<GenResp, String> {
         let state = handle.state::<AppState>();
-        let (port, root) = {
+        let (port, root, out_root) = {
             let st = state.settings.lock().unwrap();
-            (st.port, st.comfy_root.clone())
+            (st.port, st.comfy_root.clone(), crate::state::output_root(&st))
         };
         if api::health(port).is_none() {
             return Err("ComfyUI 没有在运行".into());
         }
 
         // source must be one of our outputs
-        let out_dir = std::path::PathBuf::from(&root).join("ComfyUI").join("output");
+        let out_dir = out_root;
         let canon_out = out_dir.canonicalize().unwrap_or(out_dir.clone());
         let src = std::path::PathBuf::from(&req.source)
             .canonicalize()

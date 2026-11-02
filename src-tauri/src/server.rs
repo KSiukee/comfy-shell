@@ -9,7 +9,7 @@ use std::os::windows::process::CommandExt;
 #[cfg(windows)]
 const CREATE_NO_WINDOW: u32 = 0x0800_0000;
 
-pub fn spawn(root: &str, port: u16) -> Result<Child, String> {
+pub fn spawn(root: &str, port: u16, output_dir: Option<&str>) -> Result<Child, String> {
     let root = root.trim_end_matches('\\');
     let py = format!("{root}\\python_embeded\\python.exe");
     if !std::path::Path::new(&py).exists() {
@@ -36,6 +36,11 @@ pub fn spawn(root: &str, port: u16) -> Result<Child, String> {
         .stdin(Stdio::null())
         .stdout(Stdio::from(out))
         .stderr(Stdio::from(err));
+
+    // 自定义出图目录：交给 ComfyUI 自己写（SaveImage 的 filename_prefix 会落在这下面）
+    if let Some(dir) = output_dir.map(str::trim).filter(|d| !d.is_empty()) {
+        cmd.arg("--output-directory").arg(dir);
+    }
 
     #[cfg(windows)]
     cmd.creation_flags(CREATE_NO_WINDOW);
