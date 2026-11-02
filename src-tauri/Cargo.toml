@@ -1,6 +1,6 @@
 [package]
 name = "comfy-shell"
-version = "0.106.1"
+version = "0.107.0"
 description = "Minimal Tauri shell for local ComfyUI image generation"
 edition = "2021"
 rust-version = "1.77"
@@ -20,6 +20,7 @@ rand = "0.8"
 argon2 = "0.6"
 chacha20poly1305 = "0.11"
 rfd = { version = "0.16", default-features = false }
+lettre = { version = "0.11", default-features = false, features = ["smtp-transport", "rustls-tls", "builder"] }
 
 [target.'cfg(windows)'.dependencies]
 windows-sys = { version = "0.61", features = ["Win32_Foundation", "Win32_Security", "Win32_System_Threading", "Win32_Security_Cryptography", "Win32_System_Memory"] }

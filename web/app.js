@@ -944,6 +944,7 @@ function setSettingsTab(tab) {
   document.querySelectorAll("#settingsModal .set-pane").forEach((p) => p.classList.toggle("active", p.dataset.pane === tab));
   if (tab === "ai" && window.aiAgent) window.aiAgent.refresh();
   if (tab === "workflows" && typeof wfDirty !== "undefined" && wfDirty) renderWorkflowPresets();
+  if (tab === "about") refreshFeedbackSmtp();
 }
 document.querySelectorAll("#setNav .set-tab").forEach((b) => {
   b.onclick = () => setSettingsTab(b.dataset.tab);
@@ -1193,6 +1194,80 @@ $("btnSettingsSave").onclick = async () => {
     toast(String(e), true);
   }
 };
+
+// ---------------------------------------------------------------- 关于页：反馈 / 爱发电
+async function sendFeedback() {
+  const kind = $("fbKind") ? $("fbKind").value : "bug";
+  const text = $("fbText") ? $("fbText").value.trim() : "";
+  if (!text) return toast("先写点内容", true);
+  const btn = $("fbSend");
+  if (btn) btn.disabled = true;
+  if ($("fbState")) $("fbState").textContent = "发送中…";
+  try {
+    await api.call("feedback_send", {
+      kind,
+      text,
+      contact: $("fbContact") ? $("fbContact").value.trim() : "",
+    });
+    if ($("fbState")) $("fbState").textContent = "已发送，谢谢！";
+    if ($("fbText")) $("fbText").value = "";
+    toast("反馈已发送");
+  } catch (e) {
+    // 表单服务不通时兜底：复制内容 + 打开邮件客户端
+    const ver = $("setAppVersion") ? $("setAppVersion").textContent : "";
+    const body = `[${kind}] ${text}\n\n版本 ${ver}`;
+    try {
+      await navigator.clipboard.writeText(body);
+    } catch {}
+    const mailto =
+      "mailto:ksiukee@qq.com?subject=" +
+      encodeURIComponent("[显影反馈]") +
+      "&body=" +
+      encodeURIComponent(body);
+    await api.call("open_url", { url: mailto }).catch(() => {});
+    if ($("fbState")) $("fbState").textContent = "表单发送失败，已复制内容并打开邮件客户端";
+    toast("已复制反馈内容，可直接粘贴发送", true);
+  } finally {
+    if (btn) btn.disabled = false;
+  }
+}
+if ($("fbSend")) $("fbSend").onclick = sendFeedback;
+
+async function refreshFeedbackSmtp() {
+  const ok = await api.call("feedback_smtp_status").catch(() => false);
+  if ($("fbSmtpState")) {
+    $("fbSmtpState").textContent = ok
+      ? "已配置：一键发信可用（授权码本机加密保存）"
+      : "未配置：填 QQ 邮箱「设置 → 账户 → 授权码」后，才能一键发信";
+  }
+  if ($("fbSmtp")) $("fbSmtp").value = "";
+}
+
+if ($("fbSmtpSave")) {
+  $("fbSmtpSave").onclick = async () => {
+    const code = ($("fbSmtp") ? $("fbSmtp").value : "").trim();
+    if (!code) return toast("先填授权码", true);
+    try {
+      await api.call("feedback_smtp_set", { code });
+      toast("授权码已保存（加密）");
+      await refreshFeedbackSmtp();
+    } catch (e) {
+      toast(String(e), true);
+    }
+  };
+}
+if ($("fbSmtpClear")) {
+  $("fbSmtpClear").onclick = async () => {
+    if (!confirm("清除已保存的发信授权码？")) return;
+    await api.call("feedback_smtp_clear").catch(() => {});
+    toast("已清除");
+    await refreshFeedbackSmtp();
+  };
+}
+if ($("afdianBtn")) {
+  $("afdianBtn").onclick = () =>
+    api.call("open_url", { url: "https://afdian.com/a/siukee" }).catch((e) => toast(String(e), true));
+}
 
 // ---------------------------------------------------------------- ComfyUI 下载 / 更新
 // 官方源 + 国内镜像（前缀拼官方 URL）；先测速再选最快的，下载走多线程分块，可取消。

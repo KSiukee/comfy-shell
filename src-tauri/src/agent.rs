@@ -80,24 +80,24 @@ mod dpapi {
     }
 }
 
-pub fn save_key(cfg: &Path, key: &str) -> Result<(), String> {
-    let key = key.trim();
-    if key.is_empty() {
-        return Err("key 不能为空".into());
+pub fn save_secret(path: &Path, value: &str) -> Result<(), String> {
+    let value = value.trim();
+    if value.is_empty() {
+        return Err("内容不能为空".into());
     }
     #[cfg(windows)]
     {
-        let enc = dpapi::protect(key.as_bytes()).ok_or("DPAPI 加密失败")?;
-        crate::fsutil::atomic_write(&cfg.join(KEY_FILE), &enc)
+        let enc = dpapi::protect(value.as_bytes()).ok_or("DPAPI 加密失败")?;
+        crate::fsutil::atomic_write(path, &enc)
     }
     #[cfg(not(windows))]
     {
-        crate::fsutil::atomic_write(&cfg.join(KEY_FILE), key.as_bytes())
+        crate::fsutil::atomic_write(path, value.as_bytes())
     }
 }
 
-pub fn load_key(cfg: &Path) -> Option<String> {
-    let bytes = std::fs::read(cfg.join(KEY_FILE)).ok()?;
+pub fn load_secret(path: &Path) -> Option<String> {
+    let bytes = std::fs::read(path).ok()?;
     #[cfg(windows)]
     {
         let plain = dpapi::unprotect(&bytes)?;
@@ -107,6 +107,18 @@ pub fn load_key(cfg: &Path) -> Option<String> {
     {
         String::from_utf8(bytes).ok().map(|s| s.trim().to_string())
     }
+}
+
+pub fn save_key(cfg: &Path, key: &str) -> Result<(), String> {
+    let key = key.trim();
+    if key.is_empty() {
+        return Err("key 不能为空".into());
+    }
+    save_secret(&cfg.join(KEY_FILE), key)
+}
+
+pub fn load_key(cfg: &Path) -> Option<String> {
+    load_secret(&cfg.join(KEY_FILE))
 }
 
 pub fn has_key(cfg: &Path) -> bool {
