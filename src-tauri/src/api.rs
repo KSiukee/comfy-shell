@@ -311,7 +311,7 @@ pub fn profile(name: &str) -> Option<Profile> {
             shift: None,
         },
         // 文本编码器必须带 Qwen3.5 视觉权重，所以这里用官方的 qwen3.5_9b，
-        // 不跟其他 MOSS 档共用 heretic 版。见 docs/58-MOSS二编-接入-20261101.md
+        // 不跟其他 MOSS 档共用 heretic 版。见 设计笔记
         "mossedit" => Profile {
             unet: "moss_image_sft_int8_convrot.safetensors",
             clip: "qwen3.5_9b_int8_convrot.safetensors",
@@ -1080,7 +1080,7 @@ pub fn build_inpaint(req: &InpaintReq) -> Result<Value, String> {
     } else if flux_inpaint {
         // FLUX.3 局部重绘：底板走 ReferenceMultiLatent 进 conditioning，
         // 再用 InpaintModelConditioning 把「原图 + 蒙版」编成带噪声蒙版的 latent。
-        // 这就是「只重画脸、保住底图质感」的那条路（#57）。
+        // 这就是「只重画脸、保住底图质感」的那条路。
         g.insert("8".into(), json!({"class_type": "CLIPTextEncode", "inputs": {"clip": ["6", 0], "text": req.prompt}}));
         g.insert("9".into(), json!({"class_type": "CLIPTextEncode", "inputs": {"clip": ["6", 0], "text": req.negative}}));
         let (cond_pos, cond_neg): (Value, Value) = match &req.ref_image {

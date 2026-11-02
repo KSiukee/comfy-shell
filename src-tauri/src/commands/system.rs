@@ -311,7 +311,7 @@ pub fn image_data_url(path: String) -> Result<String, String> {
     ))
 }
 
-/// 角色卡（#43）：列表 / 保存 / 删除。`project` 为空给全部，否则给「全局 + 该项目」。
+/// 角色卡：列表 / 保存 / 删除。`project` 为空给全部，否则给「全局 + 该项目」。
 #[tauri::command]
 pub fn character_list(app: tauri::AppHandle, project: Option<String>) -> Vec<characters::Character> {
     characters::visible(characters::list(&cfg_dir(&app)), project.as_deref())
@@ -393,7 +393,7 @@ pub fn custom_params(app: tauri::AppHandle, name: String) -> Result<Vec<custom::
 }
 
 // ---------------------------------------------------------------------------
-// 配方库（#28）
+// 配方库
 
 #[tauri::command]
 pub fn recipe_list(app: tauri::AppHandle) -> Vec<recipes::Recipe> {
@@ -413,7 +413,7 @@ pub fn recipe_delete(app: tauri::AppHandle, id: String) -> Result<(), String> {
 }
 
 // ---------------------------------------------------------------------------
-// 模型管理器（#30）：扫 ComfyUI/models/**、预览、启用/禁用
+// 模型管理器：扫 ComfyUI/models/**、预览、启用/禁用
 
 fn models_root(app: &tauri::AppHandle) -> std::path::PathBuf {
     let root = app.state::<crate::AppState>().settings.lock().unwrap().comfy_root.clone();

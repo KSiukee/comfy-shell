@@ -1,4 +1,4 @@
-// 图库详情抽屉（#25）：右侧看 prompt / 参数 / 项目 / 版本，
+// 图库详情抽屉：右侧看 prompt / 参数 / 项目 / 版本，
 // 动作＝填入表单、作参考图、复制提示词、恢复参数（同一入口）。
 // 数据优先级：PNG 参数块（v0.64 起生成图）→ 生成历史 → 只有文件信息。
 // 依赖 app.js（$/api/toast/state）、library.js（libItems/libUrl/libHist）、meta.js（applyImageMeta）。

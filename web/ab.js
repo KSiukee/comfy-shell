@@ -1,4 +1,4 @@
-// 版本 A/B 对比（#25）：版本窗勾两条 → 并排 / 滑块 + prompt·参数 diff + 「采用这版」。
+// 版本 A/B 对比：版本窗勾两条 → 并排 / 滑块 + prompt·参数 diff + 「采用这版」。
 // 依赖 versions.js（verCache/diffInto/fillVersion）与 library.js（libUrl）。
 
 let abA = null;

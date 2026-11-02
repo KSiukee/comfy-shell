@@ -3,7 +3,7 @@
 //! id 稳定（改名不换目录、不动图）；名字只用于显示。删除先进 `_trash`，
 //! 恢复要求目标 id 没被占用，永久删要二次确认（由界面做）。
 //!
-//! 隐私字段（`private`）现在只是占位，加密仓库在 #17 接。
+//! 隐私字段（`private`）现在只是占位，加密仓库后续接入。
 
 use serde::{Deserialize, Serialize};
 use serde_json::json;
@@ -30,7 +30,7 @@ pub struct Project {
     pub active: bool,
     /// 只是不显示（明文），锁定/加密是另一件事
     pub hidden: bool,
-    /// 占位：锁定区（#17）
+    /// 占位：锁定区
     pub private: bool,
     /// 保留：测试项目 `_test`
     pub test: bool,

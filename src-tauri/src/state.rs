@@ -19,11 +19,11 @@ pub(crate) fn default_schema_version() -> u32 {
 }
 
 pub(crate) fn default_kohya_python() -> String {
-    r"D:\deepseek-files\ai-tools\sdvenv\Scripts\python.exe".to_string()
+    String::new()
 }
 
 pub(crate) fn default_kohya_dir() -> String {
-    r"D:\deepseek-files\ai-tools\sd-scripts".to_string()
+    String::new()
 }
 
 #[derive(Clone, Serialize, Deserialize)]
@@ -64,7 +64,7 @@ impl Default for Settings {
     fn default() -> Self {
         Self {
             schema_version: default_schema_version(),
-            comfy_root: r"D:\deepseek-files\ai-tools\ComfyUI_windows_portable".to_string(),
+            comfy_root: String::new(),
             port: 8188,
             auto_start: true,
             stop_on_exit: false,

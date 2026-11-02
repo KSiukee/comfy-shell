@@ -1,4 +1,4 @@
-// 风格选择器（#26 配套）：分组 + 收藏 + 删除。
+// 风格选择器：分组 + 收藏 + 删除。
 // 数据在 promptfx.js 的 stylePacks 里；这里只管怎么挑、怎么收、怎么删。
 
 const STYLE_FAV_KEY = "cs.styleFav";

@@ -93,18 +93,18 @@ fn cast_records_plate_and_dedupes() {
     let id = shots[0].id.clone();
 
     let cast = vec![
-        CastRef { id: "a-1".into(), name: " 林小满 ".into(), plate: Some("C:/x/plate_v1.png".into()) },
+        CastRef { id: "a-1".into(), name: " 林小满 ".into(), plate: Some("plate_v1.png".into()) },
         CastRef { id: "a-1".into(), name: "重复".into(), plate: None },
         CastRef { id: "b-2".into(), name: "阿满".into(), plate: Some("  ".into()) },
     ];
     let s = set_cast(&cfg, &p.id, &id, cast).unwrap();
     assert_eq!(s.cast.len(), 2, "同 id 只留第一条");
     assert_eq!(s.cast[0].name, "林小满", "名字要去空白");
-    assert_eq!(s.cast[0].plate.as_deref(), Some("C:/x/plate_v1.png"));
+    assert_eq!(s.cast[0].plate.as_deref(), Some("plate_v1.png"));
     assert_eq!(s.cast[1].plate, None, "空底板等于没底板");
 
     let again = list(&cfg, &p.id).unwrap();
-    assert_eq!(again[0].cast[0].plate.as_deref(), Some("C:/x/plate_v1.png"));
+    assert_eq!(again[0].cast[0].plate.as_deref(), Some("plate_v1.png"));
     let _ = std::fs::remove_dir_all(&cfg);
 }
 

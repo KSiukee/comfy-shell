@@ -976,9 +976,9 @@ mod redact_tests {
 
     #[test]
     fn redacts_drive_paths_but_keeps_filename() {
-        let s = redact("open D:\\ai\\out\\x.png now");
+        let s = redact("open D:\\ai\\out\\x.png now"); // sanitize-allow
         assert!(s.contains("<path>/x.png"), "{s}");
-        assert!(!s.contains("D:\\"), "{s}");
+        assert!(!s.contains("D:\\"), "{s}"); // sanitize-allow
     }
 
     #[test]

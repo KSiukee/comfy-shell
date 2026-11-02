@@ -246,7 +246,7 @@ pub fn shot_delete(app: tauri::AppHandle, project: String, id: String) -> Result
     shots::delete(&cfg_dir(&app), &project, &id)
 }
 
-/// 给一镜挂角色卡（#33）：只存 id，不校验存在性——角色被删了要在体检里报出来。
+/// 给一镜挂角色卡：只存 id，不校验存在性——角色被删了要在体检里报出来。
 #[tauri::command]
 pub fn shot_set_characters(
     app: tauri::AppHandle,

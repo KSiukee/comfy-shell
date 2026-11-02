@@ -1,4 +1,4 @@
-// 模型管理器（#30）：扫 ComfyUI/models/**，看预览/触发词、启用/禁用。
+// 模型管理器：扫 ComfyUI/models/**，看预览/触发词、启用/禁用。
 // 禁用只写 `.disabled` 标记，不动模型文件；壳里的 LoRA 下拉会跳过它们。
 
 let modelCache = [];

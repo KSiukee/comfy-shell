@@ -47,7 +47,7 @@ body { display: flex; flex-direction: column; }
 
 .status { display: flex; align-items: center; gap: 8px; font-size: 12.5px; color: var(--muted); }
 .status .sep { width: 1px; height: 14px; background: var(--line); }
-.dot { width: 8px; height: 8px; border-radius: 50%; background: #555; box-shadow: 0 0 0 3px rgba(255,255,255,.03); }
+.dot { width: 8px; height: 8px; border-radius: 50%; background: #555; box-shadow: 0 0 0 3px rgba(255,255,255,.03); } /* sanitize-allow */
 .dot.ok { background: var(--ok); box-shadow: 0 0 10px rgba(67,209,124,.55); }
 .dot.warn { background: var(--warn); }
 .dot.err { background: var(--err); }
@@ -365,7 +365,7 @@ label.row.tight .btn { flex: 0 0 auto; white-space: nowrap; }
 .lib-item .li-meta .li-info { padding: 0 4px; font-size: 11px; line-height: 1.4; }
 .lib-empty { grid-column: 1/-1; text-align: center; color: var(--muted); padding: 60px 0; }
 
-/* 图库右侧详情抽屉（#25） */
+/* 图库右侧详情抽屉 */
 .lib-body { flex: 1; display: flex; min-height: 0; }
 .lib-detail {
   width: 336px; flex: 0 0 336px; border-left: 1px solid var(--line);
@@ -649,7 +649,7 @@ body.mode-pro .simple-only { display: none !important; }
 .topbar .status:has(.dot.err) #statusText { display: inline; }
 .topbar .status #statusText { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 /* 图区那条：进度 + 范围 + 大小 */
-/* 提示词效果行（#26）：风格 / 通配符 / 数组 / 内联 LoRA */
+/* 提示词效果行：风格 / 通配符 / 数组 / 内联 LoRA */
 .fx-row { display: flex; align-items: center; gap: 8px; margin-top: 6px; flex-wrap: wrap; }
 .fx-row select { width: auto; max-width: 220px; }
 .fx-hint { font-size: 11px; line-height: 1.5; margin-top: 5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -702,7 +702,7 @@ body.mode-pro .simple-only { display: none !important; }
 .shot-pick-row span:nth-child(2) { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 12.5px; }
 .shot-pick-row .mono { flex: 0 0 auto; font-size: 11px; }
 
-/* 镜头挂卡（#33）：每格挂角色 + 整话一致性体检 */
+/* 镜头挂卡：每格挂角色 + 整话一致性体检 */
 .shot-summary { font-size: 11px; font-weight: 400; color: #7f8ca4; margin-left: 6px; }
 .shot-cast { display: inline-flex; gap: 4px; flex: 0 0 auto; align-items: center; }
 .cast-chip {
@@ -923,7 +923,7 @@ body.mode-pro .simple-only { display: none !important; }
 .set-wf { display: flex; flex-direction: column; gap: 8px; }
 .set-wf-item { border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; background: #10141c; }
 .set-wf-head { display: flex; align-items: center; gap: 8px; font-size: 13px; }
-.set-wf-dot { width: 8px; height: 8px; border-radius: 50%; background: #555; flex: 0 0 auto; }
+.set-wf-dot { width: 8px; height: 8px; border-radius: 50%; background: #555; flex: 0 0 auto; } /* sanitize-allow */
 .set-wf-dot.ok { background: var(--ok); }
 .set-wf-dot.miss { background: var(--warn); }
 .set-wf-sub { font-size: 11.5px; color: var(--muted); margin-top: 4px; line-height: 1.5; }

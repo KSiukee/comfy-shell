@@ -13,9 +13,9 @@
     # 1) 先确认 LICENSE 允许本地使用/再分发
     # 2) 把仓库放到 ComfyUI/input/ai-pose-gallery-zh（或任意目录 + --copy）
     python tools/pose_pack_adapter.py \
-        --src "D:/.../ComfyUI/input/ai-pose-gallery-zh" \
-        --out "D:/.../ComfyUI/input/pose_packs/ai-pose" \
-        --input-root "D:/.../ComfyUI/input" \
+        --src "<ComfyUI>/input/ai-pose-gallery-zh" \
+        --out "<ComfyUI>/input/pose_packs/ai-pose" \
+        --input-root "<ComfyUI>/input" \
         --name "ai-pose 中文库"
 
     # 只预览不写盘

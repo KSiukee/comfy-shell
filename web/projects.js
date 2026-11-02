@@ -1,5 +1,5 @@
 // 项目栏（v0.43.0）：新建 / 改名 / 开工 / 隐藏 / 删除进回收站。
-// 所有后端调用走 store.js 的 api.call；本文件不碰生成参数（#16 再接输出目录）。
+// 所有后端调用走 store.js 的 api.call；本文件不碰生成参数。
 const projState = { list: [], all: [], hiddenIds: new Set(), current: "", includeHidden: false, modalMode: "create" };
 // v0.95.1：图库只显示当前项目（不再提供「全部」，免得切项目时看到别的项目的图）
 let libScope = "project";
@@ -243,7 +243,7 @@ $("projTrashClose").onclick = () => {
   $("projTrashModal").hidden = true;
 };
 
-// 给以后的功能（#16 图库/生成）留一个入口
+// 给以后的功能留一个入口
 window.projectUI = { refresh: projRefresh, current: () => projState.current || null, currentObj: () => projCurrent(), list: () => projState.list };
 
 // ---------------------------------------------------------------- 图库范围

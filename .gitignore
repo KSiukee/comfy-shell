@@ -12,6 +12,7 @@ ComfyUI/
 # screenshots & generated probes
 *.png
 !docs/**/*.png
+!assets/**/*.png
 
 # local state
 dev/__pycache__/
@@ -28,3 +29,10 @@ logs/
 
 # 反馈授权码（仅本机构建用，不入库）
 src-tauri/src/feedback_secret.txt
+
+# 发布前扫描词表（自身不入库）
+forbidden.txt
+
+# 内部开发脚本 / QA（不入公开仓）
+dev/
+tools/qa/
