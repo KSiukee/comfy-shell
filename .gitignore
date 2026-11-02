@@ -13,6 +13,7 @@ ComfyUI/
 *.png
 !docs/**/*.png
 !assets/**/*.png
+!src-tauri/icons/**/*.png
 
 # local state
 dev/__pycache__/
