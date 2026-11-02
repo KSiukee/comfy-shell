@@ -495,18 +495,68 @@ const PLAN_SYSTEM: &str = r#"你是「显影」（本地 ComfyUI 生图/改图�
   - open_folder   args: {"path":string}   （只用于提示用户去看某个文件夹）
 - 最多 6 步；不要给删除项目、读写图片库、执行任意命令之类的动作（你也没有这些工具）。
 - **绝对不许尝试修改、替换、重编译显影自己的程序或源码**；你只能通过上面这些动作改 ComfyUI 的配置与环境。
+- 说话要短：summary 不超过 80 个汉字；每步的 why 不超过 30 个汉字；advice 的 text 不超过 120 个汉字。
+- 只输出一个 JSON 对象，从 `{` 开始到 `}` 结束，前后不要有任何文字或代码块。
 - 如果体检报告已经一切正常，就返回空 steps，并在 summary 里说明。
 - 如果问题超出你的动作范围（驱动、CUDA、磁盘、显影自身 bug），在 summary 里说清楚，并加一步：
   {"title":"需要你手动处理","action":"advice","why":"原因","args":{"text":"具体建议，比如：去 GitHub 更新显影到新版本 / 提交 issue（附上日志）"}}
 "#;
 
+/// 转义字符串内部的裸控制字符（模型偶尔会在 JSON 字符串里直接换行）。
+fn escape_control_in_strings(s: &str) -> String {
+    let mut out = String::with_capacity(s.len() + 16);
+    let mut in_str = false;
+    let mut esc = false;
+    for ch in s.chars() {
+        if in_str {
+            if esc {
+                out.push(ch);
+                esc = false;
+                continue;
+            }
+            match ch {
+                '\\' => {
+                    out.push(ch);
+                    esc = true;
+                }
+                '"' => {
+                    out.push(ch);
+                    in_str = false;
+                }
+                '\n' => out.push_str("\\n"),
+                '\r' => out.push_str("\\r"),
+                '\t' => out.push_str("\\t"),
+                c if (c as u32) < 0x20 => out.push_str(&format!("\\u{:04x}", c as u32)),
+                _ => out.push(ch),
+            }
+        } else {
+            if ch == '"' {
+                in_str = true;
+            }
+            out.push(ch);
+        }
+    }
+    out
+}
+
 fn extract_json(text: &str) -> Option<serde_json::Value> {
     let start = text.find('{')?;
-    let end = text.rfind('}')?;
-    if end <= start {
-        return None;
+    let body = &text[start..];
+    // 从最后一个 } 往前试几个候选结尾，兼容「后面还有话」或「字符串里带裸换行」
+    let ends: Vec<usize> = body.match_indices('}').map(|(i, _)| i).collect();
+    for &e in ends.iter().rev().take(10) {
+        let slice = &body[..=e];
+        if let Ok(v) = serde_json::from_str::<serde_json::Value>(slice) {
+            return Some(v);
+        }
+        let fixed = escape_control_in_strings(slice);
+        if fixed != slice {
+            if let Ok(v) = serde_json::from_str::<serde_json::Value>(&fixed) {
+                return Some(v);
+            }
+        }
     }
-    serde_json::from_str(&text[start..=end]).ok()
+    None
 }
 
 pub struct PlanResult {
@@ -653,9 +703,18 @@ pub fn run_plan(cfg: &Path, s: &Settings, report: &EnvReport, request: &str) -> 
     }
 
     let plan = extract_json(&assistant).ok_or_else(|| {
+        let tail: String = assistant
+            .chars()
+            .rev()
+            .take(160)
+            .collect::<String>()
+            .chars()
+            .rev()
+            .collect();
         format!(
-            "模型没按 JSON 返回，原文前 300 字：{}",
-            assistant.chars().take(300).collect::<String>()
+            "模型没按 JSON 返回（{} 字）。尾部：{}",
+            assistant.chars().count(),
+            tail
         )
     })?;
     Ok(PlanResult {
