@@ -540,14 +540,51 @@ pub fn inspect(s: &Settings, target: &str, lines: usize) -> Result<serde_json::V
     }
 }
 
+/// 去掉终端颜色码（`\x1b[32m` 之类）。
+fn strip_ansi(s: &str) -> String {
+    let chars: Vec<char> = s.chars().collect();
+    let mut out = String::with_capacity(s.len());
+    let mut i = 0;
+    while i < chars.len() {
+        if chars[i] == '\u{1b}' && i + 1 < chars.len() && chars[i + 1] == '[' {
+            let mut j = i + 2;
+            while j < chars.len() && !chars[j].is_ascii_alphabetic() {
+                j += 1;
+            }
+            i = (j + 1).min(chars.len());
+            continue;
+        }
+        out.push(chars[i]);
+        i += 1;
+    }
+    out
+}
+
+/// ComfyUI 的 tqdm 进度行（`12%|███| 2/16 [00:00<00:02, 3.02it/s]`），界面上是乱码来源。
+fn is_progress_line(line: &str) -> bool {
+    let has_rate = line.contains("it/s]") || line.contains("s/it]");
+    let has_bar = line.contains("%|") || (line.matches('|').count() >= 2 && line.contains('%'));
+    has_rate || has_bar
+}
+
 fn tail_text(path: &Path, max_lines: usize, max_bytes: usize) -> String {
     let Ok(bytes) = std::fs::read(path) else {
         return String::new();
     };
     let start = bytes.len().saturating_sub(max_bytes);
     let text = String::from_utf8_lossy(&bytes[start..]).to_string();
-    let lines: Vec<&str> = text.lines().collect();
-    lines[lines.len().saturating_sub(max_lines)..].join("\n")
+    // 进度用 \r 刷新，先拆成独立行，再滤掉 ANSI 与进度条
+    let text = strip_ansi(&text).replace('\r', "\n");
+    let mut lines: Vec<&str> = text
+        .lines()
+        .map(str::trim)
+        .filter(|l| !l.is_empty())
+        .filter(|l| !is_progress_line(l))
+        .collect();
+    if lines.len() > max_lines {
+        lines = lines.split_off(lines.len() - max_lines);
+    }
+    lines.join("\n")
 }
 
 fn basenames(models: &[models::ModelFile]) -> std::collections::HashSet<String> {
@@ -944,5 +981,38 @@ mod redact_tests {
         let s = redact("share \\\\nas\\share\\file.txt end");
         assert!(s.contains("<path>/file.txt"), "{s}");
         assert!(!s.contains("nas\\share"), "{s}");
+    }
+}
+
+#[cfg(test)]
+mod log_clean_tests {
+    use super::{is_progress_line, strip_ansi, tail_text};
+
+    #[test]
+    fn strips_ansi_colors() {
+        assert_eq!(strip_ansi("\u{1b}[32m[INFO]\u{1b}[0m ok"), "[INFO] ok");
+    }
+
+    #[test]
+    fn drops_tqdm_progress_lines() {
+        assert!(is_progress_line(" 12%|███| 2/16 [00:00<00:02, 3.02it/s]"));
+        assert!(is_progress_line("16/16 [00:05<00:00,  3.01it/s]"));
+        assert!(!is_progress_line("[INFO] Prompt executed in 9.8 seconds"));
+    }
+
+    #[test]
+    fn tail_filters_and_limits() {
+        let p = std::env::temp_dir().join(format!("cs_tail_{}", std::process::id()));
+        std::fs::write(
+            &p,
+            "a\n\u{1b}[32m[INFO]\u{1b}[0m keep\n10%|##| 1/10 [00:01, 2it/s]\r20%|###| 2/10 [00:02, 2it/s]\nlast\n",
+        )
+        .unwrap();
+        let out = tail_text(&p, 10, 10_000);
+        assert!(out.contains("[INFO] keep"), "{out}");
+        assert!(out.contains("last"), "{out}");
+        assert!(!out.contains("it/s"), "{out}");
+        assert!(!out.contains('\u{1b}'), "{out}");
+        let _ = std::fs::remove_file(&p);
     }
 }

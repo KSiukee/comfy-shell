@@ -5,6 +5,7 @@ let aiPlanData = null;
 let aiCtx = [];
 let aiLastRequest = "";
 let aiReplanning = false;
+let aiRefreshing = false;
 
 function aiSetText(id, text) {
   const el = $(id);
@@ -12,21 +13,27 @@ function aiSetText(id, text) {
 }
 
 async function refreshAiSettings() {
+  if (aiRefreshing) return;
+  aiRefreshing = true;
   try {
-    const s = state.settings || (await api.call("settings_get"));
-    if ($("aiProvider")) $("aiProvider").value = s.aiProvider || "deepseek";
-    if ($("aiModel")) $("aiModel").value = s.aiModel || "deepseek-chat";
-  } catch {}
-  const st = await api.call("ai_engine_status").catch(() => null);
-  if (st && st.found) {
-    aiSetText("aiEngineState", `已找到（${st.source}）`);
-    if ($("aiEngineState")) $("aiEngineState").title = st.node + "\n" + st.cli;
-  } else {
-    aiSetText("aiEngineState", "未找到：需要 Node + Pi，可在终端 npm i -g @earendil-works/pi-coding-agent");
+    try {
+      const s = state.settings || (await api.call("settings_get"));
+      if ($("aiProvider")) $("aiProvider").value = s.aiProvider || "deepseek";
+      if ($("aiModel")) $("aiModel").value = s.aiModel || "deepseek-chat";
+    } catch {}
+    const st = await api.call("ai_engine_status").catch(() => null);
+    if (st && st.found) {
+      aiSetText("aiEngineState", `已找到（${st.source}）`);
+      if ($("aiEngineState")) $("aiEngineState").title = st.node + "\n" + st.cli;
+    } else {
+      aiSetText("aiEngineState", "未找到：需要 Node + Pi，可在终端 npm i -g @earendil-works/pi-coding-agent");
+    }
+    const has = await api.call("ai_key_status").catch(() => false);
+    aiSetText("aiKeyState", has ? "已保存（DPAPI 加密）" : "未保存");
+    if ($("aiKey")) $("aiKey").value = "";
+  } finally {
+    aiRefreshing = false;
   }
-  const has = await api.call("ai_key_status").catch(() => false);
-  aiSetText("aiKeyState", has ? "已保存（DPAPI 加密）" : "未保存");
-  if ($("aiKey")) $("aiKey").value = "";
 }
 
 async function saveAiKey() {
@@ -64,8 +71,16 @@ function aiFmtEnv(r) {
     for (const p of miss) lines.push(`  - ${p.label}: ${p.missing.join("、")}`);
   }
   if (r.logs) {
-    lines.push("== 日志尾 ==");
-    lines.push(r.logs.split("\n").slice(-12).join("\n"));
+    const clean = String(r.logs)
+      .replace(/\x1b\[[0-9;]*[A-Za-z]/g, "")
+      .split(/[\r\n]+/)
+      .map((s) => s.trim())
+      .filter((s) => s && !/%\||it\/s\]|s\/it\]/.test(s))
+      .slice(-10);
+    if (clean.length) {
+      lines.push("== 日志尾（已滤掉进度条）==");
+      lines.push(clean.join("\n"));
+    }
   }
   return lines.join("\n");
 }
@@ -399,6 +414,7 @@ listen("ai-progress", (ev) => {
   bind("aiOpen", openAiAssistant);
   bind("aiPlanBtn", aiPlan);
   bind("aiClose", () => ($("aiModal").hidden = true));
+  bind("btnAiTop", openAiAssistant);
   bind("aiEngineRecheck", refreshAiSettings);
   bind("aiEngineDownload", downloadEngine);
 })();

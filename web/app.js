@@ -937,6 +937,7 @@ function setSettingsTab(tab) {
   document.querySelectorAll("#setNav .set-tab").forEach((b) => b.classList.toggle("active", b.dataset.tab === tab));
   document.querySelectorAll("#settingsModal .set-pane").forEach((p) => p.classList.toggle("active", p.dataset.pane === tab));
   if (tab === "ai" && window.aiAgent) window.aiAgent.refresh();
+  if (tab === "workflows" && typeof wfDirty !== "undefined" && wfDirty) renderWorkflowPresets();
 }
 document.querySelectorAll("#setNav .set-tab").forEach((b) => {
   b.onclick = () => setSettingsTab(b.dataset.tab);
@@ -980,11 +981,20 @@ async function refreshSettingsInfo() {
     const v = await api.call("app_version");
     if ($("setAppVersion")) $("setAppVersion").textContent = "v" + v;
   } catch {}
-  if (typeof renderWorkflowPresets === "function") renderWorkflowPresets();
+  if (typeof markWorkflowsDirty === "function") markWorkflowsDirty();
 }
 
 /// 工作流依赖检查：内置的每个档位需要哪几个模型、本机缺哪个。
+let wfDirty = true;
+
+function markWorkflowsDirty() {
+  wfDirty = true;
+  const pane = document.querySelector('#settingsModal .set-pane[data-pane="workflows"]');
+  if (pane && pane.classList.contains("active")) renderWorkflowPresets();
+}
+
 async function renderWorkflowPresets() {
+  wfDirty = false;
   const box = $("setWorkflows");
   if (!box) return;
   box.innerHTML = '<div class="muted" style="font-size:12px">检查依赖中…</div>';
