@@ -94,6 +94,36 @@
           "n": "混合色温",
           "zh": "冷背景暖主体，色温对比",
           "en": "mixed color temperature, warm subject against cool background"
+        },
+        {
+          "n": "三点布光",
+          "zh": "三点布光，主光加辅光和轮廓光",
+          "en": "three-point lighting, key light with fill and rim"
+        },
+        {
+          "n": "高调光",
+          "zh": "高调光，整体明亮几乎没有阴影",
+          "en": "high-key lighting, bright and even, almost no shadows"
+        },
+        {
+          "n": "低调光",
+          "zh": "低调光，单一光源，大面积暗部",
+          "en": "low-key lighting, single source, deep shadows"
+        },
+        {
+          "n": "影棚光",
+          "zh": "影棚布光，柔光箱主光加反光板",
+          "en": "studio lighting, softbox key with reflector fill"
+        },
+        {
+          "n": "明暗对照",
+          "zh": "明暗对照，一束光劈开黑暗",
+          "en": "chiaroscuro, a single shaft cutting through darkness"
+        },
+        {
+          "n": "体积雾",
+          "zh": "体积雾，光柱在雾气里成型",
+          "en": "volumetric fog, light shafts forming in the haze"
         }
       ],
       "group": "视觉"
@@ -171,6 +201,11 @@
           "n": "重复元素",
           "zh": "背景重复元素，节奏感",
           "en": "repeating background elements"
+        },
+        {
+          "n": "层次构图",
+          "zh": "层次构图，前景中景背景分明",
+          "en": "layered composition, clear foreground midground background"
         }
       ],
       "group": "视觉"
@@ -243,6 +278,16 @@
           "n": "老镜头",
           "zh": "老镜头质感，轻微柔焦与色散",
           "en": "vintage lens, slight softness and chromatic aberration"
+        },
+        {
+          "n": "16mm 广角",
+          "zh": "16mm 超广角，边缘拉伸明显",
+          "en": "16mm ultra-wide, strong edge stretching"
+        },
+        {
+          "n": "动态模糊",
+          "zh": "动态模糊，运动拖出残影",
+          "en": "motion blur, movement trailing into streaks"
         }
       ],
       "group": "视觉"
@@ -310,6 +355,16 @@
           "n": "头顶视角",
           "zh": "正上方俯拍，像无人机",
           "en": "top-down drone view"
+        },
+        {
+          "n": "航拍",
+          "zh": "航拍远景，人和环境都很小",
+          "en": "aerial view, subject tiny in the landscape"
+        },
+        {
+          "n": "大全景",
+          "zh": "大全景，交代环境和人的位置",
+          "en": "wide establishing shot, environment and subject placement"
         }
       ],
       "group": "视觉"
@@ -397,6 +452,16 @@
           "n": "磨砂",
           "zh": "磨砂质感，光被打散",
           "en": "frosted texture scattering the light"
+        },
+        {
+          "n": "锈蚀金属",
+          "zh": "锈蚀金属，橙褐色锈斑",
+          "en": "rusted metal, orange-brown corrosion patches"
+        },
+        {
+          "n": "大理石",
+          "zh": "大理石，灰白纹理",
+          "en": "marble, grey-white veining"
         }
       ],
       "group": "视觉"
@@ -465,6 +530,26 @@
           "n": "冷调",
           "zh": "整体冷调，皮肤泛蓝",
           "en": "cool grade overall, skin leaning blue"
+        },
+        {
+          "n": "暖调",
+          "zh": "暖调，高光偏琥珀色",
+          "en": "warm grade, amber highlights"
+        },
+        {
+          "n": "粉彩",
+          "zh": "粉彩色，柔和的奶粉色调",
+          "en": "pastel colors, soft milky tones"
+        },
+        {
+          "n": "大地色",
+          "zh": "大地色，橄榄绿赭石和锈红",
+          "en": "earth tones, olive ochre and rust"
+        },
+        {
+          "n": "棕褐调",
+          "zh": "棕褐色调，像老照片",
+          "en": "sepia tone, like an old photograph"
         }
       ]
     },
@@ -1147,6 +1232,16 @@
           "n": "巴洛克",
           "zh": "巴洛克，繁复金饰与暗部",
           "en": "Baroque, ornate gilding and deep shadow"
+        },
+        {
+          "n": "1920 年代",
+          "zh": "1920 年代，装饰艺术和黑白摄影",
+          "en": "1920s, art deco and black-and-white photography"
+        },
+        {
+          "n": "复古美学",
+          "zh": "复古美学，旧印刷和褪色",
+          "en": "retro aesthetic, old print and faded color"
         }
       ],
       "group": "环境"
@@ -1322,6 +1417,36 @@
           "n": "和风",
           "zh": "和风，留白与淡彩",
           "en": "Japanese style, negative space and pale color"
+        },
+        {
+          "n": "文艺复兴",
+          "zh": "文艺复兴，古典比例和柔和明暗",
+          "en": "renaissance painting, classical proportions and soft modeling"
+        },
+        {
+          "n": "低多边形",
+          "zh": "低多边形，明显三角面",
+          "en": "low poly, visible triangular facets"
+        },
+        {
+          "n": "等距视角",
+          "zh": "等距视角，45 度俯视",
+          "en": "isometric view, 45-degree top-down"
+        },
+        {
+          "n": "纸艺",
+          "zh": "纸艺，层叠纸片和折痕",
+          "en": "papercraft, layered paper with creases"
+        },
+        {
+          "n": "水墨",
+          "zh": "水墨，墨色浓淡和留白",
+          "en": "ink wash, tonal ink and empty space"
+        },
+        {
+          "n": "日式动画",
+          "zh": "日式动画赛璐璐，干净线稿和分层上色",
+          "en": "anime cel look, clean lines and flat layered color"
         }
       ]
     },
@@ -1389,6 +1514,16 @@
           "n": "手机拍摄",
           "zh": "手机拍摄，广角近摄畸变",
           "en": "shot on a phone, wide close-up distortion"
+        },
+        {
+          "n": "35mm 胶片",
+          "zh": "35mm 胶片，细颗粒带轻微光晕",
+          "en": "35mm film, fine grain and slight halation"
+        },
+        {
+          "n": "16mm 胶片",
+          "zh": "16mm 胶片，颗粒粗边缘发软",
+          "en": "16mm film, coarse grain and soft edges"
         }
       ]
     },
@@ -1456,6 +1591,26 @@
           "n": "冷峻",
           "zh": "冷峻，表情不动",
           "en": "cold, expression unmoved"
+        },
+        {
+          "n": "空灵",
+          "zh": "空灵，画面轻得几乎没有重量",
+          "en": "ethereal, weightless and airy"
+        },
+        {
+          "n": "温馨",
+          "zh": "温馨，暖光和柔软的织物",
+          "en": "cozy, warm light and soft fabrics"
+        },
+        {
+          "n": "阴森",
+          "zh": "阴森，暗处像有东西",
+          "en": "eerie, something lurking in the dark"
+        },
+        {
+          "n": "粗粝",
+          "zh": "粗粝，脏和磨损都留在画面里",
+          "en": "gritty, dirt and wear left in frame"
         }
       ]
     },
