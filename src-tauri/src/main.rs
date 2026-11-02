@@ -209,6 +209,7 @@ fn main() {
             commands::gallery::library_star,
             commands::gallery::stars_list,
             commands::gallery::save_export,
+            commands::gallery::save_over_image,
             commands::gallery::translate_text,
             commands::luts::luts_dir_path,
             commands::luts::luts_list,

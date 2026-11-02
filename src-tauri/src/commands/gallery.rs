@@ -107,6 +107,46 @@ pub fn image_meta(state: State<AppState>, path: String) -> Option<serde_json::Va
     crate::imgmeta::read_meta_under(std::path::Path::new(&root), std::path::Path::new(&path))
 }
 
+fn decode_data_url(data_url: &str) -> Result<Vec<u8>, String> {
+    let b64 = data_url
+        .split_once(',')
+        .map(|(_, b)| b)
+        .unwrap_or(data_url);
+    use base64::Engine as _;
+    base64::engine::general_purpose::STANDARD
+        .decode(b64.trim())
+        .map_err(|e| format!("base64 解码失败: {e}"))
+}
+
+/// 覆盖保存：把调色结果写回原图。
+/// 只允许 `ComfyUI/output` 下**已经存在**的图片——前端能传路径，必须当不可信输入处理：
+/// 先做一次 canonicalize，再用前缀检查，`..` 和符号链接都过不去。
+/// 注意：写回的是纯图片字节，原 PNG 里的提示词参数块会丢（界面会先确认）。
+#[tauri::command]
+pub fn save_over_image(
+    state: State<AppState>,
+    path: String,
+    data_url: String,
+) -> Result<String, String> {
+    let root = PathBuf::from(state.settings.lock().unwrap().comfy_root.clone())
+        .join("ComfyUI")
+        .join("output");
+    let canon_root = std::fs::canonicalize(&root).map_err(|e| format!("输出目录不可用：{e}"))?;
+    let canon = std::fs::canonicalize(&path).map_err(|_| "原图不存在（可能已被移走）".to_string())?;
+    if !canon.starts_with(&canon_root) {
+        return Err("只能覆盖 output 目录里的图".into());
+    }
+    let lower = canon.to_string_lossy().to_lowercase();
+    if ![".png", ".jpg", ".jpeg", ".webp"].iter().any(|e| lower.ends_with(e)) {
+        return Err("不支持的图片格式".into());
+    }
+    let bytes = decode_data_url(&data_url)?;
+    crate::fsutil::atomic_write(&canon, &bytes)?;
+    // 返回前端传进来的原样路径：canonicalize 会带上 `\\?\` 前缀，前端拿它跟图库里的
+    // 条目比对会对不上（覆盖后缩略图就刷不新）。
+    Ok(path)
+}
+
 /// Persist an image composed by the frontend (comparison sheet, retouched photo).
 /// `subdir` 是 output 下的相对目录（比如 projects/<id>），调色另存时放回原图旁边；
 /// 只接受相对路径且不许出现 `..`——前端能传这个参数，必须当不可信输入处理。
@@ -132,14 +172,7 @@ pub fn save_export(
     }
     std::fs::create_dir_all(&dir).map_err(|e| e.to_string())?;
 
-    let b64 = data_url
-        .split_once(',')
-        .map(|(_, b)| b.to_string())
-        .unwrap_or(data_url);
-    use base64::Engine as _;
-    let bytes = base64::engine::general_purpose::STANDARD
-        .decode(b64.trim())
-        .map_err(|e| format!("base64 解码失败: {e}"))?;
+    let bytes = decode_data_url(&data_url)?;
 
     let safe: String = name
         .chars()
@@ -167,6 +200,20 @@ pub fn save_export(
     let full = dir.join(&filename);
     std::fs::write(&full, bytes).map_err(|e| e.to_string())?;
     Ok(full.to_string_lossy().to_string())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::decode_data_url;
+
+    #[test]
+    fn decodes_data_url_and_rejects_garbage() {
+        let bytes = decode_data_url("data:image/png;base64,aGVsbG8=").unwrap();
+        assert_eq!(bytes, b"hello");
+        // 没有前缀的裸 base64 也认（旧调用方）
+        assert_eq!(decode_data_url("aGVsbG8=").unwrap(), b"hello");
+        assert!(decode_data_url("data:image/png;base64,!!!!").is_err());
+    }
 }
 
 

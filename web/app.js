@@ -73,6 +73,8 @@ function setBusy(busy) {
   $("btnGenerate").disabled = busy;
   $("btnCancel").hidden = !busy;
   $("progressWrap").hidden = !busy;
+  // 生成结束后，把排队中的超分继续跑掉
+  if (!busy && typeof drainUpscale === "function") setTimeout(() => drainUpscale(), 300);
 }
 
 function fmtTime(s) {
@@ -454,6 +456,12 @@ function resultMenu(r) {
       run: () =>
         window.photoEditor &&
         window.photoEditor.open({ path: r.path, filename: r.filename, dataUrl: r.dataUrl }),
+    },
+    {
+      label: "超分 4×（有任务在跑就排队）",
+      run: () => {
+        if (typeof queueUpscale === "function") queueUpscale(r);
+      },
     },
     { label: "删除（移到回收站）", danger: true, run: () => deleteResults([r]) },
     { label: "在文件夹中显示", run: () => api.call("reveal_file", { path: r.path }) },
@@ -922,7 +930,10 @@ $("btnClearHistory").onclick = async () => {
 };
 
 // settings modal
-$("btnSettings").onclick = () => ($("settingsModal").hidden = false);
+$("btnSettings").onclick = () => {
+  if (window.shortcuts) window.shortcuts.build();
+  $("settingsModal").hidden = false;
+};
 $("btnSettingsCancel").onclick = () => ($("settingsModal").hidden = true);
 $("btnSettingsSave").onclick = async () => {
   const next = {
@@ -1042,28 +1053,45 @@ $("viewerStage").addEventListener("wheel", (e) => {
 (() => {
   const stage = $("viewerStage");
   let dragging = false;
+  let moved = false;
   let sx = 0;
   let sy = 0;
+  let startX = 0;
+  let startY = 0;
   stage.addEventListener("pointerdown", (e) => {
+    if (e.button !== 0) return;
+    if (typeof maskState !== "undefined" && maskState.active) return;
     dragging = true;
+    moved = false;
+    startX = e.clientX;
+    startY = e.clientY;
     sx = e.clientX - viewer.pan.x;
     sy = e.clientY - viewer.pan.y;
-    stage.classList.add("dragging");
-    stage.setPointerCapture(e.pointerId);
+    try {
+      stage.setPointerCapture(e.pointerId);
+    } catch {}
   });
   stage.addEventListener("pointermove", (e) => {
     if (!dragging) return;
+    if (!moved && Math.abs(e.clientX - startX) + Math.abs(e.clientY - startY) > 5) {
+      moved = true;
+      stage.classList.add("dragging");
+    }
+    if (!moved) return;
     viewer.pan = { x: e.clientX - sx, y: e.clientY - sy };
     applyViewer();
   });
-  stage.addEventListener("pointerup", () => {
+  const end = (e) => {
+    if (!dragging) return;
+    const wasMoved = moved;
     dragging = false;
+    moved = false;
     stage.classList.remove("dragging");
-  });
-  stage.addEventListener("pointercancel", () => {
-    dragging = false;
-    stage.classList.remove("dragging");
-  });
+    // 没拖动 = 单击：以点击处为锚放大 / 再点回到适应
+    if (!wasMoved && e && e.type === "pointerup") viewerZoomAt(e.clientX, e.clientY);
+  };
+  stage.addEventListener("pointerup", end);
+  stage.addEventListener("pointercancel", end);
 })();
 
 document.addEventListener("keydown", (e) => {

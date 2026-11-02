@@ -330,6 +330,8 @@ function applyViewer() {
   const t = `translate(${viewer.pan.x}px, ${viewer.pan.y}px) scale(${viewer.zoom / 100})`;
   $("viewerImg").style.transform = t;
   $("vwZoom").textContent = `${Math.round(viewer.zoom)}%`;
+  const stage = $("viewerStage");
+  if (stage) stage.classList.toggle("zoomed", viewer.zoom > 105);
 }
 
 function viewerStep(delta) {
@@ -343,29 +345,124 @@ function viewerZoom(mult) {
   applyViewer();
 }
 
+/// 以光标位置为锚点缩放：图上的那个点留在光标下面（100% ⇄ 260% 来回切）。
+function viewerZoomAt(clientX, clientY) {
+  const stage = $("viewerStage");
+  if (!stage) return;
+  const r = stage.getBoundingClientRect();
+  const z0 = viewer.zoom;
+  const z1 = z0 < 140 ? 260 : 100;
+  const px = clientX - (r.left + r.width / 2);
+  const py = clientY - (r.top + r.height / 2);
+  if (z1 === 100) {
+    // 回到适应：居中才看得全
+    viewer.pan = { x: 0, y: 0 };
+  } else {
+    const k = z1 / z0;
+    viewer.pan = { x: px - (px - viewer.pan.x) * k, y: py - (py - viewer.pan.y) * k };
+  }
+  viewer.zoom = z1;
+  applyViewer();
+}
+
+// ---------------------------------------------------------------- 超分队列
+// 生成/超分在跑的时候不硬插队：排进队列，等空闲自动跑（生成结束时 app.js 会调 drainUpscale）。
+
+const upQueue = [];
+let upBusy = false;
+
+function upscaleQueueLen() {
+  return upQueue.length;
+}
+
+async function runUpscale(item) {
+  if (!item) return;
+  upBusy = true;
+  const btn = $("vwUpscale");
+  if (btn) {
+    btn.disabled = true;
+    btn.textContent = "超分中…";
+  }
+  try {
+    const model = $("vwUpModel") && $("vwUpModel").value ? $("vwUpModel").value : null;
+    const img = await api.call("upscale_image", { path: item.path, model });
+    toast(`超分完成：${img.width}×${img.height}`);
+    if (typeof loadLibrary === "function" && !$("library").hidden) {
+      await loadLibrary();
+      if (!$("viewer").hidden && viewer.list.length) {
+        const list = sortedLibrary();
+        const idx = list.findIndex((x) => x.path === img.path);
+        if (idx >= 0) {
+          viewer.list = list;
+          viewer.idx = idx;
+          await showViewerItem();
+        }
+      }
+    }
+    // 首页图区也补一条，省得切过去找不到
+    if (typeof mergeResults === "function") {
+      const filename = String(img.path || "").split(/[\\/]/).pop();
+      mergeResults([
+        {
+          path: img.path,
+          filename,
+          width: img.width,
+          height: img.height,
+          label: "超分",
+          seconds: 0,
+          ts: Date.now() / 1000,
+          prompt: "",
+        },
+      ]);
+    }
+  } catch (e) {
+    toast(`超分失败：${e}`, true);
+  } finally {
+    upBusy = false;
+    if (btn) {
+      btn.disabled = false;
+      btn.textContent = "超分 4×";
+    }
+    setTimeout(() => drainUpscale(), 200);
+  }
+}
+
+/// 空闲才跑；生成中或正在超分就排队。
+function queueUpscale(item) {
+  if (!item || !item.path) return;
+  if (String(item.path).startsWith("vault://")) {
+    toast("私密图的超分还没做", true);
+    return;
+  }
+  if (upBusy || (typeof state !== "undefined" && state.running)) {
+    upQueue.push({ path: item.path, filename: item.filename });
+    toast(`已排队：${item.filename || "当前图"}（前面还有${upBusy ? "超分" : "生成"}任务）`);
+    return;
+  }
+  runUpscale(item);
+}
+
+function drainUpscale() {
+  if (upBusy || !upQueue.length) return;
+  if (typeof state !== "undefined" && state.running) return;
+  const next = upQueue.shift();
+  runUpscale(next);
+}
+
+// 首页灯箱里的「超分 4×」
+(() => {
+  const b = $("lbUpscale");
+  if (!b) return;
+  b.onclick = () => {
+    const it = typeof lightboxItem !== "undefined" ? lightboxItem : null;
+    if (it) queueUpscale(it);
+  };
+})();
+
 async function viewerUpscale() {
   const it = viewer.list[viewer.idx];
   if (!it) return;
-  const btn = $("vwUpscale");
-  btn.disabled = true;
-  btn.textContent = "超分中…";
-  try {
-    const img = await api.call("upscale_image", { path: it.path, model: $("vwUpModel").value || null });
-    toast(`超分完成：${img.width}×${img.height}`);
-    await loadLibrary();
-    const list = sortedLibrary();
-    const idx = list.findIndex((x) => x.path === img.path);
-    if (idx >= 0) {
-      viewer.list = list;
-      viewer.idx = idx;
-      await showViewerItem();
-    }
-  } catch (e) {
-    toast(String(e), true);
-  } finally {
-    btn.disabled = false;
-    btn.textContent = "超分 4×";
-  }
+  queueUpscale(it);
 }
 
 // ---------------------------------------------------------------- query translation

@@ -521,9 +521,10 @@
             </select>
             <button class="btn ghost small" id="peResetAll">全部重置</button>
             <span class="spacer"></span>
+            <button class="btn ghost small" id="peSaveOver" title="直接写回原文件（会丢 PNG 参数块，不能撤销）">覆盖原图</button>
             <button class="btn primary small" id="peSave">另存为新图</button>
           </div>
-          <div class="hint" style="margin-top:-2px">原图不动，按上面的尺寸另存为新文件</div>
+          <div class="hint" style="margin-top:-2px">原图不动；炸图只留一小格时用「覆盖原图」</div>
         </aside>
       </div>
     </div>
@@ -539,6 +540,7 @@
       <span class="mono" id="lightboxMeta"></span>
       <div class="spacer"></div>
       <button class="btn ghost small" id="lbEdit" title="裁切 / LUT / 调色">调色</button>
+      <button class="btn ghost small" id="lbUpscale" title="4× 超分（有任务在跑就排队）">超分 4×</button>
       <button class="btn ghost small" id="lbShot" title="把这张图存进某个镜头格">存为镜头</button>
       <button class="btn ghost small" id="lightboxRef">用作参考图</button>
       <button class="btn ghost small" id="lightboxReveal">在文件夹中显示</button>
@@ -861,6 +863,11 @@
       <label class="check"><input type="checkbox" id="setStopOnExit" /> 关闭壳时一并关掉 ComfyUI</label>
       <label class="check"><input type="checkbox" id="setFreeEnhance" /> 扩写直接用未审查模型（跳过官方扩写器）</label>
       <div class="hint">官方扩写器偶尔会拒绝；勾上后所有扩写都走本地 Qwen3-VL heretic。</div>
+      <div class="field">
+        <label>快捷键（看图时生效）</label>
+        <div id="scList" class="sc-list"></div>
+        <div class="hint">点键位框，再按一个键（Esc 取消）。输入框里打字不会触发。</div>
+      </div>
       <div class="row tight" style="margin-top:14px">
         <button class="btn small" id="btnBackup">备份数据…</button>
         <button class="btn small" id="btnExportProject">导出当前项目…</button>
@@ -1257,6 +1264,7 @@
   <script src="meta.js"></script>
   <script src="detail.js"></script>
 <script src="photoedit.js"></script>
+<script src="shortcuts.js"></script>
   <script src="ab.js"></script>
   <script src="workspace.js"></script>
   <script src="problems.js"></script>
