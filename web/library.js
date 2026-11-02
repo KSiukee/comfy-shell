@@ -53,6 +53,13 @@ async function loadLibImage(img) {
 async function openLibrary() {
   $("library").hidden = false;
   libRenderLimit = 120;
+  // 老收藏只有 stars.json：第一次开图库时把项目内 _favorites 镜像补齐（幂等）
+  if (!openLibrary._favSynced) {
+    openLibrary._favSynced = true;
+    try {
+      await api.call("library_sync_favorites");
+    } catch {}
+  }
   await loadLibUpscaleModels();
   await loadLibrary();
 }
@@ -172,7 +179,7 @@ function renderLibrary() {
 
 async function deleteSelected() {
   if (!libSel.size) return;
-  if (!confirm(`删除选中的 ${libSel.size} 张？\n会移到 output\\_comfyshell_trash\\，可手动恢复`)) return;
+  if (!confirm(`删除选中的 ${libSel.size} 张？\n会移到各自项目文件夹的 _trash\\ 里，可手动恢复`)) return;
   try {
     const n = await api.call("library_delete", { paths: [...libSel] });
     toast(`已移走 ${n} 张`);

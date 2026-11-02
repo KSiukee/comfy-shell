@@ -1,8 +1,6 @@
-// 首页图区（结果网格 + 大图翻页）+ 「全部 / 本项目」范围过滤。
+// 首页图区（结果网格 + 大图翻页）。
 // 从 app.js 拆出（#6 继续拆「结果」）；app.js 只保留生成与装配。
-
-const RES_SCOPE_KEY = "cs.resScope";
-let resScope = localStorage.getItem(RES_SCOPE_KEY) === "project" ? "project" : "all";
+// v0.95.1：只显示**当前项目**的图——避免切项目时看到别的项目的图。
 
 /** 图片路径 → 所属项目 id（`output/projects/<id>/…`）；根目录的图返回空串（临时）。 */
 function resultProjectId(path) {
@@ -15,20 +13,19 @@ function resultScopeWant() {
   return p ? p.id : "";
 }
 
-/** 当前图区范围下要显示的条目（不改 state.results 本身）。 */
+/** 当前项目下的条目（不改 state.results 本身）。没有项目就什么都不显示。 */
 function resultsInScope() {
-  if (resScope !== "project") return state.results;
   const want = resultScopeWant();
+  if (!want) return [];
   return state.results.filter((r) => resultProjectId(r.path) === want);
 }
 
 function emptyHint() {
   const p = $("empty") && $("empty").querySelector("p");
   if (!p) return;
-  p.textContent =
-    state.results.length && resScope === "project"
-      ? "本项目还没有图。图区右上切到「全部」看所有项目。"
-      : "还没有图。左边写好提示词，点「生成」。";
+  p.textContent = !resultScopeWant()
+    ? "先在左上角项目栏选一个项目（图区只显示当前项目的图）。"
+    : "本项目还没有图。左边写好提示词，点「生成」。";
 }
 
 function renderResults() {
@@ -143,19 +140,9 @@ $("lightbox").addEventListener(
 );
 
 // ---------------------------------------------------------------- 图区范围
-
-function applyResScope(scope) {
-  resScope = scope === "project" ? "project" : "all";
-  try {
-    localStorage.setItem(RES_SCOPE_KEY, resScope);
-  } catch {}
-  document.querySelectorAll("#resScope .tab").forEach((t) => {
-    t.classList.toggle("active", t.dataset.scope === resScope);
-  });
+// v0.95.1：只有「本项目」一档，不再提供「全部」（防止跨项目泄漏）。
+function applyResScope() {
   renderResults();
 }
 
-document.querySelectorAll("#resScope .tab").forEach((t) => {
-  t.onclick = () => applyResScope(t.dataset.scope);
-});
-applyResScope(resScope);
+applyResScope();

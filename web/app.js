@@ -402,7 +402,7 @@ async function deleteResults(items) {
     state.results = state.results.filter((r) => !paths.includes(r.path));
     renderResults();
     if (!$("library").hidden) await loadLibrary();
-    toast(`已删除 ${paths.length} 张（在 output\\_comfyshell_trash 可找回）`);
+    toast(`已删除 ${paths.length} 张（在项目文件夹的 _trash 里可找回）`);
   } catch (e) {
     toast(String(e), true);
   }

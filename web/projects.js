@@ -1,8 +1,8 @@
 // 项目栏（v0.43.0）：新建 / 改名 / 开工 / 隐藏 / 删除进回收站。
 // 所有后端调用走 store.js 的 api.call；本文件不碰生成参数（#16 再接输出目录）。
 const projState = { list: [], all: [], hiddenIds: new Set(), current: "", includeHidden: false, modalMode: "create" };
-const LIB_SCOPE_KEY = "cs.libScope";
-let libScope = localStorage.getItem(LIB_SCOPE_KEY) || "project";
+// v0.95.1：图库只显示当前项目（不再提供「全部」，免得切项目时看到别的项目的图）
+let libScope = "project";
 
 function projCurrent() {
   return projState.list.find((p) => p.id === projState.current) || null;
@@ -52,6 +52,8 @@ async function projRefresh(selectId) {
   $("projHide").textContent = cur && cur.hidden ? "取消隐藏" : "隐藏";
   const scope = document.getElementById("libScope");
   if (scope) scope.options[0].textContent = `本项目（${active ? active.name : "临时"}）`;
+  const tag = document.getElementById("resScopeTag");
+  if (tag) tag.textContent = active ? `本项目：${active.name}` : "本项目：无";
   refreshLibraryIfOpen();
   // 图区的「本项目」过滤也要跟着开工项目变
   if (typeof renderResults === "function") renderResults();
@@ -264,10 +266,10 @@ function filterLibItems(items) {
     if (libScope === "private") return isVault;
     if (isVault) return false;
     const pid = libProjectOf(it.subfolder);
-    if (pid === "_test") return false;
-    if (pid && projState.hiddenIds.has(pid)) return false;
-    if (libScope === "all") return true;
-    return active ? pid === active.id : !pid;
+    // 只显示**当前项目**：别的项目（含隐藏的）一张都不露。
+    // 当前项目即使是测试项目/被标记隐藏，也照常显示——否则选中它却是空库。
+    if (!active) return !pid;
+    return pid === active.id;
   });
 }
 
@@ -280,8 +282,7 @@ const libScopeSel = document.getElementById("libScope");
 if (libScopeSel) {
   libScopeSel.value = libScope;
   libScopeSel.addEventListener("change", () => {
-    libScope = libScopeSel.value;
-    localStorage.setItem(LIB_SCOPE_KEY, libScope);
+    libScope = libScopeSel.value === "private" ? "private" : "project";
     refreshLibraryIfOpen();
   });
 }

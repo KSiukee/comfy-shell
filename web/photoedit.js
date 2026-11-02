@@ -1123,7 +1123,6 @@ async function peSaveOver() {
   }
   const ext = ((peEd.filename || "").match(/\.[^.]+$/) || [".png"])[0].toLowerCase();
   const fmt = ext === ".jpg" || ext === ".jpeg" ? "jpg" : ext === ".webp" ? "webp" : "png";
-  if (!confirm(`覆盖原图？\n\n${peEd.filename}\n\n原图会被直接替换（PNG 里的提示词参数会丢），不能撤销。`)) return;
   await peBeginExport();
   try {
     const c = peRenderFull();

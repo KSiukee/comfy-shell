@@ -291,10 +291,7 @@
         </div>
         <span class="spacer"></span>
         <span class="muted" style="font-size:11.5px">图区</span>
-        <div class="tabs mini" id="resScope">
-          <button class="tab active" data-scope="all" title="显示所有项目的生成结果">全部</button>
-          <button class="tab" data-scope="project" title="只显示当前开工项目的结果">本项目</button>
-        </div>
+        <span class="muted mono" id="resScopeTag" style="font-size:11.5px" title="图区只显示当前项目的图">本项目</span>
         <span class="muted" style="font-size:11.5px;margin-left:6px">大小</span>
         <input type="range" id="resSize" min="100" max="560" step="10" value="440" style="width:110px;flex:0 0 110px" title="结果图大小（双击复位）" />
       </div>
@@ -553,9 +550,8 @@
     <div class="lib-head">
       <div class="lib-head-row">
         <strong class="lib-head-title">图库</strong>
-        <select id="libScope" title="图库范围：本项目 / 全部 / 私密">
+        <select id="libScope" title="图库范围：只显示当前项目">
           <option value="project">本项目</option>
-          <option value="all">全部</option>
           <option value="private" disabled>私密（未启用）</option>
         </select>
         <input id="libSearch" placeholder="搜索文件名或提示词…" />

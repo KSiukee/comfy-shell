@@ -36,14 +36,11 @@ fn dir_nanos(p: &Path) -> u64 {
 /// Root-only mtime is not enough: images saved into `projects/<id>/` change that
 /// subdirectory's mtime, not the output root's, so the gallery would go stale.
 fn tree_key(output: &Path) -> u64 {
-    let trash = output.join("_comfyshell_trash");
-    let fav = output.join("_favorites");
-    let staging = output.join("_private_staging");
     let mut stack = vec![output.to_path_buf()];
     let mut acc = 0u64;
     let mut dirs = 0u64;
     while let Some(dir) = stack.pop() {
-        if dir == trash || dir == fav || dir == staging {
+        if dir != output && is_reserved_dir(&dir) {
             continue;
         }
         acc ^= dir_nanos(&dir).rotate_left((dirs % 63) as u32);
@@ -85,6 +82,31 @@ fn save_disk_cache(cfg: &Path, key: u64, items: &[LibItem]) {
 
 const IMAGE_EXTS: [&str; 4] = ["png", "jpg", "jpeg", "webp"];
 
+/// 任意层级都要跳过的保留目录：回收站 / 收藏镜像 / 私密暂存。
+/// 项目和根目录各有一套 `_trash`、`_favorites`，所以不能只按根目录的绝对路径判。
+fn is_reserved_dir(p: &Path) -> bool {
+    p.file_name()
+        .and_then(|x| x.to_str())
+        .map(|n| {
+            matches!(
+                n,
+                "_trash" | "_favorites" | "_comfyshell_trash" | "_private_staging"
+            )
+        })
+        .unwrap_or(false)
+}
+
+/// 文件所属项目目录（`output/projects/<id>`）；根目录的图返回 None。
+fn project_root(output: &Path, file: &Path) -> Option<PathBuf> {
+    let rel = file.parent()?.strip_prefix(output).ok()?;
+    let mut comps = rel.components();
+    if comps.next()?.as_os_str() != "projects" {
+        return None;
+    }
+    let id = comps.next()?.as_os_str();
+    Some(output.join("projects").join(id))
+}
+
 fn stars_file(cfg: &Path) -> PathBuf {
     cfg.join("stars.json")
 }
@@ -112,37 +134,52 @@ pub fn stars(cfg: &Path) -> Vec<String> {
     out
 }
 
-pub fn star(cfg: &Path, output: &Path, path: &str, on: bool) {
-    // mirror starred files into output\_favorites so the file manager agrees
-    let fav = output.join("_favorites");
-    let src = Path::new(path);
-    let name = src
-        .file_name()
-        .map(|n| n.to_string_lossy().to_string())
-        .unwrap_or_default();
-    if !name.is_empty() {
-        let prefix = src
-            .parent()
-            .and_then(|p| p.strip_prefix(output).ok())
-            .map(|p| p.to_string_lossy().replace('\\', "_"))
-            .unwrap_or_default();
-        let target = if prefix.is_empty() {
-            fav.join(&name)
-        } else {
-            fav.join(format!("{prefix}__{name}"))
-        };
-        if on {
-            let _ = std::fs::create_dir_all(&fav);
-            if !target.exists() && src.exists() {
-                let _ = std::fs::hard_link(src, &target);
-                if !target.exists() {
-                    let _ = std::fs::copy(src, &target);
-                }
-            }
-        } else {
-            let _ = std::fs::remove_file(&target);
-        }
+/// 收藏镜像的目标文件：项目里的图进 `<项目>/_favorites/`，根目录的图进 `output/_favorites/`。
+/// 子目录用 `a_b__文件名` 压平，避免同名打架。
+fn favorite_target(output: &Path, src: &Path) -> Option<PathBuf> {
+    let base = project_root(output, src).unwrap_or_else(|| output.to_path_buf());
+    let name = src.file_name()?.to_string_lossy().to_string();
+    if name.is_empty() {
+        return None;
     }
+    let prefix = src
+        .strip_prefix(&base)
+        .ok()
+        .and_then(|rel| rel.parent())
+        .filter(|p| !p.as_os_str().is_empty())
+        .map(|p| p.to_string_lossy().replace('\\', "_"))
+        .unwrap_or_default();
+    let dir = base.join("_favorites");
+    Some(if prefix.is_empty() {
+        dir.join(&name)
+    } else {
+        dir.join(format!("{prefix}__{name}"))
+    })
+}
+
+fn mirror_favorite(output: &Path, src: &Path, on: bool) {
+    let Some(target) = favorite_target(output, src) else {
+        return;
+    };
+    if on {
+        if let Some(dir) = target.parent() {
+            let _ = std::fs::create_dir_all(dir);
+        }
+        if !target.exists() && src.exists() {
+            let _ = std::fs::hard_link(src, &target);
+            if !target.exists() {
+                let _ = std::fs::copy(src, &target);
+            }
+        }
+    } else {
+        let _ = std::fs::remove_file(&target);
+    }
+}
+
+pub fn star(cfg: &Path, output: &Path, path: &str, on: bool) {
+    // 镜像到**项目目录里**的 _favorites，这样每个项目文件夹自带「收藏」，
+    // 拷走一个项目不会把收藏留在别处。
+    mirror_favorite(output, Path::new(path), on);
 
     let mut set = load_stars(cfg);
     if on {
@@ -151,6 +188,21 @@ pub fn star(cfg: &Path, output: &Path, path: &str, on: bool) {
         set.remove(path);
     }
     save_stars(cfg, &set);
+}
+
+/// 把 stars.json 里已经在收藏的图补一份镜像（幂等）。给老数据用：
+/// 之前收藏只记在 json 里，项目文件夹里没有 `_favorites`。
+pub fn sync_star_mirrors(cfg: &Path, output: &Path) -> usize {
+    let set = load_stars(cfg);
+    let mut n = 0;
+    for p in set {
+        let src = Path::new(&p);
+        if src.is_file() {
+            mirror_favorite(output, src, true);
+            n += 1;
+        }
+    }
+    n
 }
 
 fn png_size(b: &[u8]) -> Option<(u32, u32)> {
@@ -237,12 +289,9 @@ fn scan_uncached(cfg: &Path, output: &Path, cap: usize) -> Vec<LibItem> {
     let stars = load_stars(cfg);
     let mut out = Vec::new();
     let mut stack = vec![output.to_path_buf()];
-    let trash = output.join("_comfyshell_trash");
-    let fav = output.join("_favorites");
-    let staging = output.join("_private_staging");
 
     while let Some(dir) = stack.pop() {
-        if dir == trash || dir == fav || dir == staging {
+        if dir != output && is_reserved_dir(&dir) {
             continue;
         }
         let rd = match std::fs::read_dir(&dir) {
@@ -296,10 +345,9 @@ fn scan_uncached(cfg: &Path, output: &Path, cap: usize) -> Vec<LibItem> {
     out
 }
 
-/// Move files into `output/_comfyshell_trash/` (recoverable by hand).
+/// 移到回收站：项目里的图进 `<项目>/_trash/`，根目录的图进 `output/_trash/`。
+/// 名字前缀时间戳，避免同名覆盖；文件管理器里按项目一眼能找到。
 pub fn delete(output: &Path, paths: &[String]) -> Result<usize, String> {
-    let trash = output.join("_comfyshell_trash");
-    std::fs::create_dir_all(&trash).map_err(|e| e.to_string())?;
     let out_canon = output.canonicalize().unwrap_or_else(|_| output.to_path_buf());
     let mut moved = 0;
     for p in paths {
@@ -311,6 +359,9 @@ pub fn delete(output: &Path, paths: &[String]) -> Result<usize, String> {
         if !canon.starts_with(&out_canon) {
             continue;
         }
+        let base = project_root(&out_canon, &canon).unwrap_or_else(|| out_canon.clone());
+        let trash = base.join("_trash");
+        let _ = std::fs::create_dir_all(&trash);
         let name = canon
             .file_name()
             .and_then(|x| x.to_str())
@@ -344,5 +395,55 @@ mod tests {
         let k2 = tree_key(&out);
         assert_ne!(k1, k2, "子目录里加图后，缓存键必须变");
         let _ = std::fs::remove_dir_all(&out);
+    }
+
+    #[test]
+    fn trash_and_favorites_live_inside_the_project() {
+        let root = std::env::temp_dir().join(format!("cs_lib_trash_{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&root);
+        let cfg = root.join("cfg");
+        let out = root.join("out");
+        let p1 = out.join("projects").join("p1");
+        std::fs::create_dir_all(&p1).unwrap();
+        std::fs::create_dir_all(&cfg).unwrap();
+        let a = p1.join("a.png");
+        let b = p1.join("b.png");
+        let root_img = out.join("root.png");
+        std::fs::write(&a, b"x").unwrap();
+        std::fs::write(&b, b"y").unwrap();
+        std::fs::write(&root_img, b"z").unwrap();
+
+        // 项目里的图 → 项目自己的 _trash
+        delete(&out, &[a.to_string_lossy().to_string()]).unwrap();
+        assert!(p1.join("_trash").is_dir(), "项目里要有 _trash");
+        assert_eq!(std::fs::read_dir(p1.join("_trash")).unwrap().count(), 1);
+
+        // 根目录的图 → output/_trash
+        delete(&out, &[root_img.to_string_lossy().to_string()]).unwrap();
+        assert!(out.join("_trash").is_dir(), "根目录也要有自己的 _trash");
+
+        // 收藏镜像进项目的 _favorites；取消后镜像消失
+        let bs = b.to_string_lossy().to_string();
+        star(&cfg, &out, &bs, true);
+        assert!(p1.join("_favorites").join("b.png").is_file(), "收藏要镜像进项目");
+        star(&cfg, &out, &bs, false);
+        assert!(!p1.join("_favorites").join("b.png").exists());
+
+        // 扫描不能把 _trash/_favorites 里的文件当成图（按路径段判，别被临时目录名带偏）
+        let items = scan_uncached(&cfg, &out, 100);
+        let reserved = |p: &str| {
+            p.contains("\\_trash\\")
+                || p.contains("/_trash/")
+                || p.contains("\\_favorites\\")
+                || p.contains("/_favorites/")
+        };
+        let bad: Vec<&str> = items
+            .iter()
+            .map(|i| i.path.as_str())
+            .filter(|p| reserved(p))
+            .collect();
+        assert!(bad.is_empty(), "不该被扫到：{bad:?}");
+        assert!(items.iter().any(|i| i.filename == "b.png"));
+        let _ = std::fs::remove_dir_all(&root);
     }
 }

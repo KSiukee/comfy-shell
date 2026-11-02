@@ -107,7 +107,7 @@ function ldCopyPrompt(it) {
 }
 
 async function ldDelete(it) {
-  if (!confirm(`删除 ${it.filename}？\n会移到 output\\_comfyshell_trash\\，可手动恢复`)) return;
+  if (!confirm(`删除 ${it.filename}？\n会移到项目文件夹的 _trash\\ 里，可手动恢复`)) return;
   try {
     await api.call("library_delete", { paths: [it.path] });
     closeLibDetail();

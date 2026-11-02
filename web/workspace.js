@@ -136,9 +136,10 @@ function wsApply(data) {
     }
     const g = data.gallery || {};
     if (g.scope && typeof libScope !== "undefined") {
-      libScope = g.scope;
+      // 老工作区里可能存着 "all"：现在只有本项目/私密两档，其余一律按本项目
+      libScope = g.scope === "private" ? "private" : "project";
       const sel = document.getElementById("libScope");
-      if (sel) sel.value = g.scope;
+      if (sel) sel.value = libScope;
     }
     wsSetVal("libSearch", g.search);
     wsSetVal("libSort", g.sort);

@@ -85,7 +85,7 @@ async function scDeleteCurrent(it) {
     toast("私密图请在锁定区里删", true);
     return;
   }
-  if (!confirm(`删除 ${it.filename || it.path}？\n会移到 output\\_comfyshell_trash\\，可手动恢复`)) return;
+  if (!confirm(`删除 ${it.filename || it.path}？\n会移到项目文件夹的 _trash\\ 里，可手动恢复`)) return;
   try {
     await api.call("delete_results", { paths: [it.path] });
     toast("已删除（回收站里可找回）");

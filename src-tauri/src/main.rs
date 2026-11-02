@@ -208,6 +208,7 @@ fn main() {
             commands::gallery::delete_results,
             commands::gallery::library_star,
             commands::gallery::stars_list,
+            commands::gallery::library_sync_favorites,
             commands::gallery::save_export,
             commands::gallery::save_over_image,
             commands::gallery::translate_text,

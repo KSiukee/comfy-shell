@@ -86,6 +86,19 @@ pub fn stars_list(app: tauri::AppHandle) -> Vec<String> {
     library::stars(&cfg_dir(&app))
 }
 
+/// 把已有的收藏补一份项目内 `_favorites` 镜像（幂等；老数据只有 stars.json）。
+#[tauri::command]
+pub async fn library_sync_favorites(app: tauri::AppHandle) -> usize {
+    let handle = app.clone();
+    tauri::async_runtime::spawn_blocking(move || {
+        let state = handle.state::<AppState>();
+        let out = output_dir(&state);
+        library::sync_star_mirrors(&cfg_dir(&handle), &out)
+    })
+    .await
+    .unwrap_or(0)
+}
+
 #[tauri::command]
 pub fn library_star(app: tauri::AppHandle, path: String, starred: bool) {
     if let Some(rest) = path.strip_prefix("vault://") {
