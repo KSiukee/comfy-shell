@@ -25,3 +25,6 @@ logs/
 
 # scratch probes / 临时脚本
 .scratch/
+
+# 反馈授权码（仅本机构建用，不入库）
+src-tauri/src/feedback_secret.txt

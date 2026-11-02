@@ -951,7 +951,7 @@ body.mode-pro .simple-only { display: none !important; }
 .ai-step-args { font-size: 11px; color: #7f9bd0; word-break: break-all; }
 .ai-step .btn { align-self: flex-start; margin-top: 4px; }
 .ai-replan { margin-top: 6px; }
-.fb-adv summary { cursor: pointer; font-size: 12px; color: var(--muted); }
+
 .ai-advice { font-size: 12px; color: #ffd08a; background: #2a2216; border: 1px solid #5a4a26; border-radius: 8px; padding: 8px 10px; }
 
 /* ---------------- photo editor：裁切 / LUT / 调色 ---------------- */

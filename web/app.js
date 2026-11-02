@@ -944,7 +944,7 @@ function setSettingsTab(tab) {
   document.querySelectorAll("#settingsModal .set-pane").forEach((p) => p.classList.toggle("active", p.dataset.pane === tab));
   if (tab === "ai" && window.aiAgent) window.aiAgent.refresh();
   if (tab === "workflows" && typeof wfDirty !== "undefined" && wfDirty) renderWorkflowPresets();
-  if (tab === "about") refreshFeedbackSmtp();
+
 }
 document.querySelectorAll("#setNav .set-tab").forEach((b) => {
   b.onclick = () => setSettingsTab(b.dataset.tab);
@@ -1233,37 +1233,6 @@ async function sendFeedback() {
 }
 if ($("fbSend")) $("fbSend").onclick = sendFeedback;
 
-async function refreshFeedbackSmtp() {
-  const ok = await api.call("feedback_smtp_status").catch(() => false);
-  if ($("fbSmtpState")) {
-    $("fbSmtpState").textContent = ok
-      ? "已配置：一键发信可用（授权码本机加密保存）"
-      : "未配置：填 QQ 邮箱「设置 → 账户 → 授权码」后，才能一键发信";
-  }
-  if ($("fbSmtp")) $("fbSmtp").value = "";
-}
-
-if ($("fbSmtpSave")) {
-  $("fbSmtpSave").onclick = async () => {
-    const code = ($("fbSmtp") ? $("fbSmtp").value : "").trim();
-    if (!code) return toast("先填授权码", true);
-    try {
-      await api.call("feedback_smtp_set", { code });
-      toast("授权码已保存（加密）");
-      await refreshFeedbackSmtp();
-    } catch (e) {
-      toast(String(e), true);
-    }
-  };
-}
-if ($("fbSmtpClear")) {
-  $("fbSmtpClear").onclick = async () => {
-    if (!confirm("清除已保存的发信授权码？")) return;
-    await api.call("feedback_smtp_clear").catch(() => {});
-    toast("已清除");
-    await refreshFeedbackSmtp();
-  };
-}
 if ($("afdianBtn")) {
   $("afdianBtn").onclick = () =>
     api.call("open_url", { url: "https://afdian.com/a/siukee" }).catch((e) => toast(String(e), true));

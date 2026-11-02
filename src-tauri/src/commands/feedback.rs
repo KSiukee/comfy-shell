@@ -1,4 +1,4 @@
-//! 反馈与支持：SMTP 直发作者邮箱（授权码本机加密）、打开外部链接。
+//! 反馈与支持：SMTP 直发作者邮箱（授权码构建时内置，源码仓库不含）、打开外部链接。
 
 use crate::*;
 use lettre::transport::smtp::authentication::Credentials;
@@ -6,30 +6,19 @@ use lettre::{Message, SmtpTransport, Transport};
 use std::path::Path;
 use std::process::Command;
 
+// 构建时由 build.rs 生成：取自 src/feedback_secret.txt（已 gitignore）
+include!(concat!(env!("OUT_DIR"), "/feedback_secret.rs"));
+
 const TO: &str = "ksiukee@qq.com";
 const SMTP_FILE: &str = "feedback_smtp.dat";
 
+/// 优先用构建时内置的授权码；没有则退回本机旧配置（老版本留下）。
 fn smtp_code(cfg: &Path) -> Option<String> {
-    agent::load_secret(&cfg.join(SMTP_FILE))
-}
-
-#[tauri::command]
-pub fn feedback_smtp_status(app: tauri::AppHandle) -> bool {
-    smtp_code(&cfg_dir(&app)).is_some()
-}
-
-#[tauri::command]
-pub fn feedback_smtp_set(app: tauri::AppHandle, code: String) -> Result<(), String> {
-    agent::save_secret(&cfg_dir(&app).join(SMTP_FILE), &code)
-}
-
-#[tauri::command]
-pub fn feedback_smtp_clear(app: tauri::AppHandle) -> Result<(), String> {
-    let p = cfg_dir(&app).join(SMTP_FILE);
-    if p.exists() {
-        std::fs::remove_file(p).map_err(|e| e.to_string())?;
+    let builtin = SMTP_CODE.trim();
+    if !builtin.is_empty() {
+        return Some(builtin.to_string());
     }
-    Ok(())
+    agent::load_secret(&cfg.join(SMTP_FILE))
 }
 
 #[tauri::command]
@@ -50,7 +39,7 @@ pub async fn feedback_send(
         }
         let cfg = cfg_dir(&handle);
         let code = smtp_code(&cfg).ok_or(
-            "作者还没配置发信授权码（关于页 → 发信设置，填 QQ 邮箱授权码）".to_string(),
+            "这个构建没有内置发信通道，已改为打开邮件客户端".to_string(),
         )?;
         let kind_label = match kind.as_str() {
             "bug" => "Bug",
