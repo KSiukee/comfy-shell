@@ -1,0 +1,54 @@
+name: release
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  windows:
+    runs-on: windows-latest
+    env:
+      FEEDBACK_SMTP_CODE: ${{ secrets.FEEDBACK_SMTP_CODE }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install tauri CLI (prebuilt)
+        run: npm install -g @tauri-apps/cli@^2
+
+      - name: Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache cargo
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri
+
+      - name: Build (tauri, no bundle)
+        shell: pwsh
+        run: |
+          if ($env:FEEDBACK_SMTP_CODE) { "feedback channel: enabled" } else { "feedback channel: disabled (no secret)" }
+          cd src-tauri
+          tauri build --no-bundle
+
+      - name: Create release
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $exe = "src-tauri/target/release/comfy-shell.exe"
+          if (-not (Test-Path $exe)) { throw "exe not built" }
+          $hash = (Get-FileHash $exe -Algorithm SHA256).Hash.ToLower()
+          "$hash  comfy-shell.exe" | Set-Content SHA256SUMS.txt -Encoding ascii
+          gh release create $env:GITHUB_REF_NAME $exe SHA256SUMS.txt --title "显影 $env:GITHUB_REF_NAME" --generate-notes

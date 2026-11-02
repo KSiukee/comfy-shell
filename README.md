@@ -1,5 +1,10 @@
 # 显影（ComfyShell）
 
+[![Release](https://img.shields.io/github/v/release/KSiukee/comfy-shell?label=release&color=4f6ce0)](https://github.com/KSiukee/comfy-shell/releases/latest)
+[![Downloads](https://img.shields.io/github/downloads/KSiukee/comfy-shell/total?color=4f6ce0)](https://github.com/KSiukee/comfy-shell/releases)
+[![License](https://img.shields.io/github/license/KSiukee/comfy-shell?color=4f6ce0)](LICENSE)
+[![Platform](https://img.shields.io/badge/platform-Windows%2010%2F11%20x64-4f6ce0)](#)
+
 **把 ComfyUI 变成一个「只说想画什么」的桌面软件。**
 
 不用拖节点、不用改工作流、不用记参数。打开就能写提示词，关掉窗口就是一张图；
