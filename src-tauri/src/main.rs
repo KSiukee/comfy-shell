@@ -126,6 +126,8 @@ fn main() {
             commands::system::server_stop,
             commands::system::models_list,
             commands::system::profiles,
+            commands::system::app_version,
+            commands::system::config_dir_path,
             commands::system::save_ref_image,
             commands::system::ref_preview,
             commands::system::image_data_url,

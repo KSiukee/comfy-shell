@@ -842,47 +842,108 @@
   </div>
 
   <!-- settings -->
-  <div class="modal" id="settingsModal" hidden>
-    <div class="modal-card">
-      <h3>设置</h3>
-      <div class="field">
-        <label>ComfyUI 便携版目录</label>
-        <input type="text" id="setRoot" spellcheck="false" />
-        <div class="hint">包含 python_embeded 与 ComfyUI 子目录的那个文件夹。</div>
+  <div class="modal set" id="settingsModal" hidden>
+    <div class="set-card">
+      <div class="set-head">
+        <h3>设置</h3>
+        <span class="spacer"></span>
+        <button class="btn small ghost" id="setOpenCfg" type="button">打开配置目录</button>
+        <button class="btn ghost small" id="btnSettingsCloseX" type="button" title="关闭">✕</button>
       </div>
-      <div class="field">
-        <label>出图目录</label>
-        <div class="row tight">
-          <input type="text" id="setOutputDir" spellcheck="false" placeholder="留空 = ComfyUI\output" style="flex:1" />
-          <button class="btn small" id="setOutputPick" type="button">选择…</button>
+      <div class="set-body">
+        <nav class="set-nav" id="setNav">
+          <button class="set-tab active" data-tab="general" type="button">通用</button>
+          <button class="set-tab" data-tab="comfy" type="button">ComfyUI</button>
+          <button class="set-tab" data-tab="workflows" type="button">工作流</button>
+          <button class="set-tab" data-tab="keys" type="button">快捷键</button>
+          <button class="set-tab" data-tab="about" type="button">关于</button>
+        </nav>
+        <div class="set-panes">
+          <section class="set-pane active" data-pane="general">
+            <div class="set-row">
+              <div class="set-label">开机自动启动<small>随壳启动 ComfyUI</small></div>
+              <label class="check"><input type="checkbox" id="setAutoStart" /> 启用</label>
+            </div>
+            <div class="set-row">
+              <div class="set-label">退出时关掉 ComfyUI<small>关闭壳时一并结束服务</small></div>
+              <label class="check"><input type="checkbox" id="setStopOnExit" /> 启用</label>
+            </div>
+            <div class="set-row">
+              <div class="set-label">扩写跳过官方审查<small>所有扩写走本地 Qwen3-VL heretic</small></div>
+              <label class="check"><input type="checkbox" id="setFreeEnhance" /> 启用</label>
+            </div>
+            <div class="set-sep"></div>
+            <div class="set-row">
+              <div class="set-label">数据<small>备份只含密文 vault；导出私密项目会解密成明文</small></div>
+              <div class="row tight">
+                <button class="btn small" id="btnBackup" type="button">备份数据…</button>
+                <button class="btn small" id="btnExportProject" type="button">导出项目…</button>
+                <button class="btn small" id="btnImportProject" type="button">导入项目…</button>
+              </div>
+            </div>
+          </section>
+
+          <section class="set-pane" data-pane="comfy">
+            <div class="set-field">
+              <label>ComfyUI 便携版目录</label>
+              <input type="text" id="setRoot" spellcheck="false" />
+              <div class="hint">包含 python_embeded 与 ComfyUI 子目录的那个文件夹。</div>
+            </div>
+            <div class="set-field">
+              <label>出图目录</label>
+              <div class="row tight">
+                <input type="text" id="setOutputDir" spellcheck="false" placeholder="留空 = ComfyUI\output" style="flex:1" />
+                <button class="btn small" id="setOutputPick" type="button">选择…</button>
+              </div>
+              <div class="hint">可以放到别的盘；壳托管 ComfyUI 时用 <code>--output-directory</code> 传下去，<b>改完要重启 ComfyUI</b> 才生效。外部启动的 ComfyUI 不受此设置影响。</div>
+            </div>
+            <div class="set-row">
+              <div class="set-label">端口<small>默认 8188</small></div>
+              <input type="number" id="setPort" min="1024" max="65535" style="width:120px" />
+            </div>
+            <div class="set-sep"></div>
+            <div class="set-row">
+              <div class="set-label">运行状态<small id="setComfyVersion">未运行</small></div>
+              <div class="row tight">
+                <button class="btn small ghost" id="setOpenComfy" type="button">打开目录</button>
+                <button class="btn small ghost" id="setRestartComfy" type="button" title="保存配置后重启，出图目录/端口改动才生效">重启 ComfyUI</button>
+              </div>
+            </div>
+            <div class="hint" style="margin-top:6px">下载 / 更新 ComfyUI 的入口在开源版里预留（见 docs/99），目前先支持「指向已有的便携版」。</div>
+          </section>
+
+          <section class="set-pane" data-pane="workflows">
+            <div class="hint" style="margin-bottom:8px">这些工作流已内置在壳里（参数、采样、参考图链路都配好了）；点「生成」即可用，缺的只是模型文件。</div>
+            <div id="setWorkflows" class="set-wf"></div>
+            <div class="row tight" style="margin-top:10px">
+              <button class="btn small ghost" id="setOpenModels" type="button">打开模型目录</button>
+              <span class="muted" style="font-size:11.5px">模型体积大且有各自许可，壳不自动下载</span>
+            </div>
+          </section>
+
+          <section class="set-pane" data-pane="keys">
+            <div class="set-field">
+              <label>看图时的快捷键</label>
+              <div id="scList" class="sc-list"></div>
+              <div class="hint">点键位框，再按一个键（Esc 取消）。输入框里打字不会触发。编辑器里另有 <code>Ctrl+S</code> 保存、<code>Ctrl+Shift+S</code> 另存。</div>
+            </div>
+          </section>
+
+          <section class="set-pane" data-pane="about">
+            <div class="set-about">
+              <div class="set-about-name">显影 <span class="muted mono" id="setAppVersion"></span></div>
+              <div class="muted" style="font-size:12.5px;line-height:1.7">
+                本地生图/改图壳：静默拉起 ComfyUI，只留提示词、参数和结果。<br>
+                后端 Rust（Tauri 2），前端纯静态、无构建。<br>
+                开源协议尚未定稿（见 docs/99 的选型建议）。
+              </div>
+            </div>
+          </section>
         </div>
-        <div class="hint">可以放到别的盘；壳托管 ComfyUI 时用 <code>--output-directory</code> 传下去，<b>改完要重启 ComfyUI</b> 才生效。外部启动的 ComfyUI 不受此设置影响。</div>
       </div>
-      <div class="row two">
-        <div class="field">
-          <label>端口</label>
-          <input type="number" id="setPort" min="1024" max="65535" />
-        </div>
-        <div class="field">
-          <label>开机自动启动</label>
-          <label class="check"><input type="checkbox" id="setAutoStart" /> 随壳启动</label>
-        </div>
-      </div>
-      <label class="check"><input type="checkbox" id="setStopOnExit" /> 关闭壳时一并关掉 ComfyUI</label>
-      <label class="check"><input type="checkbox" id="setFreeEnhance" /> 扩写直接用未审查模型（跳过官方扩写器）</label>
-      <div class="hint">官方扩写器偶尔会拒绝；勾上后所有扩写都走本地 Qwen3-VL heretic。</div>
-      <div class="field">
-        <label>快捷键（看图时生效）</label>
-        <div id="scList" class="sc-list"></div>
-        <div class="hint">点键位框，再按一个键（Esc 取消）。输入框里打字不会触发。</div>
-      </div>
-      <div class="row tight" style="margin-top:14px">
-        <button class="btn small" id="btnBackup">备份数据…</button>
-        <button class="btn small" id="btnExportProject">导出当前项目…</button>
-        <button class="btn small" id="btnImportProject">导入项目…</button>
-      </div>
-      <div class="hint">备份只含密文 vault；导出私密项目会解密成明文，导出前会再确认。</div>
-      <div class="modal-actions">
+      <div class="set-foot">
+        <span class="muted" id="setFootHint" style="font-size:11.5px"></span>
+        <span class="spacer"></span>
         <button class="btn ghost" id="btnSettingsCancel">取消</button>
         <button class="btn primary" id="btnSettingsSave">保存</button>
       </div>

@@ -932,12 +932,136 @@ $("btnClearHistory").onclick = async () => {
   toast("历史已清空");
 };
 
-// settings modal
+// settings modal（v0.97：左侧分类 + 右侧内容）
+function setSettingsTab(tab) {
+  document.querySelectorAll("#setNav .set-tab").forEach((b) => b.classList.toggle("active", b.dataset.tab === tab));
+  document.querySelectorAll("#settingsModal .set-pane").forEach((p) => p.classList.toggle("active", p.dataset.pane === tab));
+}
+document.querySelectorAll("#setNav .set-tab").forEach((b) => {
+  b.onclick = () => setSettingsTab(b.dataset.tab);
+});
+
+function collectSettings() {
+  const prevOut = (state.settings && state.settings.outputDir) || "";
+  // 从现有设置铺开再覆盖这几个字段：别把 simpleUi / kohya 路径之类的旧字段冲掉
+  return Object.assign({}, state.settings || {}, {
+    comfyRoot: $("setRoot").value.trim(),
+    port: Number($("setPort").value),
+    outputDir: $("setOutputDir") ? $("setOutputDir").value.trim() : prevOut,
+    autoStart: $("setAutoStart").checked,
+    stopOnExit: $("setStopOnExit").checked,
+    freeEnhance: $("setFreeEnhance").checked,
+  });
+}
+
+async function saveSettings(closeModal) {
+  const next = collectSettings();
+  const prevOut = (state.settings && state.settings.outputDir) || "";
+  await api.call("settings_set", { settings: next });
+  state.settings = await api.call("settings_get");
+  if (closeModal) $("settingsModal").hidden = true;
+  if (next.outputDir !== prevOut) toast("出图目录已保存：重启 ComfyUI 后生效");
+  else if (closeModal) toast("已保存");
+  refreshStatus();
+}
+
+async function refreshSettingsInfo() {
+  try {
+    const st = await api.call("server_status");
+    const el = $("setComfyVersion");
+    if (el) {
+      el.textContent = st.healthy
+        ? `ComfyUI ${st.version || ""} · 运行中${st.managed ? "（壳托管）" : "（外部进程）"}`
+        : "未运行";
+    }
+  } catch {}
+  try {
+    const v = await api.call("app_version");
+    if ($("setAppVersion")) $("setAppVersion").textContent = "v" + v;
+  } catch {}
+  if (typeof renderWorkflowPresets === "function") renderWorkflowPresets();
+}
+
+/// 工作流依赖检查：内置的每个档位需要哪几个模型、本机缺哪个。
+async function renderWorkflowPresets() {
+  const box = $("setWorkflows");
+  if (!box) return;
+  box.innerHTML = '<div class="muted" style="font-size:12px">检查依赖中…</div>';
+  try {
+    const [profs, models] = await Promise.all([api.call("profiles"), api.call("models_scan")]);
+    const have = new Set((models || []).map((m) => String(m.name || "").split("/").pop().toLowerCase()));
+    box.innerHTML = "";
+    for (const p of profs || []) {
+      const req = [p.unet, p.clip, p.vae].filter(Boolean);
+      const missing = req.filter((f) => !have.has(String(f).toLowerCase()));
+      const item = document.createElement("div");
+      item.className = "set-wf-item";
+      const head = document.createElement("div");
+      head.className = "set-wf-head";
+      head.innerHTML = `<i class="set-wf-dot ${missing.length ? "miss" : "ok"}"></i><b></b><span class="muted" style="font-size:11.5px"></span>`;
+      head.querySelector("b").textContent = p.label || p.id;
+      head.querySelector("span").textContent = `${p.steps} 步 · CFG ${p.cfg}${p.supportsEdit ? " · 支持改图" : ""}`;
+      const sub = document.createElement("div");
+      sub.className = "set-wf-sub";
+      if (missing.length) {
+        sub.innerHTML = `缺 ${missing.length} 个模型：<span class="bad"></span>`;
+        sub.querySelector(".bad").textContent = missing.join("、");
+      } else {
+        sub.textContent = "依赖齐全，可直接开跑";
+      }
+      item.append(head, sub);
+      box.appendChild(item);
+    }
+  } catch (e) {
+    box.textContent = "检查失败：" + e;
+  }
+}
+
 $("btnSettings").onclick = () => {
   if (window.shortcuts) window.shortcuts.build();
+  setSettingsTab("general");
   $("settingsModal").hidden = false;
+  refreshSettingsInfo();
 };
 $("btnSettingsCancel").onclick = () => ($("settingsModal").hidden = true);
+if ($("btnSettingsCloseX")) $("btnSettingsCloseX").onclick = () => ($("settingsModal").hidden = true);
+if ($("setOpenCfg")) {
+  $("setOpenCfg").onclick = async () => {
+    try {
+      const dir = await api.call("config_dir_path");
+      await api.call("open_folder", { path: dir });
+    } catch (e) {
+      toast(String(e), true);
+    }
+  };
+}
+if ($("setOpenComfy")) {
+  $("setOpenComfy").onclick = () => {
+    const p = $("setRoot").value.trim();
+    if (p) api.call("open_folder", { path: p });
+  };
+}
+if ($("setOpenModels")) {
+  $("setOpenModels").onclick = () => {
+    const p = $("setRoot").value.trim();
+    if (p) api.call("open_folder", { path: `${p}\\ComfyUI\\models` });
+  };
+}
+if ($("setRestartComfy")) {
+  $("setRestartComfy").onclick = async () => {
+    try {
+      await saveSettings(false);
+      toast("正在重启 ComfyUI…");
+      await api.call("server_stop");
+      await api.call("server_start");
+      toast("ComfyUI 已重启");
+    } catch (e) {
+      toast(String(e), true);
+    } finally {
+      refreshSettingsInfo();
+    }
+  };
+}
 if ($("setOutputPick")) {
   $("setOutputPick").onclick = async () => {
     try {
@@ -949,23 +1073,8 @@ if ($("setOutputPick")) {
   };
 }
 $("btnSettingsSave").onclick = async () => {
-  const prevOut = (state.settings && state.settings.outputDir) || "";
-  // 从现有设置铺开再覆盖这几个字段：别把 simpleUi / kohya 路径之类的旧字段冲掉
-  const next = Object.assign({}, state.settings || {}, {
-    comfyRoot: $("setRoot").value.trim(),
-    port: Number($("setPort").value),
-    outputDir: $("setOutputDir") ? $("setOutputDir").value.trim() : prevOut,
-    autoStart: $("setAutoStart").checked,
-    stopOnExit: $("setStopOnExit").checked,
-    freeEnhance: $("setFreeEnhance").checked,
-  });
   try {
-    await api.call("settings_set", { settings: next });
-    state.settings = await api.call("settings_get");
-    $("settingsModal").hidden = true;
-    if (next.outputDir !== prevOut) toast("出图目录已保存：重启 ComfyUI 后生效");
-    else toast("已保存");
-    refreshStatus();
+    await saveSettings(true);
   } catch (e) {
     toast(String(e), true);
   }

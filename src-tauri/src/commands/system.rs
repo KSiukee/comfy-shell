@@ -214,6 +214,18 @@ pub fn profiles() -> serde_json::Value {
     api::profiles_json()
 }
 
+/// 壳自己的版本号（关于页用；跟 Cargo.toml 同一处来源）。
+#[tauri::command]
+pub fn app_version() -> String {
+    env!("CARGO_PKG_VERSION").to_string()
+}
+
+/// 配置目录（设置页「打开配置目录」用）。
+#[tauri::command]
+pub fn config_dir_path(app: tauri::AppHandle) -> String {
+    cfg_dir(&app).to_string_lossy().to_string()
+}
+
 #[tauri::command]
 pub fn save_ref_image(state: State<AppState>, name: String, data_url: String) -> Result<String, String> {
     let root = state.settings.lock().unwrap().comfy_root.clone();

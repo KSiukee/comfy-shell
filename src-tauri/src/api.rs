@@ -344,6 +344,11 @@ pub fn profiles_json() -> Value {
                 "turboSteps": p.turbo_steps,
                 "supportsEdit": p.supports_edit,
                 "defaultNegative": p.default_negative,
+                // 工作流依赖检查用：设置页「工作流」一栏要能说出缺哪个模型
+                "unet": p.unet,
+                "clip": p.clip,
+                "vae": p.vae,
+                "sampler": p.sampler,
             }));
         }
     }
