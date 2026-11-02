@@ -15,6 +15,9 @@ concurrency:
 jobs:
   windows:
     runs-on: windows-latest
+    env:
+      # 在 Settings → Secrets and variables → Actions 里加这个名字；不加也能构建
+      FEEDBACK_SMTP_CODE: ${{ secrets.FEEDBACK_SMTP_CODE }}
     steps:
       - uses: actions/checkout@v4
 
@@ -37,6 +40,7 @@ jobs:
       - name: Build (tauri, no bundle)
         shell: pwsh
         run: |
+          if ($env:FEEDBACK_SMTP_CODE) { "feedback channel: enabled" } else { "feedback channel: disabled (no secret)" }
           cd src-tauri
           tauri build --no-bundle
 
