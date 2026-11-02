@@ -936,6 +936,7 @@ $("btnClearHistory").onclick = async () => {
 function setSettingsTab(tab) {
   document.querySelectorAll("#setNav .set-tab").forEach((b) => b.classList.toggle("active", b.dataset.tab === tab));
   document.querySelectorAll("#settingsModal .set-pane").forEach((p) => p.classList.toggle("active", p.dataset.pane === tab));
+  if (tab === "ai" && window.aiAgent) window.aiAgent.refresh();
 }
 document.querySelectorAll("#setNav .set-tab").forEach((b) => {
   b.onclick = () => setSettingsTab(b.dataset.tab);
@@ -1023,6 +1024,7 @@ $("btnSettings").onclick = () => {
   $("settingsModal").hidden = false;
   if ($("dlDir")) $("dlDir").value = (state.settings && state.settings.comfyRoot) || "";
   if (typeof dlFillMirrors === "function") dlFillMirrors();
+  if (window.aiAgent) window.aiAgent.refresh();
   refreshSettingsInfo();
 };
 $("btnSettingsCancel").onclick = () => ($("settingsModal").hidden = true);

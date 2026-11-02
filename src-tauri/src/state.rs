@@ -50,6 +50,14 @@ pub(crate) struct Settings {
     /// 由壳托管 ComfyUI 时通过 `--output-directory` 传下去；外部进程不生效。
     #[serde(default)]
     pub(crate) output_dir: String,
+    /// AI 助手：provider / model（key 单独 DPAPI 存）
+    #[serde(default)]
+    pub(crate) ai_provider: String,
+    #[serde(default)]
+    pub(crate) ai_model: String,
+    /// 自定义 Pi 引擎目录（空 = 自动找 PATH / 应用数据）
+    #[serde(default)]
+    pub(crate) pi_path: String,
 }
 
 impl Default for Settings {
@@ -65,6 +73,9 @@ impl Default for Settings {
             kohya_python: default_kohya_python(),
             kohya_dir: default_kohya_dir(),
             output_dir: String::new(),
+            ai_provider: String::new(),
+            ai_model: String::new(),
+            pi_path: String::new(),
         }
     }
 }

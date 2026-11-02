@@ -443,6 +443,21 @@
     </div>
   </div>
 
+  <!-- AI 配置助手 -->
+  <div class="modal" id="aiModal" hidden>
+    <div class="modal-card" style="width: 880px">
+      <h3>AI 配置助手 <span class="muted" style="font-size:12px">体检 → 计划 → 你确认后执行</span></h3>
+      <textarea id="aiRequest" rows="3" placeholder="例如：帮我看看缺什么模型，并把出图目录改到 D:\ai\out"></textarea>
+      <div class="row tight">
+        <button class="btn primary small" id="aiPlanBtn" type="button">生成方案</button>
+        <span class="muted mono" id="aiPlanState"></span>
+        <span class="spacer"></span>
+        <button class="btn ghost small" id="aiClose" type="button">关闭</button>
+      </div>
+      <div id="aiPlanOut" class="ai-plan"></div>
+    </div>
+  </div>
+
   <!-- photo editor: crop / LUT / color -->
   <div class="modal pe" id="peModal" hidden>
     <div class="modal-card pe-card">
@@ -855,6 +870,7 @@
           <button class="set-tab active" data-tab="general" type="button">通用</button>
           <button class="set-tab" data-tab="comfy" type="button">ComfyUI</button>
           <button class="set-tab" data-tab="workflows" type="button">工作流</button>
+          <button class="set-tab" data-tab="ai" type="button">AI 助手</button>
           <button class="set-tab" data-tab="keys" type="button">快捷键</button>
           <button class="set-tab" data-tab="about" type="button">关于</button>
         </nav>
@@ -938,6 +954,42 @@
               <button class="btn small ghost" id="setOpenModels" type="button">打开模型目录</button>
               <span class="muted" style="font-size:11.5px">模型体积大且有各自许可，壳不自动下载</span>
             </div>
+          </section>
+
+          <section class="set-pane" data-pane="ai">
+            <div class="set-row">
+              <div class="set-label">引擎<small id="aiEngineState">检测中…</small></div>
+              <div class="row tight">
+                <button class="btn small ghost" id="aiEngineRecheck" type="button">重新检测</button>
+                <button class="btn small ghost" id="aiEngineDownload" type="button" title="下载 Node + Pi（下一步支持一键装）">下载引擎…</button>
+              </div>
+            </div>
+            <div class="set-row">
+              <div class="set-label">服务商 / 模型<small>OpenAI 兼容；默认 deepseek</small></div>
+              <div class="row tight">
+                <input id="aiProvider" placeholder="deepseek" style="width:120px" spellcheck="false" />
+                <input id="aiModel" placeholder="deepseek-chat" style="width:170px" spellcheck="false" />
+              </div>
+            </div>
+            <div class="set-field">
+              <label>API Key <span id="aiKeyState" class="muted" style="font-size:11px"></span></label>
+              <div class="row tight">
+                <input type="password" id="aiKey" placeholder="sk-…（只存本机，DPAPI 加密）" style="flex:1" spellcheck="false" />
+                <button class="btn small" id="aiKeySave" type="button">保存</button>
+                <button class="btn small ghost" id="aiKeyClear" type="button">清除</button>
+              </div>
+              <div class="hint">key 用 Windows DPAPI 加密后存在配置目录，不写进 settings.json。</div>
+            </div>
+            <div class="set-sep"></div>
+            <div class="set-row">
+              <div class="set-label">体检 / 助手<small id="aiEnvHint">先跑一次看环境</small></div>
+              <div class="row tight">
+                <button class="btn small" id="aiEnvRun" type="button">运行体检</button>
+                <button class="btn small primary" id="aiOpen" type="button">打开 AI 助手</button>
+              </div>
+            </div>
+            <pre id="aiEnvOut" class="ai-pre" hidden></pre>
+            <div class="hint">AI 只碰 ComfyUI（纠错、配模型/节点、下模型），不给摸项目；每步执行前都会确认。</div>
           </section>
 
           <section class="set-pane" data-pane="keys">
@@ -1353,6 +1405,7 @@
   <script src="detail.js"></script>
 <script src="photoedit.js"></script>
 <script src="shortcuts.js"></script>
+<script src="aiagent.js"></script>
   <script src="ab.js"></script>
   <script src="workspace.js"></script>
   <script src="problems.js"></script>

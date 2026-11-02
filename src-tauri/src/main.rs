@@ -1,5 +1,6 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
+mod agent;
 mod api;
 mod custom;
 mod dataio;
@@ -127,6 +128,12 @@ fn main() {
             commands::system::server_stop,
             commands::system::models_list,
             commands::system::profiles,
+            commands::agent::ai_engine_status,
+            commands::agent::ai_key_set,
+            commands::agent::ai_key_status,
+            commands::agent::ai_key_clear,
+            commands::agent::ai_env_check,
+            commands::agent::ai_plan,
             commands::download::dl_probe,
             commands::download::dl_cancel,
             commands::download::comfy_install,

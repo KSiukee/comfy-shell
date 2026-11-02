@@ -3,6 +3,13 @@
 > 本文件是补写的更新历史：最早十二个版本没有当时的发布记录，依据 `dev/test_*.py`、截图、README 旧版与代码痕迹重建，
 > 标注「推断」的条目细节可能有偏差；有发布记录之后为当时实测记录。
 
+## v0.99.0
+- **AI 配置助手（L1 规划器）**：设置 → AI 助手。填 API key（**DPAPI 加密**，不写 settings.json）、provider/model，点「打开 AI 助手」：输入一句话 → 壳把**体检报告**喂给 Pi（`pi -p --mode json`，**不给任何工具**）→ 模型只输出 JSON 计划 → 逐条显示「做什么 / 为什么 / 参数」→ 用户点「执行这一步」。
+- **动作白名单**：改设置（目录/出图目录/端口）、启停/重启 ComfyUI、安装/更新、打开目录、`advice`（只给建议不动手）。没有 shell、文件读写、项目/图库工具。
+- **体检 `ai_env_check`**：运行状态/版本、便携版完整性、出图目录可写性、模型数、自定义节点数、8 个档位各缺什么、日志尾 40 行。
+- **边界**：Pi 固定 `--no-tools --no-context-files --no-skills --no-extensions --no-mcp --offline`，cwd 空目录；提示词明确「不许改显影程序/源码，解决不了就建议更新或提 issue」。
+- 新命令：`ai_engine_status` / `ai_key_set` / `ai_key_status` / `ai_key_clear` / `ai_env_check` / `ai_plan`。
+- 实测：引擎检测、key DPAPI 往返、体检、计划解析（stub 引擎）全通；**真实模型调用待你填 key 后验**。引擎一键下载按钮留到下一步。
 ## v0.98.0
 - **ComfyUI 下载 / 更新（开源准备第一刀）**：设置 → ComfyUI 新增「下载 / 更新」。
   - **下载引擎**：镜像测速（官方 GitHub + gh-proxy / ghfast / hub.gitmirror / gh.llkk 前缀）+ **多线程 Range 分块**（默认 6 线程）+ 进度事件 + 可取消；代理自动跟系统（环境变量 → Windows 注册表）。
