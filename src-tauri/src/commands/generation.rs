@@ -98,6 +98,12 @@ pub async fn generate(app: tauri::AppHandle, mut req: api::GenReq, turbo: bool) 
         }
         *state.cancel.lock().unwrap() = false;
 
+        // #88：随机种子（-1）在提交前就定下来——后面元数据/历史/版本都写这个真实值，
+        // 不然它们只能记 -1，「用这张的参数再生成」也就复现不了。
+        if req.seed < 0 {
+            req.seed = api::pick_seed(-1);
+        }
+
         let cfg = cfg_dir(&handle);
         let custom_name = req.profile.strip_prefix("custom:").map(|s| s.to_string());
         let mut label = match &custom_name {

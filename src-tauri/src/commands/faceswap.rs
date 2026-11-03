@@ -30,6 +30,7 @@ pub struct FaceSwapCall {
     pub profile: String,
     pub steps: u32,
     pub cfg: f64,
+    #[serde(default, deserialize_with = "crate::api::de_seed")]
     pub seed: i64,
     #[serde(default)]
     pub denoise: f64,
@@ -177,6 +178,9 @@ where
         _ => None,
     };
 
+    // #88：随机种子在提交前定下来——换脸的最终图是壳自己合成的 PNG（没有 ComfyUI 的
+    // 工作流块），种子只能靠我们自己记牢，否则永远找不回来。
+    let seed = if req.seed < 0 { api::pick_seed(-1) } else { req.seed };
     let ireq = api::InpaintReq {
         profile: req.profile.clone(),
         prompt: req.prompt.clone(),
@@ -185,7 +189,7 @@ where
         mask: mask_name,
         steps: req.steps.max(1),
         cfg: req.cfg,
-        seed: req.seed,
+        seed,
         denoise: if req.denoise > 0.0 { req.denoise.clamp(0.05, 1.0) } else { 0.88 },
         // 蒙版边缘柔化（1024 工作分辨率上的像素）：边界落在皮肤上，羽化要宽一点
         feather: 24,
@@ -266,7 +270,7 @@ where
         "app": "comfy-shell", "schema": 1, "appVersion": env!("CARGO_PKG_VERSION"),
         "createdAt": now_ms(), "mode": "faceswap",
         "prompt": req.prompt, "negative": req.negative, "profile": req.profile,
-        "steps": req.steps, "cfg": req.cfg, "seed": req.seed,
+        "steps": req.steps, "cfg": req.cfg, "seed": seed,
         "denoise": ireq.denoise, "feather": feather,
         "face": req.face, "crop": [crop.x, crop.y, crop.w, crop.h],
         "ref": req.ref_image_data_url.is_some(),
@@ -304,7 +308,7 @@ where
         height: ih,
         steps: req.steps,
         cfg: req.cfg,
-        seed: req.seed,
+        seed,
         seconds: out.seconds,
         project: project.clone(),
         images: vec![crate::history::HistoryImage {

@@ -286,7 +286,7 @@ async function runInpaint() {
         maskDataUrl,
         steps: Number($("inpaintSteps").value),
         cfg: target.cfg,
-        seed: Number($("seed").value),
+        seed: seedArg(),
         denoise: Number($("inpaintDenoise").value),
         feather: Number($("inpaintFeather").value),
         refImageDataUrl,

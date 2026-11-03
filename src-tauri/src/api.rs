@@ -126,6 +126,7 @@ pub struct GenReq {
     pub height: u32,
     pub steps: u32,
     pub cfg: f64,
+    #[serde(deserialize_with = "de_seed")]
     pub seed: i64,
     #[serde(default = "one")]
     pub batch: u32,
@@ -378,13 +379,42 @@ fn seed_of(req: &GenReq) -> i64 {
 }
 
 /// -1 (or any negative) means "roll a random seed".
+///
+/// #88：随机种子上限压在 2^53——再大就超出 JavaScript 的安全整数范围，图库/历史里
+/// 显示和回填的种子会被舍入成另一个值，「用这张的参数再生成」就复现不了了。
 pub fn pick_seed(seed: i64) -> i64 {
     if seed < 0 {
         use rand::Rng;
-        rand::thread_rng().gen_range(0..i64::MAX / 2)
+        const MAX_SAFE: i64 = 1i64 << 53;
+        rand::thread_rng().gen_range(0..MAX_SAFE)
     } else {
         seed
     }
+}
+
+/// 种子的 JSON 形状：新数据是数字，前端为了不丢精度会回传字符串；两种都收。
+pub fn de_seed<'de, D>(d: D) -> Result<i64, D::Error>
+where
+    D: serde::Deserializer<'de>,
+{
+    use serde::de::Error as _;
+    let v = Value::deserialize(d)?;
+    match v {
+        Value::Number(n) => n.as_i64().ok_or_else(|| D::Error::custom("seed 不是整数")),
+        Value::String(s) => s
+            .trim()
+            .parse::<i64>()
+            .map_err(|e| D::Error::custom(format!("seed 解析失败: {e}"))),
+        _ => Err(D::Error::custom("seed 必须是整数或整数字符串")),
+    }
+}
+
+/// 交给前端的种子一律用字符串：i64 超过 2^53 时 JSON 数字会被 JS 舍入。
+pub fn seed_str<S>(v: &i64, s: S) -> Result<S::Ok, S::Error>
+where
+    S: serde::Serializer,
+{
+    s.serialize_str(&v.to_string())
 }
 
 /// Build an API-format graph for the requested profile/mode.
@@ -1008,6 +1038,7 @@ pub struct InpaintReq {
     pub mask: String,
     pub steps: u32,
     pub cfg: f64,
+    #[serde(deserialize_with = "de_seed")]
     pub seed: i64,
     #[serde(default = "one_f")]
     pub denoise: f64,

@@ -184,9 +184,13 @@ pub fn one_f() -> f64 {
 }
 
 #[tauri::command]
-pub async fn inpaint_image(app: tauri::AppHandle, req: InpaintCall) -> Result<GenResp, String> {
+pub async fn inpaint_image(app: tauri::AppHandle, mut req: InpaintCall) -> Result<GenResp, String> {
     let handle = app.clone();
     tauri::async_runtime::spawn_blocking(move || -> Result<GenResp, String> {
+        // #88：随机种子在提交前定下来，元数据/历史才能记真实值
+        if req.seed < 0 {
+            req.seed = api::pick_seed(-1);
+        }
         let state = handle.state::<AppState>();
         let (port, root, out_root) = {
             let st = state.settings.lock().unwrap();

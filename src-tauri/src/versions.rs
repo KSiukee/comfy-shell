@@ -27,6 +27,7 @@ pub struct Version {
     pub height: u32,
     pub steps: u32,
     pub cfg: f64,
+    #[serde(serialize_with = "crate::api::seed_str", deserialize_with = "crate::api::de_seed")]
     pub seed: i64,
     pub stars: u8,
     pub layout: Option<String>,

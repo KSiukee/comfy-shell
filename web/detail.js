@@ -67,7 +67,10 @@ function ldParamRows(meta, hist) {
   if (src.width || src.height) rows.push(["尺寸", `${src.width || 0}×${src.height || 0}`]);
   if (src.steps) rows.push(["步数", String(src.steps)]);
   if (src.cfg) rows.push(["CFG", String(src.cfg)]);
-  if (src.seed !== undefined && src.seed !== null) rows.push(["种子", String(src.seed)]);
+  if (src.seed !== undefined && src.seed !== null) {
+    // #88：老图的随机种子是 -1，后端从 ComfyUI 写在 PNG 里的工作流块读回来了
+    rows.push(["种子", src.seedRecovered ? `${src.seed}（从图里读回）` : String(src.seed)]);
+  }
   if (src.profile) rows.push(["模型", ldProfileName(src.profile)]);
   if (src.mode) rows.push(["模式", String(src.mode)]);
   if (meta) {

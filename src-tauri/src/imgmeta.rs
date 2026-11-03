@@ -118,8 +118,7 @@ pub fn write_png_meta(path: &Path, meta: &Value) -> Result<(), String> {
 }
 
 /// 读取 `comfyshell` 元数据（供测试/未来命令行导出用）。
-pub fn read_png_meta(path: &Path) -> Option<Value> {
-    let bytes = std::fs::read(path).ok()?;
+pub fn read_png_meta(path: &Path) -> Option<Value> {    let bytes = std::fs::read(path).ok()?;
     if bytes.len() < 12 || bytes[..8] != SIG {
         return None;
     }
@@ -141,6 +140,65 @@ pub fn read_png_meta(path: &Path) -> Option<Value> {
         pos = end;
     }
     None
+}
+
+/// 从 ComfyUI 写进 PNG 的 `prompt` 文本块（完整 API 工作流 JSON）里捞 KSampler 的种子。
+///
+/// #88 之前「随机」(-1) 生成时我们自己的元数据只记了 -1，真实种子只在 ComfyUI 这个块里。
+/// 换脸那种由壳自己合成的结果图没有这个块，捞不到（只能靠新版本写入的真种子）。
+pub fn read_comfy_seed(path: &Path) -> Option<i64> {
+    let bytes = std::fs::read(path).ok()?;
+    parse_comfy_seed(&bytes)
+}
+
+pub fn parse_comfy_seed(bytes: &[u8]) -> Option<i64> {
+    if bytes.len() < 12 || bytes[..8] != SIG {
+        return None;
+    }
+    let mut pos = 8usize;
+    while pos + 12 <= bytes.len() {
+        let len = u32::from_be_bytes([bytes[pos], bytes[pos + 1], bytes[pos + 2], bytes[pos + 3]]) as usize;
+        let end = pos + 12 + len;
+        if end > bytes.len() {
+            return None;
+        }
+        let typ = &bytes[pos + 4..pos + 8];
+        let data = &bytes[pos + 8..pos + 8 + len];
+        if (typ == b"tEXt" || typ == b"iTXt") && chunk_keyword(data) == Some(b"prompt".as_slice()) {
+            let text = if typ == b"iTXt" { parse_itxt(data) } else { parse_text(data) };
+            if let Some(seed) = text.as_deref().and_then(seed_from_workflow) {
+                return Some(seed);
+            }
+        }
+        pos = end;
+    }
+    None
+}
+
+fn seed_from_workflow(text: &str) -> Option<i64> {
+    let v: Value = serde_json::from_str(text).ok()?;
+    let obj = v.as_object()?;
+    let mut fallback = None;
+    for node in obj.values() {
+        let ct = node.get("class_type").and_then(|x| x.as_str()).unwrap_or("");
+        let Some(inputs) = node.get("inputs").and_then(|x| x.as_object()) else {
+            continue;
+        };
+        let seed = inputs
+            .get("seed")
+            .and_then(|x| x.as_i64())
+            .or_else(|| inputs.get("noise_seed").and_then(|x| x.as_i64()));
+        let Some(seed) = seed.filter(|s| *s > 0) else {
+            continue;
+        };
+        if ct.starts_with("KSampler") {
+            return Some(seed);
+        }
+        if fallback.is_none() && (ct.contains("Sampler") || ct.contains("Noise")) {
+            fallback = Some(seed);
+        }
+    }
+    fallback
 }
 
 /// 读一张输出图的参数块（图库详情用）：**只认 root 目录内的明文图**，

@@ -72,3 +72,48 @@ fn read_meta_under_only_inside_root() {
     assert!(read_meta_under(&root, &root.join("missing.png")).is_none());
     let _ = std::fs::remove_dir_all(&base);
 }
+
+// ---------------------------------------------------------------- #88 种子互查
+
+/// 造一张「ComfyUI 会写出来的样子」的 PNG：带一个 fake 的 prompt 文本块。
+fn png_with_prompt(json_text: &str) -> Vec<u8> {
+    let mut png = tiny_png();
+    let mut data = Vec::new();
+    data.extend_from_slice(b"prompt");
+    data.push(0);
+    data.extend_from_slice(json_text.as_bytes());
+    let mut out = Vec::new();
+    out.extend_from_slice(&png[..png.len() - 12]); // 去掉 IEND
+    out.extend_from_slice(&chunk(b"tEXt", &data));
+    out.extend_from_slice(&chunk(b"IEND", &[]));
+    png = out;
+    png
+}
+
+#[test]
+fn reads_the_seed_out_of_comfyuis_prompt_chunk() {
+    let wf = json!({
+        "3": {"class_type": "CLIPTextEncode", "inputs": {"text": "x"}},
+        "8": {"class_type": "KSampler", "inputs": {"seed": 1918999279702401148i64, "steps": 16}},
+    });
+    let png = png_with_prompt(&wf.to_string());
+    assert_eq!(parse_comfy_seed(&png), Some(1918999279702401148));
+}
+
+#[test]
+fn reads_noise_seed_from_advanced_samplers() {
+    let wf = json!({
+        "8": {"class_type": "KSamplerAdvanced", "inputs": {"noise_seed": 777, "steps": 8}},
+    });
+    assert_eq!(parse_comfy_seed(&png_with_prompt(&wf.to_string())), Some(777));
+}
+
+#[test]
+fn ignores_random_sentinel_and_missing_chunks() {
+    let wf = json!({"8": {"class_type": "KSampler", "inputs": {"seed": -1}}});
+    assert_eq!(parse_comfy_seed(&png_with_prompt(&wf.to_string())), None);
+    // 没有 prompt 块（比如壳自己合成的换脸图）
+    assert_eq!(parse_comfy_seed(&tiny_png()), None);
+    // 不是 PNG
+    assert_eq!(parse_comfy_seed(b"not a png at all"), None);
+}

@@ -130,7 +130,7 @@ async function runFaceSwap() {
         profile: target.id,
         steps: Number($("faceSteps").value) || target.steps,
         cfg: target.cfg,
-        seed: Number($("seed").value),
+        seed: seedArg(),
         denoise: Number($("faceDenoise").value),
         feather: Number($("faceFeather").value) || 0,
         pad: Number($("facePad").value) || 1.6,

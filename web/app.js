@@ -572,7 +572,7 @@ function currentReq() {
     height: Number($("height").value),
     steps: Number($("steps").value),
     cfg: Number($("cfg").value),
-    seed: Number($("seed").value),
+    seed: seedArg(),
     batch: Number($("batch").value),
     lora: $("lora").value || null,
     loraStrength: Number($("loraStrength").value),
