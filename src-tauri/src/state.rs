@@ -58,6 +58,9 @@ pub(crate) struct Settings {
     /// 自定义 Pi 引擎目录（空 = 自动找 PATH / 应用数据）
     #[serde(default)]
     pub(crate) pi_path: String,
+    /// 超分后替换原图（#86，默认关）：原图进回收站，新图继承收藏与提示词参数
+    #[serde(default)]
+    pub(crate) replace_original: bool,
 }
 
 impl Default for Settings {
@@ -76,6 +79,7 @@ impl Default for Settings {
             ai_provider: String::new(),
             ai_model: String::new(),
             pi_path: String::new(),
+            replace_original: false,
         }
     }
 }

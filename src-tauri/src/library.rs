@@ -136,8 +136,13 @@ pub fn stars(cfg: &Path) -> Vec<String> {
 
 /// 收藏镜像的目标文件：项目里的图进 `<项目>/_favorites/`，根目录的图进 `output/_favorites/`。
 /// 子目录用 `a_b__文件名` 压平，避免同名打架。
+///
+/// 两个入参都先尽量 canonicalize：调用方有的传 `\\?\D:\...`（canonicalize 的结果）、
+/// 有的传 `D:\...`，不统一就会 strip_prefix 失败 ⇒ 该摘的镜像摘不掉、该建的建不出。
 fn favorite_target(output: &Path, src: &Path) -> Option<PathBuf> {
-    let base = project_root(output, src).unwrap_or_else(|| output.to_path_buf());
+    let output = output.canonicalize().unwrap_or_else(|_| output.to_path_buf());
+    let src = src.canonicalize().unwrap_or_else(|_| src.to_path_buf());
+    let base = project_root(&output, &src).unwrap_or_else(|| output.clone());
     let name = src.file_name()?.to_string_lossy().to_string();
     if name.is_empty() {
         return None;

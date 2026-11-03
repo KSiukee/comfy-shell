@@ -1,5 +1,6 @@
 //! 超分 / 局部重绘。
 
+use crate::upscale_meta::merge_upscale_meta;
 use crate::*;
 use crate::commands::generation::{project_id_of_path, push_history, relocate_into_project, GenResp};
 use tauri::State;
@@ -36,17 +37,16 @@ pub fn pick_upscale_model(root: &str) -> Result<String, String> {
 }
 
 #[tauri::command]
-pub async fn upscale_image(
-    app: tauri::AppHandle,
+pub async fn upscale_image(    app: tauri::AppHandle,
     path: String,
     model: Option<String>,
 ) -> Result<api::ImageOut, String> {
     let handle = app.clone();
     tauri::async_runtime::spawn_blocking(move || {
         let state = handle.state::<AppState>();
-        let (port, root, out_root) = {
+        let (port, root, out_root, replace) = {
             let s = state.settings.lock().unwrap();
-            (s.port, s.comfy_root.clone(), crate::state::output_root(&s))
+            (s.port, s.comfy_root.clone(), crate::state::output_root(&s), s.replace_original)
         };
         if api::health(port).is_none() {
             return Err("ComfyUI 没有在运行".into());
@@ -82,14 +82,27 @@ pub async fn upscale_image(
             api::upscale_image(port, &root, &src.to_string_lossy(), &chosen)?
         };
         relocate_into_project(&canon_out, &src, &mut img);
-        let meta = json!({
+        // 统一成不带 `\\?\` 的路径：图库/收藏/历史都按这个形状比对，带了前缀就对不上
+        img.path = crate::commands::generation::strip_win_prefix(&img.path);
+        // #86：开启「超分后替换原图」时，先把旧图的参数块读出来（下面要合并到新图上）
+        let old_name = src
+            .file_name()
+            .map(|x| x.to_string_lossy().to_string())
+            .unwrap_or_default();
+        let old_meta = if replace {
+            crate::imgmeta::read_meta_under(&canon_out, &src)
+        } else {
+            None
+        };
+        let base_meta = json!({
             "app": "comfy-shell", "schema": 1, "appVersion": env!("CARGO_PKG_VERSION"),
             "createdAt": now_ms(), "mode": "upscale",
             "project": project_id_of_path(&canon_out, &src),
-            "source": src.file_name().map(|x| x.to_string_lossy().to_string()),
+            "source": old_name,
             "model": chosen,
             "width": img.width, "height": img.height,
         });
+        let meta = merge_upscale_meta(old_meta.as_ref(), base_meta, &old_name);
         if !img.path.starts_with("vault://") {
             let _ = crate::imgmeta::write_png_meta(std::path::Path::new(&img.path), &meta);
             // 超分结果也要进历史，否则重启/切项目后图区看不到（只在图库里）
@@ -125,6 +138,21 @@ pub async fn upscale_image(
                 }],
             };
             crate::history::append(&crate::state::cfg_dir(&handle), item);
+
+            // #86：收藏跟到新图，然后把原图挪进回收站。
+            // 先摘旧收藏再删，否则 _favorites 里会留一个指向废图的硬链接。
+            if replace {
+                let cfg = crate::state::cfg_dir(&handle);
+                let old_path = crate::commands::generation::strip_win_prefix(&src.to_string_lossy());
+                let starred = crate::library::stars(&cfg)
+                    .iter()
+                    .any(|p| crate::commands::generation::strip_win_prefix(p) == old_path);
+                if starred {
+                    crate::library::star(&cfg, &canon_out, &img.path, true);
+                    crate::library::star(&cfg, &canon_out, &old_path, false);
+                }
+                let _ = crate::library::delete(&canon_out, &[old_path]);
+            }
         }
         Ok(img)
     })

@@ -423,7 +423,8 @@ async function runUpscale(item) {
   try {
     const model = $("vwUpModel") && $("vwUpModel").value ? $("vwUpModel").value : null;
     const img = await api.call("upscale_image", { path: item.path, model });
-    toast(`超分完成：${img.width}×${img.height}`);
+    const swapped = !!(state.settings && state.settings.replaceOriginal);
+    toast(`超分完成：${img.width}×${img.height}${swapped ? "（原图已移入回收站）" : ""}`);
     if (typeof refreshLibExtra === "function") refreshLibExtra();
     if (typeof loadLibrary === "function" && !$("library").hidden) {
       await loadLibrary();

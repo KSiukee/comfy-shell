@@ -641,6 +641,7 @@
       <span class="mono" id="vwPos"></span>
       <button class="btn ghost small" id="vwNext" title="下一张（→）">→</button>
       <button class="btn ghost small" id="vwPlay" title="幻灯片播放（空格开始/暂停，Esc 停）">▶</button>
+      <button class="btn ghost small" id="vwPlayStar" title="只播放收藏的图">★</button>
       <select id="vwPlayGap" class="mini-select" title="播放间隔">
         <option value="2000">2s</option>
         <option value="3000" selected>3s</option>
@@ -936,6 +937,10 @@
             <div class="set-row">
               <div class="set-label">扩写跳过官方审查<small>所有扩写走本地 Qwen3-VL heretic</small></div>
               <label class="check"><input type="checkbox" id="setFreeEnhance" /> 启用</label>
+            </div>
+            <div class="set-row">
+              <div class="set-label">超分后替换原图<small>原图移到项目的 <code>_trash</code>（可找回），新图继承收藏与提示词参数；只对图库里的图生效，默认关</small></div>
+              <label class="check"><input type="checkbox" id="setReplaceOriginal" /> 启用</label>
             </div>
             <div class="set-sep"></div>
             <div class="set-row">
@@ -1446,6 +1451,7 @@
 
   <script src="store.js"></script>
   <script src="app.js"></script>
+  <script src="settings.js"></script>
   <script src="results.js"></script>
   <script src="workflowparams.js"></script>
   <script src="recipes.js"></script>

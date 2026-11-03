@@ -5,6 +5,7 @@ mod api;
 mod custom;
 mod dataio;
 mod enhance;
+mod upscale_meta;
 mod faceswap;
 mod fsutil;
 mod history;

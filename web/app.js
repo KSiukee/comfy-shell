@@ -717,6 +717,7 @@ async function boot() {
   $("setAutoStart").checked = state.settings.autoStart;
   $("setStopOnExit").checked = state.settings.stopOnExit;
   $("setFreeEnhance").checked = !!state.settings.freeEnhance;
+  if ($("setReplaceOriginal")) $("setReplaceOriginal").checked = !!state.settings.replaceOriginal;
 
   buildModelSelect();
   refreshStatus(); // paint something before the slower queries
@@ -989,29 +990,7 @@ document.querySelectorAll("#setNav .set-tab").forEach((b) => {
   b.onclick = () => setSettingsTab(b.dataset.tab);
 });
 
-function collectSettings() {
-  const prevOut = (state.settings && state.settings.outputDir) || "";
-  // 从现有设置铺开再覆盖这几个字段：别把 simpleUi / kohya 路径之类的旧字段冲掉
-  return Object.assign({}, state.settings || {}, {
-    comfyRoot: $("setRoot").value.trim(),
-    port: Number($("setPort").value),
-    outputDir: $("setOutputDir") ? $("setOutputDir").value.trim() : prevOut,
-    autoStart: $("setAutoStart").checked,
-    stopOnExit: $("setStopOnExit").checked,
-    freeEnhance: $("setFreeEnhance").checked,
-  });
-}
-
-async function saveSettings(closeModal) {
-  const next = collectSettings();
-  const prevOut = (state.settings && state.settings.outputDir) || "";
-  await api.call("settings_set", { settings: next });
-  state.settings = await api.call("settings_get");
-  if (closeModal) $("settingsModal").hidden = true;
-  if (next.outputDir !== prevOut) toast("出图目录已保存：重启 ComfyUI 后生效");
-  else if (closeModal) toast("已保存");
-  refreshStatus();
-}
+// collectSettings / saveSettings 搬到了 web/settings.js（app.js 只许缩，不许长）
 
 async function refreshSettingsInfo() {
   try {

@@ -6,8 +6,9 @@
 //
 // 实现上只有一个 setTimeout 链：每放完一张再排下一张（改间隔立刻生效，不会半路跳拍）。
 
-const slide = { on: false, timer: 0, gapMs: 3000 };
+const slide = { on: false, timer: 0, gapMs: 3000, starOnly: false };
 const SLIDE_GAP_KEY = "cs.slideGap";
+const SLIDE_STAR_KEY = "cs.slideStarOnly";
 
 function slideGapMs() {
   const sel = $("vwPlayGap");
@@ -19,6 +20,7 @@ function slideLoadGap() {
   try {
     const saved = Number(localStorage.getItem(SLIDE_GAP_KEY));
     if ([2000, 3000, 5000].includes(saved) && $("vwPlayGap")) $("vwPlayGap").value = String(saved);
+    slide.starOnly = localStorage.getItem(SLIDE_STAR_KEY) === "1";
   } catch {}
 }
 
@@ -34,6 +36,31 @@ function slideRender() {
   btn.textContent = slide.on ? "⏸" : "▶";
   btn.classList.toggle("primary", slide.on);
   btn.title = slide.on ? "暂停播放（空格）" : "幻灯片播放（空格开始，Esc 停）";
+  const star = $("vwPlayStar");
+  if (star) {
+    star.classList.toggle("primary", slide.starOnly);
+    star.title = slide.starOnly
+      ? "正在只播放收藏（点一下改回全部）"
+      : "只播放收藏的图";
+  }
+}
+
+/// 「只放收藏」时的播放列表：当前筛选/排序 + 只要收藏过的。
+function slideStarList() {
+  return sortedLibrary().filter((i) => i.starred);
+}
+
+function slideSetStarOnly(on) {
+  slide.starOnly = !!on;
+  try {
+    localStorage.setItem(SLIDE_STAR_KEY, slide.starOnly ? "1" : "0");
+  } catch {}
+  slideRender();
+  if (slide.on) {
+    // 正在放：按新范围重开，别让「只放收藏」等下一次才生效
+    slideStop();
+    slideStart();
+  }
 }
 
 function slideClear() {
@@ -73,7 +100,23 @@ function slideNoteStep() {
   if (slide.on) slideSchedule();
 }
 
-function slideStart() {
+async function slideStart() {
+  // 「只放收藏」：播放列表换成收藏过的（仍然按当前筛选与排序），从当前这张接上
+  if (slide.starOnly) {
+    // 图库没打开过时 libItems 还是空的——先扫一次，别让人在「收藏夹是空的」上撞墙
+    if (!libItems.length && typeof loadLibrary === "function") await loadLibrary();
+    const list = slideStarList();
+    if (!list.length) {
+      toast("收藏夹是空的，没法只放收藏", true);
+      return;
+    }
+    const cur = viewer.list[viewer.idx];
+    let idx = cur ? list.findIndex((x) => x.path === cur.path) : -1;
+    if (idx < 0) idx = 0;
+    viewer.list = list;
+    viewer.idx = idx;
+    showViewerItem();
+  }
   if (!viewer.list.length) {
     toast("没有可播放的图", true);
     return;
@@ -135,6 +178,7 @@ window.addEventListener(
 );
 
 if ($("vwPlay")) $("vwPlay").onclick = () => slideToggle();
+if ($("vwPlayStar")) $("vwPlayStar").onclick = () => slideSetStarOnly(!slide.starOnly);
 if ($("vwPlayGap")) {
   $("vwPlayGap").onchange = () => {
     slideSaveGap();
