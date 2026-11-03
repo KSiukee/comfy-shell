@@ -120,7 +120,7 @@ pub fn image_meta(state: State<AppState>, path: String) -> Option<serde_json::Va
     crate::imgmeta::read_meta_under(std::path::Path::new(&root), std::path::Path::new(&path))
 }
 
-fn decode_data_url(data_url: &str) -> Result<Vec<u8>, String> {
+pub(crate) fn decode_data_url(data_url: &str) -> Result<Vec<u8>, String> {
     let b64 = data_url
         .split_once(',')
         .map(|(_, b)| b)

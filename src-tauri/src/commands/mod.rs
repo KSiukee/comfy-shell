@@ -1,6 +1,7 @@
 pub mod agent;
 pub mod ai;
 pub mod download;
+pub mod faceswap;
 pub mod feedback;
 pub mod gallery;
 pub mod generation;

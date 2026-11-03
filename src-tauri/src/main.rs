@@ -5,6 +5,7 @@ mod api;
 mod custom;
 mod dataio;
 mod enhance;
+mod faceswap;
 mod fsutil;
 mod history;
 mod hints;
@@ -238,6 +239,7 @@ fn main() {
             commands::upscale::upscale_image,
             commands::upscale::upscale_models_list,
             commands::upscale::inpaint_image,
+            commands::faceswap::face_swap,
             commands::upscale::upscale_input,
             commands::training_files::train_lora,
             commands::ai::assist,

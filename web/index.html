@@ -649,6 +649,7 @@
       <button class="btn ghost small" id="vwEdit" title="裁切 / LUT / 调色">调色</button>
       <button class="btn primary small" id="vwUpscale">超分 4×</button>
       <button class="btn ghost small" id="vwInpaint">局部重绘</button>
+      <button class="btn ghost small" id="vwFace" title="把这张图里的脸换成角色卡上的人：裁出脸整块重绘，再羽化贴回">换脸</button>
       <button class="btn ghost small" id="vwRef">用作参考图</button>
       <button class="btn ghost small" id="vwReveal">文件夹</button>
       <button class="btn ghost small" id="vwClose">关闭</button>
@@ -712,11 +713,49 @@
           <button class="btn small" id="inpaintUsePlate" title="取当前角色卡的身份底板，按比例裁出头部当参考">用角色底板（自动裁脸）</button>
           <span class="muted mono" id="inpaintRefState" style="font-size:11px"></span>
         </div>
-        <div class="muted" style="font-size:11px;margin:-4px 0 6px">只把脸换成角色卡上的人：切 FLUX.3、蒙版<b>只涂脸</b>（别盖头发/耳饰）、用「自动裁脸」当参考、重绘强度 0.75-0.92、羽化 6-10。</div>
+        <div class="muted" style="font-size:11px;margin:-4px 0 6px">只换脸：用大图工具条上的「换脸」（裁脸→整块重绘→贴回，不会重影）。这里的蒙版重绘适合改局部物件，别用它换整张脸。</div>
       </div>
       <div class="modal-actions">
         <button class="btn ghost" id="inpaintCancel">取消</button>
         <button class="btn primary" id="inpaintGo">开始</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- faceswap (#60): crop the face, redraw it whole, feather it back -->
+  <div class="modal" id="faceModal" hidden>
+    <div class="modal-card">
+      <h3>换脸 <span class="muted mono" id="faceInfo"></span></h3>
+      <div class="muted" style="font-size:12px">
+        做法：裁出整张脸（外扩 1.6 倍）→ 让模型重画成一张完整的脸 → 羽化贴回。
+        蒙版不再横穿眉眼，所以不会出现重影/半条眉毛。
+      </div>
+      <div class="field">
+        <label>这张脸要画成什么</label>
+        <textarea id="facePrompt" rows="3" placeholder="例如：同一个人的脸，正面，五官清晰，皮肤质感自然"></textarea>
+      </div>
+      <div class="row tight">
+        <button class="btn small" id="faceUsePlate" title="取当前角色卡的身份底板，按比例裁出头部当参考">用角色底板（自动裁脸）</button>
+        <span class="muted mono" id="faceRefState" style="font-size:11px">参考：未选（只靠提示词，样子不稳）</span>
+      </div>
+      <div class="row two">
+        <div class="field"><label>重绘强度</label><input type="number" id="faceDenoise" min="0.4" max="1" step="0.02" value="0.88" /></div>
+        <div class="field"><label>贴回羽化（px，0=自动）</label><input type="number" id="faceFeather" min="0" max="400" step="2" value="0" /></div>
+      </div>
+      <div class="row two">
+        <div class="field">
+          <label>步数</label>
+          <input type="number" id="faceSteps" min="4" max="60" />
+          <div class="step-presets" id="faceStepPresets"></div>
+        </div>
+        <div class="field"><label>外扩倍数</label><input type="number" id="facePad" min="1.2" max="2.5" step="0.05" value="1.6" /></div>
+      </div>
+      <div class="muted" style="font-size:11.5px">
+        结果另存一张（原图不动）。强度过低会太像原脸、过高会丢原图的光照；0.85-0.95 比较稳。
+      </div>
+      <div class="modal-actions">
+        <button class="btn ghost" id="faceCancel">取消</button>
+        <button class="btn primary" id="faceGo">开始</button>
       </div>
     </div>
   </div>
@@ -1429,6 +1468,7 @@
   <script src="batch.js"></script>
   <script src="train.js"></script>
   <script src="inpaint.js"></script>
+  <script src="faceswap.js"></script>
   <script src="layout-editor.js"></script>
   <script src="tools.js"></script>
   <script src="region.js"></script>
