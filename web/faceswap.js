@@ -23,12 +23,12 @@ function faceSwapTarget() {
   );
 }
 
+// 提示词只写「脸本身」：肤质、光照、肤色。
+// 别把角色卡的 identityZh 拼进来，也别写「头饰/发型/服装」——模型只能画蒙版里那块
+// 脸，这些词会被它当成「往脸上画」的指令（实测：角色卡写着「额间红色花钿…白色珍珠
+// 花朵发饰」，换出来的脸就真的长出了花钿、发簪和红穗耳坠）。
 function faceSwapDefaultPrompt() {
-  const c = window.charCurrent || null;
-  const bits = [];
-  if (c && c.identityZh) bits.push(c.identityZh);
-  bits.push("同一个人的脸", "正面，五官清晰，皮肤质感自然", "发型、头饰、服装与背景保持不变");
-  return bits.join("，");
+  return "同一个人的脸，自然肤质，与原图一致的光照和肤色";
 }
 
 async function faceSwapDetect() {
@@ -61,7 +61,7 @@ async function openFaceSwap() {
   $("faceRefState").textContent = "参考：未选（只靠提示词，样子不稳）";
   $("facePrompt").value = faceSwapDefaultPrompt();
   $("faceSteps").value = target.steps;
-  $("faceDenoise").value = "0.88";
+  $("faceDenoise").value = "0.75";
   $("faceFeather").value = "0";
   $("facePad").value = "1.6";
   $("faceGo").disabled = true;

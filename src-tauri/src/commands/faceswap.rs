@@ -269,6 +269,7 @@ where
         "steps": req.steps, "cfg": req.cfg, "seed": req.seed,
         "denoise": ireq.denoise, "feather": feather,
         "face": req.face, "crop": [crop.x, crop.y, crop.w, crop.h],
+        "ref": req.ref_image_data_url.is_some(),
         "project": project,
         "source": src.file_name().map(|x| x.to_string_lossy().to_string()),
     });
@@ -453,16 +454,23 @@ mod tests {
             }
             None => None,
         };
+        // 调参用：CS_TEST_PROMPT / CS_TEST_DENOISE 可以覆盖默认值（只影响这个真机测试）
+        let prompt = std::env::var("CS_TEST_PROMPT")
+            .unwrap_or_else(|_| "同一个人的脸，正面，五官清晰，皮肤质感自然".to_string());
+        let denoise: f64 = std::env::var("CS_TEST_DENOISE")
+            .ok()
+            .and_then(|v| v.parse().ok())
+            .unwrap_or(0.88);
         let req = super::FaceSwapCall {
             source: target.to_string_lossy().to_string(),
             face: [b[0], b[1], b[2], b[3]],
-            prompt: "同一个人的脸，正面，五官清晰，皮肤质感自然".into(),
+            prompt,
             negative: String::new(),
             profile: "flux3".into(),
             steps: p.steps,
             cfg: p.cfg,
             seed: 7,
-            denoise: 0.88,
+            denoise,
             feather: 0,
             pad: None,
             ref_image_data_url: ref_data_url,
