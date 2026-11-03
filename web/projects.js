@@ -55,8 +55,11 @@ async function projRefresh(selectId) {
   const tag = document.getElementById("resScopeTag");
   if (tag) tag.textContent = active ? `本项目：${active.name}` : "本项目：无";
   refreshLibraryIfOpen();
-  // 图区的「本项目」过滤也要跟着开工项目变
-  if (typeof renderResults === "function") renderResults();
+  // 图区的「本项目」过滤也要跟着开工项目变；顺手从磁盘补一次（历史被清也能看见）
+  if (typeof refreshLibExtra === "function") refreshLibExtra();
+  else if (typeof renderResults === "function") renderResults();
+  // 表单草稿也是按项目的：切项目要载入目标项目的草稿（没草稿就清空，别带上一页的提示词）
+  if (typeof wsCheck === "function") wsCheck();
   return list;
 }
 

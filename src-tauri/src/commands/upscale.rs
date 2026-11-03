@@ -92,6 +92,39 @@ pub async fn upscale_image(
         });
         if !img.path.starts_with("vault://") {
             let _ = crate::imgmeta::write_png_meta(std::path::Path::new(&img.path), &meta);
+            // 超分结果也要进历史，否则重启/切项目后图区看不到（只在图库里）
+            let label = if chosen == "__seedvr2__" {
+                "SeedVR2 4×".to_string()
+            } else {
+                format!("超分 · {chosen}")
+            };
+            let item = crate::history::HistoryItem {
+                id: format!("up-{}", now_ms()),
+                ts: now_ms(),
+                profile: "upscale".to_string(),
+                label,
+                mode: "upscale".to_string(),
+                prompt: src
+                    .file_name()
+                    .map(|x| x.to_string_lossy().to_string())
+                    .unwrap_or_default(),
+                negative: String::new(),
+                width: img.width,
+                height: img.height,
+                steps: 0,
+                cfg: 0.0,
+                seed: 0,
+                seconds: 0.0,
+                project: project_id_of_path(&canon_out, &src),
+                images: vec![crate::history::HistoryImage {
+                    filename: img.filename.clone(),
+                    subfolder: img.subfolder.clone(),
+                    path: crate::commands::generation::strip_win_prefix(&img.path),
+                    width: img.width,
+                    height: img.height,
+                }],
+            };
+            crate::history::append(&crate::state::cfg_dir(&handle), item);
         }
         Ok(img)
     })

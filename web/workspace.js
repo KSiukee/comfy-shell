@@ -159,7 +159,21 @@ async function wsLoadFor(project) {
   try {
     const data = await api.call("workspace_get", { project });
     if (data) wsApply(data);
+    else wsResetForm();
   } catch {}
+}
+
+/// 目标项目还没有草稿：把表单清回默认，别把上一个项目（可能是隐藏项目）的提示词带过来。
+function wsResetForm() {
+  wsApplying = true;
+  try {
+    if ($("prompt")) $("prompt").value = "";
+    if ($("negative")) $("negative").value = "";
+    if ($("seed")) $("seed").value = "-1";
+    if (typeof applyProfileDefaults === "function") applyProfileDefaults();
+  } finally {
+    wsApplying = false;
+  }
 }
 
 async function wsCheck() {

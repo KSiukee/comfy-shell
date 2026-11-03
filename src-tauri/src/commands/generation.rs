@@ -266,6 +266,11 @@ pub(crate) fn project_id_of_path(out_dir: &std::path::Path, src: &std::path::Pat
 }
 
 /// 改图/超分的产物默认落 output 根；源图在项目里时搬回同项目目录。
+/// Windows 的 canonicalize 会带 \\?\ 前缀，存进元数据/历史前统一去掉。
+pub(crate) fn strip_win_prefix(p: &str) -> String {
+    p.strip_prefix(r"\\?\").unwrap_or(p).to_string()
+}
+
 pub(crate) fn relocate_into_project(out_dir: &std::path::Path, src: &std::path::Path, img: &mut api::ImageOut) {
     let Some(id) = project_id_of_path(out_dir, src) else {
         return;
@@ -281,9 +286,22 @@ pub(crate) fn relocate_into_project(out_dir: &std::path::Path, src: &std::path::
     if name.is_empty() {
         return;
     }
-    let target = dir.join(&name);
-    let from = std::path::PathBuf::from(&img.path);
+    let mut target = dir.join(&name);
+    // 超分输出名固定是 upscaled_00001_，多次超分会撞名；撞了就补时间戳
+    if target.exists() {
+        let stem = std::path::Path::new(&name)
+            .file_stem()
+            .map(|x| x.to_string_lossy().to_string())
+            .unwrap_or_else(|| "img".to_string());
+        let ext = std::path::Path::new(&name)
+            .extension()
+            .map(|x| x.to_string_lossy().to_string())
+            .unwrap_or_else(|| "png".to_string());
+        target = dir.join(format!("{stem}_{}.{}", now_ms(), ext));
+    }
+    let from = std::path::PathBuf::from(strip_win_prefix(&img.path));
     if from == target {
+        img.path = target.to_string_lossy().to_string();
         return;
     }
     if std::fs::rename(&from, &target).is_ok() {

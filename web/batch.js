@@ -293,6 +293,7 @@ async function batchUpscale() {
     }
   }
   await loadLibrary();
+  if (typeof refreshLibExtra === "function") refreshLibExtra();
   toast(`批量超分完成 ${done}/${picked.length}`);
 }
 

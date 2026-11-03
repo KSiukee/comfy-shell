@@ -3,6 +3,10 @@
 // v0.95.1：只显示**当前项目**的图——避免切项目时看到别的项目的图。
 
 /** 图片路径 → 所属项目 id（`output/projects/<id>/…`）；根目录的图返回空串（临时）。 */
+function normWinPath(p) {
+  return String(p || "").replace(/^\\\\\?\\/, "");
+}
+
 function resultProjectId(path) {
   const m = /[\\/]projects[\\/]([^\\/]+)[\\/]/.exec(String(path || ""));
   return m ? m[1] : "";
@@ -17,7 +21,51 @@ function resultScopeWant() {
 function resultsInScope() {
   const want = resultScopeWant();
   if (!want) return [];
-  return state.results.filter((r) => resultProjectId(r.path) === want);
+  // 历史里的路径可能带 \\?\ 前缀（Windows canonicalize），统一去掉再比，避免同一张图重复
+  const seen = new Set();
+  const base = [];
+  for (const r of state.results) {
+    if (resultProjectId(r.path) !== want) continue;
+    const p = normWinPath(r.path);
+    if (seen.has(p)) continue;
+    seen.add(p);
+    base.push(r.path === p ? r : { ...r, path: p });
+  }
+  const extra = (state.libExtra || []).filter((r) => !seen.has(normWinPath(r.path)));
+  return base.concat(extra).sort((a, b) => (b.ts || 0) - (a.ts || 0));
+}
+
+/**
+ * 图区 = 历史 + 当前项目磁盘上的图。
+ * 历史被「清空」或超分这类没进历史的产物，也不会从图区消失（图库本来就是扫磁盘）。
+ */
+async function refreshLibExtra() {
+  const want = resultScopeWant();
+  if (!want) {
+    state.libExtra = [];
+    renderResults();
+    return;
+  }
+  try {
+    const items = (await api.call("library_scan")) || [];
+    state.libExtra = items
+      .filter((i) => resultProjectId(i.path) === want)
+      .map((i) => ({
+        path: i.path,
+        filename: i.filename,
+        width: i.width,
+        height: i.height,
+        ts: Math.floor((i.mtime || 0) / 1e6),
+        label: "",
+        prompt: "",
+        mode: "",
+        seconds: 0,
+        fromLib: true,
+      }));
+  } catch {
+    state.libExtra = [];
+  }
+  renderResults();
 }
 
 function emptyHint() {
@@ -39,6 +87,7 @@ function renderResults() {
     card.className = "card";
     const img = document.createElement("img");
     img.dataset.path = r.path;
+    img.__item = r;
     img.alt = "";
     if (r.dataUrl) img.src = r.dataUrl;
     else observer.observe(img);

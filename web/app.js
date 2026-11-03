@@ -408,7 +408,8 @@ const observer = new IntersectionObserver(
 
 async function loadImageInto(img) {
   const path = img.dataset.path;
-  const item = state.results.find((r) => r.path === path);
+  // 图区现在也会显示「磁盘上但不在历史里」的图，优先用渲染时挂的条目
+  const item = img.__item || state.results.find((r) => r.path === path);
   if (!item) return;
   if (item.dataUrl) {
     img.src = item.dataUrl;
@@ -738,6 +739,7 @@ async function boot() {
     state.results = flattenHistory(hist);
   } catch {}
   renderResults();
+  if (typeof refreshLibExtra === "function") refreshLibExtra();
 
   applyProfileDefaults();
   restoreLast();

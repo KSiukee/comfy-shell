@@ -422,6 +422,7 @@ async function runUpscale(item) {
     const model = $("vwUpModel") && $("vwUpModel").value ? $("vwUpModel").value : null;
     const img = await api.call("upscale_image", { path: item.path, model });
     toast(`超分完成：${img.width}×${img.height}`);
+    if (typeof refreshLibExtra === "function") refreshLibExtra();
     if (typeof loadLibrary === "function" && !$("library").hidden) {
       await loadLibrary();
       if (!$("viewer").hidden && viewer.list.length) {

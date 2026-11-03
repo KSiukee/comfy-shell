@@ -69,7 +69,7 @@ cargo tauri build --no-bundle
 
 前端是纯静态文件，没有打包步骤；产物在 `src-tauri/target/release/comfy-shell.exe`。
 
-## 完整功能清单（v0.109.0）
+## 完整功能清单（v0.109.1）
 
 | 能力 | 状态 |
 |---|---|
