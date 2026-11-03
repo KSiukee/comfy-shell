@@ -588,6 +588,7 @@
         </select>
         <span class="muted mono" id="libCount"></span>
         <span class="spacer"></span>
+        <button class="btn small ghost" id="libPlay" title="从选中的一张开始播放（跟着当前筛选与排序）">▶ 播放</button>
         <button class="btn small ghost" id="libRefresh">刷新</button>
         <button class="btn small ghost" id="libClose">关闭</button>
       </div>
@@ -639,6 +640,12 @@
       <button class="btn ghost small" id="vwPrev" title="上一张（←）">←</button>
       <span class="mono" id="vwPos"></span>
       <button class="btn ghost small" id="vwNext" title="下一张（→）">→</button>
+      <button class="btn ghost small" id="vwPlay" title="幻灯片播放（空格开始/暂停，Esc 停）">▶</button>
+      <select id="vwPlayGap" class="mini-select" title="播放间隔">
+        <option value="2000">2s</option>
+        <option value="3000" selected>3s</option>
+        <option value="5000">5s</option>
+      </select>
       <span class="muted mono" id="vwName"></span>
       <span class="spacer"></span>
       <button class="btn ghost small" id="vwZoomOut">−</button>
@@ -1466,6 +1473,7 @@
   <script src="versions.js"></script>
   <script src="prompts.js"></script>
   <script src="library.js"></script>
+  <script src="slideshow.js"></script>
   <script src="batch.js"></script>
   <script src="train.js"></script>
   <script src="inpaint.js"></script>

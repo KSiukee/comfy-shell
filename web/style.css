@@ -480,7 +480,11 @@ label.row.tight .btn { flex: 0 0 auto; white-space: nowrap; }
 .viewer-stage.zoomed { cursor: grab; }
 .viewer-stage.dragging { cursor: grabbing; }
 .viewer-stage img { max-width: 96%; max-height: 96%; transform-origin: center center; user-select: none; }
-.viewer-bar { display: flex; align-items: center; gap: 8px; padding: 8px 14px; border-top: 1px solid var(--line); background: var(--panel); }
+.viewer-bar { display: flex; align-items: center; gap: 8px; padding: 8px 14px; border-top: 1px solid var(--line); background: var(--panel); flex-wrap: wrap; }
+.viewer-bar .btn { white-space: nowrap; }
+/* 大图工具条：播放间隔是窄下拉、模型下拉限宽，别把一行撑爆（#85） */
+#vwPlayGap { max-width: 74px; }
+#vwUpModel { max-width: 180px; }
 
 .chip {
   display: inline-flex; align-items: center; gap: 6px;

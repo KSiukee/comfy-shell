@@ -345,6 +345,8 @@ function viewerStep(delta) {
   if (!viewer.list.length) return;
   viewer.idx = (viewer.idx + delta + viewer.list.length) % viewer.list.length;
   showViewerItem();
+  // 幻灯片播放中手动翻页：重新计时（slideshow.js），别刚翻完又被定时器顶一张
+  if (typeof slideNoteStep === "function") slideNoteStep();
 }
 
 function viewerZoom(mult) {
