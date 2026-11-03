@@ -730,11 +730,19 @@
     </div>
   </div>
 
-  <!-- faceswap (#60): crop the face, redraw it whole, feather it back -->
+  <!-- faceswap (#60) / Qwen 换头换身 (#89) -->
   <div class="modal" id="faceModal" hidden>
     <div class="modal-card">
       <h3>换脸 <span class="muted mono" id="faceInfo"></span></h3>
-      <div class="muted" style="font-size:12px">
+      <div class="field">
+        <label>做法</label>
+        <select id="faceMode">
+          <option value="flux">FLUX 裁脸贴回（快，只换脸；发型/头饰/衣服都不动）</option>
+          <option value="qwen_head">Qwen 换头（整颗头：发型 + 头饰 + 五官一起过来）</option>
+          <option value="qwen_body">Qwen 换身（整套造型：衣服/体型/脸；慢，约 45 秒）</option>
+        </select>
+      </div>
+      <div class="muted" style="font-size:12px" id="faceModeHint">
         做法：裁出整张脸（外扩 1.6 倍）→ 让模型重画成一张完整的脸 → 羽化贴回。
         蒙版不再横穿眉眼，所以不会出现重影/半条眉毛。
       </div>
@@ -743,10 +751,10 @@
         <textarea id="facePrompt" rows="3" placeholder="例如：同一个人的脸，自然肤质，与原图一致的光照和肤色"></textarea>
       </div>
       <div class="row tight">
-        <button class="btn small" id="faceUsePlate" title="取当前角色卡的身份底板，按比例裁出头部当参考">用角色底板（自动裁脸）</button>
+        <button class="btn small" id="faceUsePlate" title="取当前角色卡的身份底板：换脸自动裁脸、换头自动紧裁头、换身用整张全身">用角色底板</button>
         <span class="muted mono" id="faceRefState" style="font-size:11px">参考：未选（只靠提示词，样子不稳）</span>
       </div>
-      <div class="row two">
+      <div class="row two" id="faceFluxRow">
         <div class="field"><label>重绘强度</label><input type="number" id="faceDenoise" min="0.4" max="1" step="0.02" value="0.75" /></div>
         <div class="field"><label>贴回羽化（px，0=自动）</label><input type="number" id="faceFeather" min="0" max="400" step="2" value="0" /></div>
       </div>
@@ -756,9 +764,14 @@
           <input type="number" id="faceSteps" min="4" max="60" />
           <div class="step-presets" id="faceStepPresets"></div>
         </div>
-        <div class="field"><label>外扩倍数</label><input type="number" id="facePad" min="1.2" max="2.5" step="0.05" value="1.6" /></div>
+        <div class="field" id="facePadField"><label>外扩倍数</label><input type="number" id="facePad" min="1.2" max="2.5" step="0.05" value="1.6" /></div>
+        <div class="field" id="faceCfgField" hidden><label>CFG</label><input type="number" id="faceCfg" min="1" max="10" step="0.5" value="1" /></div>
       </div>
-      <div class="muted" style="font-size:11.5px">
+      <div class="row tight" id="faceQwenRow" hidden>
+        <label class="check"><input type="checkbox" id="faceKeepPose" checked /> 保持原图姿势（换身）</label>
+        <label class="check"><input type="checkbox" id="faceKeepHead" /> 保持头转向（侧脸/回头时勾）</label>
+      </div>
+      <div class="muted" style="font-size:11.5px" id="faceHint">
         结果另存一张（原图不动）。<b>0.70-0.80 保留原图的光照和皮肤质感</b>；0.85 以上会把整张脸重画，
         底板上的花钿/发饰也容易被一起画上去。提示词里写「花钿 / 发饰 / 头饰」= 真的要它们。
       </div>

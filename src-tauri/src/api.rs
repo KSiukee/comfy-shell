@@ -149,6 +149,12 @@ pub struct GenReq {
     /// 自定义工作流的参数覆盖：键 `节点id|输入名`
     #[serde(default)]
     pub wf_params: Option<std::collections::BTreeMap<String, serde_json::Value>>,
+    /// #89：采样器覆盖（Qwen 换头/换身的 BFS 配方用 deis；空 = 用模型档默认）
+    #[serde(default)]
+    pub sampler: Option<String>,
+    /// #89：Qwen 编辑的 resolution（0 = latent 跟随参考图，BFS 换身要这个）
+    #[serde(default)]
+    pub edit_resolution: Option<u32>,
     /// active project id: save under `output/projects/<id>/`
     #[serde(default)]
     pub project: Option<String>,
@@ -432,6 +438,12 @@ pub fn build_graph(req: &GenReq, turbo: bool) -> Result<Value, String> {
         req.cfg
     };
     let batch = req.batch.clamp(1, 8);
+    // #89：允许请求方覆盖采样器（BFS 配方是 8 步 + cfg1 + deis，和 qwen21 默认的 euler/45 不同）
+    let sampler = req
+        .sampler
+        .as_deref()
+        .filter(|s| !s.is_empty() && s.chars().all(|c| c.is_ascii_alphanumeric() || c == '_'))
+        .unwrap_or(p.sampler);
     let mut g: BTreeMap<String, Value> = BTreeMap::new();
 
     g.insert(
@@ -546,9 +558,12 @@ pub fn build_graph(req: &GenReq, turbo: bool) -> Result<Value, String> {
             te.insert("clip".into(), json!(["3", 0]));
             te.insert("prompt".into(), json!(req.prompt));
             te.insert("negative_prompt".into(), json!(req.negative));
-            te.insert("resolution".into(), json!(req.width.max(req.height).clamp(512, 2048)));
+            // #89：0 = 让 latent 跟着参考图（BFS 换身的工作流就是这么用的）
+            let res = req.edit_resolution.unwrap_or_else(|| req.width.max(req.height).clamp(512, 2048));
+            te.insert("resolution".into(), json!(res));
             te.insert("vae".into(), json!(["4", 0]));
-            for (i, img) in req.ref_images.iter().take(1).enumerate() {
+            // #89：两张参考（image_1 = 场景/底图，image_2 = 头或人）——BFS 换头/换身要这个
+            for (i, img) in req.ref_images.iter().take(2).enumerate() {
                 let nid = format!("{}", 20 + i);
                 g.insert(nid.clone(), json!({"class_type": "LoadImage", "inputs": {"image": img}}));
                 te.insert(format!("images.image_{}", i + 1), json!([nid, 0]));
@@ -666,7 +681,7 @@ pub fn build_graph(req: &GenReq, turbo: bool) -> Result<Value, String> {
         json!({"class_type": "KSampler", "inputs": {
             "model": model_ref, "positive": pos, "negative": neg, "latent_image": latent,
             "seed": seed_of(req), "steps": steps, "cfg": cfg,
-            "sampler_name": p.sampler, "scheduler": "simple", "denoise": 1.0}}),
+            "sampler_name": sampler, "scheduler": "simple", "denoise": 1.0}}),
     );
     g.insert("9".into(), json!({"class_type": "VAEDecode", "inputs": {"samples": ["8", 0], "vae": ["4", 0]}}));
     let prefix = save_prefix(req.project.as_deref(), req.staging, "comfyshell");
@@ -1424,3 +1439,65 @@ mod tests {
 
 
 
+
+#[cfg(test)]
+mod qwen_swap_tests {
+    use super::*;
+
+    fn req2(sampler: Option<&str>, res: Option<u32>) -> GenReq {
+        GenReq {
+            profile: "qwen21".into(),
+            mode: "edit".into(),
+            prompt: "head_swap: …".into(),
+            negative: String::new(),
+            width: 832,
+            height: 1216,
+            steps: 8,
+            cfg: 1.0,
+            seed: 42,
+            batch: 1,
+            lora: Some("bfs_head_v1.1_qwen_2.1.safetensors".into()),
+            lora_strength: 1.0,
+            lora2: Some("p_qwen_image_2.1_8step_v0.1.safetensors".into()),
+            lora2_strength: 1.0,
+            ref_images: vec!["scene.png".into(), "head.png".into()],
+            slg: false,
+            slg_layers: "22".into(),
+            layout: None,
+            wf_params: None,
+            sampler: sampler.map(|s| s.to_string()),
+            edit_resolution: res,
+            project: None,
+            staging: false,
+            version_parent: None,
+        }
+    }
+
+    #[test]
+    fn qwen_edit_takes_two_refs_and_passes_resolution_through() {
+        let g = build_graph(&req2(Some("deis"), Some(0)), false).unwrap();
+        let te = &g["5"]["inputs"];
+        assert_eq!(te["images.image_1"], json!(["20", 0]), "image_1 是场景");
+        assert_eq!(te["images.image_2"], json!(["21", 0]), "image_2 是参考头/人");
+        assert_eq!(te["resolution"], 0, "0 = latent 跟随参考图（BFS 换身）");
+        assert_eq!(g["8"]["inputs"]["latent_image"], json!(["5", 2]));
+        assert_eq!(g["8"]["inputs"]["sampler_name"], "deis", "采样器覆盖要生效");
+        // 两级 LoRA 串起来：加速 LoRA 挂在 BFS 后面
+        assert_eq!(g["12"]["class_type"], "LoraLoaderModelOnly");
+        assert_eq!(g["8"]["inputs"]["model"], json!(["12", 0]));
+    }
+
+    #[test]
+    fn qwen_edit_defaults_keep_old_behaviour() {
+        // 不给 sampler / resolution 时：还是模型档的 euler + 按画布算的 resolution
+        let g = build_graph(&req2(None, None), false).unwrap();
+        assert_eq!(g["8"]["inputs"]["sampler_name"], "euler");
+        assert_eq!(g["5"]["inputs"]["resolution"], 1216);
+    }
+
+    #[test]
+    fn bogus_sampler_falls_back_to_the_profile_one() {
+        let g = build_graph(&req2(Some("rm -rf"), None), false).unwrap();
+        assert_eq!(g["8"]["inputs"]["sampler_name"], "euler");
+    }
+}

@@ -164,6 +164,8 @@ pub fn train_run(
                 slg_layers: "22".to_string(),
                 layout: None,
                 wf_params: None,
+                sampler: None,
+                edit_resolution: None,
                 project: None,
                 staging: false,
                 version_parent: None,

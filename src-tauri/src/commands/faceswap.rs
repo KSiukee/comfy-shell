@@ -604,6 +604,8 @@ mod tests {
             slg_layers: "22".into(),
             layout: None,
             wf_params: None,
+            sampler: None,
+            edit_resolution: None,
             project: None,
             staging: false,
             version_parent: None,
