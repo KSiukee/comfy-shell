@@ -1,4 +1,25 @@
 // 首页图区（结果网格 + 大图翻页）。
+
+// 缩略图并发上限：超分后的图动辄 4000×6000（base64 40MB+），同时读几张会把 WebView 内存打爆
+const imgQueue = [];
+let imgRunning = 0;
+
+function enqueueImage(img) {
+  imgQueue.push(img);
+  pumpImages();
+}
+
+function pumpImages() {
+  while (imgRunning < 2 && imgQueue.length) {
+    const img = imgQueue.shift();
+    imgRunning++;
+    loadImageInto(img).finally(() => {
+      imgRunning--;
+      pumpImages();
+    });
+  }
+}
+
 // 从 app.js 拆出；app.js 只保留生成与装配。
 // v0.95.1：只显示**当前项目**的图——避免切项目时看到别的项目的图。
 

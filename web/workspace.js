@@ -12,6 +12,7 @@ const _wsChk = (id) => {
 let wsLoadedProject = "";
 let wsSaving = false;
 let wsTimer = null;
+let wsPending = '';   // 排队那一刻定死的保存目标（防切项目后写进新项目）
 let wsApplying = false;
 
 function wsCollect() {
@@ -53,6 +54,8 @@ function wsCollect() {
 
 async function wsSaveFor(project) {
   if (!project || wsSaving) return;
+  // 表单只属于 wsLoadedProject：目标对不上就别写，否则会把上一个项目的提示词写进这个项目
+  if (wsLoadedProject && wsLoadedProject !== project) return;
   const p = (window.projectUI.list() || []).find((x) => x.id === project);
   if (p && p.private) return;
   wsSaving = true;
@@ -67,10 +70,20 @@ async function wsSaveFor(project) {
 
 function wsScheduleSave() {
   if (wsApplying) return;
+  const id = projectUI.current();
+  if (!id) return;
+  const p = (window.projectUI.list() || []).find((x) => x.id === id);
+  if (p && p.private) return; // 私密项目不落盘（workspace.json 是明文）
+  wsPending = id; // 目标在这里定死，不在 900ms 后再问「现在是哪个项目」
   clearTimeout(wsTimer);
   wsTimer = setTimeout(() => {
-    const id = projectUI.current();
-    if (id) wsSaveFor(id);
+    const target = wsPending;
+    wsPending = "";
+    if (!target) return;
+    // 这 900ms 里切了项目（或换了归属）就作废：这份表单不属于新项目
+    if (projectUI.current() !== target) return;
+    if (wsLoadedProject && wsLoadedProject !== target) return;
+    wsSaveFor(target);
   }, 900);
 }
 

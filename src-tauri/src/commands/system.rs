@@ -444,8 +444,16 @@ pub fn phrase_mine(
     hidden: Vec<String>,
     excluded: Vec<String>,
 ) -> Vec<hints::Phrase> {
-    let items = history::load(&cfg_dir(&app));
-    hints::mine(&items, project.as_deref(), &hidden, &excluded)
+    let cfg = cfg_dir(&app);
+    let items = history::load(&cfg);
+    // 隐藏/私密项目里的提示词不参与全局挖掘（「全部项目」也不挖），否则隐藏内容会漏到「我的用语」里
+    let mut ex = excluded.clone();
+    for p in project::list(&cfg, true) {
+        if p.hidden || p.private {
+            ex.push(p.id);
+        }
+    }
+    hints::mine(&items, project.as_deref(), &hidden, &ex)
 }
 
 // ---------------------------------------------------------------------------

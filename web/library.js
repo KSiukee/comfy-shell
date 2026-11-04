@@ -425,7 +425,7 @@ async function runUpscale(item) {
     const img = await api.call("upscale_image", { path: item.path, model });
     const swapped = !!(state.settings && state.settings.replaceOriginal);
     toast(`超分完成：${img.width}×${img.height}${swapped ? "（原图已移入回收站）" : ""}`);
-    if (typeof refreshLibExtra === "function") refreshLibExtra();
+    if (typeof refreshLibExtra === "function") await refreshLibExtra();
     if (typeof loadLibrary === "function" && !$("library").hidden) {
       await loadLibrary();
       if (!$("viewer").hidden && viewer.list.length) {

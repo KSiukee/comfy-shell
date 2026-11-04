@@ -400,7 +400,7 @@ const observer = new IntersectionObserver(
       if (!en.isIntersecting) continue;
       const img = en.target;
       observer.unobserve(img);
-      loadImageInto(img);
+      enqueueImage(img);
     }
   },
   { root: $("results"), rootMargin: "300px" }
@@ -419,7 +419,17 @@ async function loadImageInto(img) {
     item.dataUrl = await api.call("read_output_image", { path });
     img.src = item.dataUrl;
   } catch {
-    item.missing = true; img.closest(".card")?.remove(); if (!$("results").querySelector(".card")) $("empty").hidden = false;
+    // 一次失败不等于「这张图不存在」（超分大图会因内存/并发瞬时失败）：
+    // 先把卡片留着画成坏图占位，点一下重试，别把整张卡从图区删掉。
+    img.src = "";
+    img.classList.add("broken");
+    img.alt = "打不开，点一下重试";
+    img.title = "打不开，点一下重试";
+    img.onclick = () => {
+      img.classList.remove("broken");
+      img.onclick = () => img.__item && openLightbox(img.__item);
+      enqueueImage(img);
+    };
   }
 }
 
@@ -622,7 +632,8 @@ async function generate() {
     }));
     mergeResults(items);
     toast(`完成：${fmtTime(res.seconds)}`);
-    localStorage.setItem("cs.lastReq", JSON.stringify(req));
+    // 按项目存：不然在隐藏项目里生成一次，切到别的项目再启动就会把它的提示词带回表单（实测泄漏）
+    localStorage.setItem("cs.lastReq." + ((window.projectUI && projectUI.current && projectUI.current()) || "none"), JSON.stringify(req));
     ok = true;
   } catch (e) {
     toast(String(e), true);
@@ -764,7 +775,10 @@ async function boot() {
 
 function restoreLast() {
   try {
-    const raw = localStorage.getItem("cs.lastReq");
+    // 旧版本是全局键（cs.lastReq），会跨项目把提示词带回来——启动时直接清掉
+    localStorage.removeItem("cs.lastReq");
+    const pid = (window.projectUI && projectUI.current && projectUI.current()) || "none";
+    const raw = localStorage.getItem("cs.lastReq." + pid);
     if (!raw) return;
     const r = JSON.parse(raw);
     if (r.profile && [...$("model").options].some((o) => o.value === r.profile)) $("model").value = r.profile;
