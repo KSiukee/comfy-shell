@@ -114,7 +114,9 @@ async function shotSwapHeadOne(s, card) {
 async function shotSwapOne(s) {
   const card = await shotSwapCard();
   const mode = await shotSwapMode();
-  return mode === "head" ? shotSwapHeadOne(s, card) : shotSwapFaceOne(s, card);
+  if (mode === "head") return shotSwapHeadOne(s, card);
+  if (mode === "keep") return shotSwapHeadKeepOne(s, card);
+  return shotSwapFaceOne(s, card);
 }
 
 async function shotSwapRun(shots, label) {
@@ -147,8 +149,75 @@ $("shotsSwapAll").onclick = async () => {
   const targets = shotsCache.filter((s) => (s.images || []).length);
   if (!targets.length) return toast("还没有出过图的格", true);
   const mode = await shotSwapMode();
-  await shotSwapRun(targets, mode === "head" ? "换头" : "换脸");
+  const label = mode === "head" ? "换头" : mode === "keep" ? "保构图换头" : "换脸";
+  await shotSwapRun(targets, label);
 };
 
 $("shotsSwapCards").onclick = () => shotSwapFillCards();
 shotSwapFillCards();
+
+/// 换头但保构图（#97）：只把「头那一块」用局部重绘换成角色卡的发型与头饰，身体、衣服、背景原样。
+/// 和整图换头的区别：不动构图，代价是只换得到头发/头饰，脸换得没那么「整」。
+async function shotSwapHeadKeepOne(s, card) {
+  const src = (s.images || []).slice(-1)[0];
+  if (!src) throw new Error("这一格还没有图");
+  const dataUrl = await api.call("image_data_url", { path: src });
+  const probe = await api.call("save_ref_image", { name: "shot_keep_probe.png", dataUrl });
+  const box = await api.call("face_detect", { image: probe });
+  if (!box || !box.bbox) throw new Error("这一格里没找到脸（侧脸/背影换不了）");
+  const img = await qsImage(dataUrl);
+  const W = img.naturalWidth;
+  const H = img.naturalHeight;
+  const fb = box.bbox;
+  const bw = fb[2];
+  const bh = fb[3];
+  const cx = (fb[0] + bw / 2) * W;
+  const faceH = Math.max(8, bh * H);
+  // 头比脸框大得多（后脑勺的头发常在脸框外），蒙版给到 2.9 倍脸宽，否则会出现两个头
+  const w = Math.max(32, bw * W * 2.9);
+  const top = Math.max(0, fb[1] * H - faceH * 1.35);
+  const bottom = Math.min(H, (fb[1] + bh) * H + faceH * 0.45);
+  const x0 = Math.max(0, Math.min(W - w, cx - w / 2));
+  const h = Math.max(32, bottom - top);
+  const c = document.createElement("canvas");
+  c.width = W;
+  c.height = H;
+  const g = c.getContext("2d");
+  g.fillStyle = "#000000";
+  g.fillRect(0, 0, W, H);
+  g.fillStyle = "#ffffff";
+  const r = Math.min(w, h) * 0.18;
+  g.beginPath();
+  if (g.roundRect) g.roundRect(x0, top, w, h, r);
+  else g.rect(x0, top, w, h);
+  g.fill();
+  const maskDataUrl = c.toDataURL("image/png");
+
+  const plateUrl = await api.call("image_data_url", { path: card.identityPlate });
+  const plateImg = await qsImage(plateUrl);
+  const plateProbe = await api.call("save_ref_image", { name: "shot_keep_plate.png", dataUrl: plateUrl });
+  const plateBox = await api.call("face_detect", { image: plateProbe });
+  if (!plateBox || !plateBox.bbox) throw new Error("角色底板上没找到脸");
+  const refImageDataUrl = qsHeadCrop(plateImg, plateBox.bbox);
+
+  const res = await api.call("inpaint_image", {
+    req: {
+      profile: "flux3",
+      prompt:
+        "把这一块换成参考角色的发型与发饰（发簪、花钿），保留原来的脸朝向、光照和背景；只改头发与头饰，不要改变构图",
+      negative: "不同的脸型，换脸，变形，多余的头",
+      source: src,
+      maskDataUrl,
+      steps: 16,
+      cfg: 1,
+      seed: -1,
+      denoise: 0.9,
+      feather: 28,
+      refImageDataUrl,
+    },
+  });
+  const p = shotProject();
+  await api.call("shot_add_image", { project: p.id, id: s.id, path: res.images[0].path });
+  return res.images[0].path;
+}
+
