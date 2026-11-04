@@ -1300,6 +1300,14 @@
       </details>
       <div class="shot-check" id="shotsCheckBox" hidden></div>
       <div id="shotsList" style="display:flex;flex-direction:column;gap:8px;max-height:56vh;overflow:auto"></div>
+      <div class="row tight" style="margin-top:8px;border-top:1px solid var(--line);padding-top:8px">
+        <span class="muted">补身份</span>
+        <select id="shotSwapCard" class="mini-select" title="用哪张角色卡的底板"></select>
+        <label class="check"><input type="radio" name="shotSwapMode" value="face" checked /> 只换脸（保留本格发型）</label>
+        <label class="check"><input type="radio" name="shotSwapMode" value="head" /> 换头（连发饰一起）</label>
+        <button class="btn small" id="shotsSwapCards" title="重新读取角色卡">↻</button>
+        <button class="btn small primary" id="shotsSwapAll">整话执行</button>
+      </div>
       <div class="row tight" style="justify-content:flex-end;margin-top:12px">
         <button class="btn small" id="shotsCheck" title="查记录对不对得上（不判脸像不像）">整话体检</button>
         <button class="btn small" id="shotsRun" title="先补没出图的格；全都出过了会问要不要全部重画">整话出图</button>
@@ -1502,6 +1510,7 @@
   <script src="story.js"></script>
 <script src="shots.js"></script>
   <script src="shotcast.js"></script>
+<script src="shotswap.js"></script>
   <script src="shotcheck.js"></script>
   <script src="versions.js"></script>
   <script src="prompts.js"></script>

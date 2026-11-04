@@ -74,6 +74,24 @@ function shotRow(s) {
   again.className = "btn small";
   again.textContent = "重画";
   again.onclick = () => regenerateShot(s);
+  const swap = document.createElement("button");
+  swap.className = "btn small";
+  swap.textContent = "换";
+  swap.title = "用角色卡给这一格补身份（换脸 / 换头，方式见下方「补身份」）";
+  swap.onclick = async () => {
+    swap.disabled = true;
+    swap.textContent = "换…";
+    try {
+      await shotSwapOne(s);
+      toast("第 " + s.index + " 格已补身份");
+      await shotsRefresh();
+    } catch (e) {
+      toast(String(e), true);
+    } finally {
+      swap.disabled = false;
+      swap.textContent = "换";
+    }
+  };
   const del = document.createElement("button");
   del.className = "btn small ghost";
   del.textContent = "删";
@@ -86,7 +104,7 @@ function shotRow(s) {
       toast(String(e), true);
     }
   };
-  row.append(idx, prompt, shotCastChips(s), count, fill, again, del);
+  row.append(idx, prompt, shotCastChips(s), count, fill, again, swap, del);
   return row;
 }
 
