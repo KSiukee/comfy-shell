@@ -9,6 +9,7 @@ pub mod luts;
 pub mod projects;
 pub mod promptfx;
 pub mod continuity;
+pub mod headswap;
 pub mod story;
 pub mod system;
 pub mod training;

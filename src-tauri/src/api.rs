@@ -424,6 +424,36 @@ where
 }
 
 /// Build an API-format graph for the requested profile/mode.
+/// #99 换头（BFS）共用：提示词与 LoRA 名。
+pub const HEAD_SWAP_PROMPT: &str = "head_swap: start with <image1> as the base image, keeping its lighting, environment, and background. remove the head from <image1> completely and replace it with the head from <image2>, strictly preserving the hair, eye color, nose structure from <image2>. copy the direction of the eye, head rotation, micro expressions from <image1>, high quality, sharp details, 4k";
+pub const BFS_HEAD_LORA: &str = "bfs_head_v1.1_qwen_2.1.safetensors";
+pub const QWEN_ACCEL_LORA: &str = "p_qwen_image_2.1_8step_v0.1.safetensors";
+
+/// #99：裁块换头的图（image_1 = 带肩膀的裁块，image_2 = 底板紧裁头）。
+/// 8 步 + cfg1 + deis + 加速 LoRA 是 BFS 官方配方。
+pub fn build_head_swap(scene_name: &str, head_name: &str, steps: u32, cfg: f64, seed: i64) -> Value {
+    let p = profile("qwen21").expect("qwen21 profile");
+    let mut g: BTreeMap<String, Value> = BTreeMap::new();
+    g.insert("1".into(), json!({"class_type": "UNETLoader", "inputs": {"unet_name": p.unet, "weight_dtype": "default"}}));
+    g.insert("2".into(), json!({"class_type": "QwenImage21Cache", "inputs": {"model": ["1", 0], "device": "auto", "dtype": "default"}}));
+    g.insert("3".into(), json!({"class_type": "CLIPLoader", "inputs": {"clip_name": p.clip, "type": p.clip_type, "device": "default"}}));
+    g.insert("4".into(), json!({"class_type": "VAELoader", "inputs": {"vae_name": p.vae}}));
+    g.insert("5".into(), json!({"class_type": "LoraLoaderModelOnly", "inputs": {"model": ["2", 0], "lora_name": BFS_HEAD_LORA, "strength_model": 1.0}}));
+    g.insert("6".into(), json!({"class_type": "LoraLoaderModelOnly", "inputs": {"model": ["5", 0], "lora_name": QWEN_ACCEL_LORA, "strength_model": 1.0}}));
+    g.insert("10".into(), json!({"class_type": "LoadImage", "inputs": {"image": scene_name}}));
+    g.insert("11".into(), json!({"class_type": "LoadImage", "inputs": {"image": head_name}}));
+    g.insert("20".into(), json!({"class_type": "TextEncodeQwenImage21", "inputs": {
+        "clip": ["3", 0], "prompt": HEAD_SWAP_PROMPT, "negative_prompt": "",
+        "resolution": 0, "vae": ["4", 0],
+        "images.image_1": ["10", 0], "images.image_2": ["11", 0]}}));
+    g.insert("22".into(), json!({"class_type": "KSampler", "inputs": {
+        "model": ["6", 0], "positive": ["20", 0], "negative": ["20", 1], "latent_image": ["20", 2],
+        "seed": seed, "steps": steps, "cfg": cfg, "sampler_name": "deis", "scheduler": "simple", "denoise": 1.0}}));
+    g.insert("23".into(), json!({"class_type": "VAEDecode", "inputs": {"samples": ["22", 0], "vae": ["4", 0]}}));
+    g.insert("24".into(), json!({"class_type": "SaveImage", "inputs": {"images": ["23", 0], "filename_prefix": "cs_headswap"}}));
+    Value::Object(g.into_iter().collect())
+}
+
 pub fn build_graph(req: &GenReq, turbo: bool) -> Result<Value, String> {
     let pos_text = req.layout.clone().unwrap_or_else(|| req.prompt.clone());
     let p = profile(&req.profile).ok_or_else(|| format!("未知模型配置: {}", req.profile))?;

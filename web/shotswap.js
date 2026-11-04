@@ -116,6 +116,7 @@ async function shotSwapOne(s) {
   const mode = await shotSwapMode();
   if (mode === "head") return shotSwapHeadOne(s, card);
   if (mode === "keep") return shotSwapHeadKeepOne(s, card);
+  if (mode === "crop") return shotSwapHeadCropOne(s, card);
   return shotSwapFaceOne(s, card);
 }
 
@@ -149,7 +150,7 @@ $("shotsSwapAll").onclick = async () => {
   const targets = shotsCache.filter((s) => (s.images || []).length);
   if (!targets.length) return toast("还没有出过图的格", true);
   const mode = await shotSwapMode();
-  const label = mode === "head" ? "换头" : mode === "keep" ? "保构图换头" : "换脸";
+  const label = mode === "head" ? "换头" : mode === "keep" ? "保构图换头" : mode === "crop" ? "裁块换头" : "换脸";
   await shotSwapRun(targets, label);
 };
 
@@ -231,3 +232,31 @@ document.querySelectorAll('input[name="shotSwapMode"]').forEach((el) => {
     if (typeof shotsRefresh === "function") shotsRefresh();
   });
 });
+
+/// #99 换头·裁块贴回：裁一块带头带肩膀的方图 → BFS 换头 → 椭圆软边贴回原图。
+/// 尺度天然正确（裁块里头的比例就是原图的），构图/身体/背景一个字都不动。
+async function shotSwapHeadCropOne(s, card) {
+  const src = (s.images || []).slice(-1)[0];
+  if (!src) throw new Error("这一格还没有图");
+  const dataUrl = await api.call("image_data_url", { path: src });
+  const name = await api.call("save_ref_image", { name: "shot_hc_src.png", dataUrl });
+  const box = await api.call("face_detect", { image: name });
+  if (!box || !box.bbox) throw new Error("这一格里没找到脸（侧脸/背影换不了）");
+  const plateUrl = await api.call("image_data_url", { path: card.identityPlate });
+  const pname = await api.call("save_ref_image", { name: "shot_hc_plate.png", dataUrl: plateUrl });
+  const pbox = await api.call("face_detect", { image: pname });
+  if (!pbox || !pbox.bbox) throw new Error("角色底板上没找到脸");
+  const res = await api.call("head_swap", {
+    req: {
+      source: src,
+      face: box.bbox,
+      plate: card.identityPlate,
+      plateFace: pbox.bbox,
+      seed: -1,
+    },
+  });
+  const p = shotProject();
+  await api.call("shot_add_image", { project: p.id, id: s.id, path: res.images[0].path });
+  return res.images[0].path;
+}
+

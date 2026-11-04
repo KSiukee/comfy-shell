@@ -208,6 +208,7 @@ fn main() {
             commands::projects::workspace_get,
             commands::projects::workspace_save,
             commands::ai::story_split_preview,
+            commands::headswap::head_swap,
             commands::continuity::shot_prompt,
             commands::continuity::shot_set_continuity,
             commands::continuity::shots_continuity,
