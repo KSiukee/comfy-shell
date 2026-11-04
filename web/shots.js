@@ -25,8 +25,8 @@ function shotRow(s) {
   const fill = document.createElement("button");
   fill.className = "btn small";
   fill.textContent = "填入";
-  fill.onclick = () => {
-    fillShot(s);
+  fill.onclick = async () => {
+    await fillShot(s);
     $("shotsModal").hidden = true;
     toast(`已填入第 ${s.index} 格`);
   };
@@ -93,9 +93,10 @@ async function shotsRefresh() {
   shotSummaryUpdate();
 }
 
-function fillShot(s) {
-  $("prompt").value = s.prompt || "";
-  $("negative").value = s.negative || "";
+async function fillShot(s) {
+  // 剧本设定（#90）：提示词 = 设定前缀 + 这一格的原文；负面词没填时用统一的
+  $("prompt").value = await storyComposeText(s.prompt || "");
+  $("negative").value = s.negative || (typeof storyNegative === "function" ? storyNegative() : "");
   $("width").value = s.width;
   $("height").value = s.height;
   $("steps").value = s.steps;
@@ -123,6 +124,8 @@ async function regenerateShot(s) {
 
 $("shotsBtn").onclick = async () => {
   $("shotsModal").hidden = false;
+  const p0 = shotProject();
+  if (p0 && !p0.private && typeof storyLoad === "function") await storyLoad(p0.id);
   await shotsRefresh();
 };
 $("shotsExport").onclick = async () => {

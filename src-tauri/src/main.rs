@@ -26,6 +26,7 @@ mod server;
 mod shots;
 mod single_instance;
 mod state;
+mod story;
 mod vault;
 mod versions;
 mod vault_ops;
@@ -204,6 +205,10 @@ fn main() {
             commands::projects::project_import,
             commands::projects::workspace_get,
             commands::projects::workspace_save,
+            commands::story::story_get,
+            commands::story::story_set,
+            commands::story::story_presets,
+            commands::story::story_compose,
             commands::projects::shots_list,
             commands::projects::shots_add,
             commands::projects::shot_add_image,

@@ -8,6 +8,7 @@ pub mod generation;
 pub mod luts;
 pub mod projects;
 pub mod promptfx;
+pub mod story;
 pub mod system;
 pub mod training;
 pub mod training_files;

@@ -1270,6 +1270,10 @@
   <div class="modal" id="shotsModal" hidden>
     <div class="modal-card" style="width: 780px">
       <h3>镜头 <span class="muted" style="font-size:12px">一话 = 一组镜头 · 每格可挂角色</span> <span class="shot-summary" id="shotsSummary"></span></h3>
+      <details class="shots-split" id="storyBox">
+        <summary>🎬 剧本设定 <span class="muted">画风 / 时代 / 光线 —— 逐格拼在每格描述前面</span></summary>
+        <div id="storyBody"></div>
+      </details>
       <details class="shots-split" id="shotsSplitBox">
         <summary>✂️ 从一段剧情拆镜头 <span class="muted">本地模型拆格，可改再存</span></summary>
         <textarea id="shotsStory" rows="4" placeholder="贴一段连续剧情，越具体越好"></textarea>
@@ -1487,7 +1491,8 @@
   <script src="layout.js"></script>
   <script src="layoutio.js"></script>
   <script src="data.js"></script>
-  <script src="shots.js"></script>
+  <script src="story.js"></script>
+<script src="shots.js"></script>
   <script src="shotcast.js"></script>
   <script src="shotcheck.js"></script>
   <script src="versions.js"></script>

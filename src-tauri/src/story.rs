@@ -1,0 +1,228 @@
+//! 剧本设定（#94）：一部戏的「长什么样」——画风、时代地点、光线色彩、镜头语言。
+//!
+//! 起因：剧情拆出来的每格只有一句 40~80 字的画面描述，生成时也只多挂了个
+//! `@角色名`——画风/时代/光线全靠模型自由发挥，六张图能长出六个派系。
+//! 这里把设定抽成一份**逐格复用**的前缀，拼在每格描述前面。
+//!
+//! 规矩：`enabled = false` 时 `compose()` 逐字返回原文（等于旧行为，一行回退）。
+
+use serde::{Deserialize, Serialize};
+use serde_json::{json, Value};
+use std::path::{Path, PathBuf};
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase", default)]
+pub struct Story {
+    pub enabled: bool,
+    /// 画风预设 id；`custom` 时用 `style_custom`
+    pub style: String,
+    #[serde(default)]
+    pub style_custom: String,
+    #[serde(default)]
+    pub era: String,
+    #[serde(default)]
+    pub light: String,
+    #[serde(default)]
+    pub camera: String,
+    /// 统一负面词：格子自己没填时用它
+    #[serde(default)]
+    pub negative: String,
+}
+
+impl Default for Story {
+    fn default() -> Self {
+        Self {
+            enabled: true,
+            style: "photoreal".into(),
+            style_custom: String::new(),
+            era: String::new(),
+            light: String::new(),
+            camera: String::new(),
+            negative: String::new(),
+        }
+    }
+}
+
+/// 画风预设：id / 下拉标签 / 实际拼进提示词的词。
+/// UI 的下拉从 `story_presets` 拉，别在前端再抄一份（会走样）。
+pub fn presets() -> Value {
+    json!([
+        {"id": "photoreal", "label": "写实摄影", "text": "写实摄影，真实皮肤质感，自然光影，电影剧照"},
+        {"id": "guofeng", "label": "国风工笔", "text": "国风工笔画，绢本质感，淡彩晕染，留白构图"},
+        {"id": "anime", "label": "日系动画", "text": "日系动画赛璐璐，干净线稿，平涂上色，动画截图"},
+        {"id": "cg3d", "label": "3D 渲染", "text": "3D 渲染，次表面散射，柔和棚光，CG 角色"},
+        {"id": "ink", "label": "水墨写意", "text": "水墨写意，墨分五色，宣纸质感，飞白笔触"},
+        {"id": "cyber", "label": "赛博朋克", "text": "赛博朋克，霓虹冷暖对冲，湿润街面反光，高对比"},
+        {"id": "film", "label": "胶片电影", "text": "35mm 胶片，颗粒感，轻微眩光，复古色调"},
+        {"id": "custom", "label": "自定义", "text": ""},
+    ])
+}
+
+fn preset_text(id: &str) -> &'static str {
+    match id {
+        "photoreal" => "写实摄影，真实皮肤质感，自然光影，电影剧照",
+        "guofeng" => "国风工笔画，绢本质感，淡彩晕染，留白构图",
+        "anime" => "日系动画赛璐璐，干净线稿，平涂上色，动画截图",
+        "cg3d" => "3D 渲染，次表面散射，柔和棚光，CG 角色",
+        "ink" => "水墨写意，墨分五色，宣纸质感，飞白笔触",
+        "cyber" => "赛博朋克，霓虹冷暖对冲，湿润街面反光，高对比",
+        "film" => "35mm 胶片，颗粒感，轻微眩光，复古色调",
+        _ => "",
+    }
+}
+
+impl Story {
+    /// 这部戏的画风词：预设优先，`custom` 用自由文本。
+    pub fn style_text(&self) -> String {
+        if self.style == "custom" {
+            self.style_custom.trim().to_string()
+        } else {
+            let t = preset_text(&self.style);
+            if t.is_empty() {
+                self.style_custom.trim().to_string()
+            } else {
+                t.to_string()
+            }
+        }
+    }
+
+    /// 只有前缀（给界面预览用）。
+    pub fn prefix(&self) -> String {
+        if !self.enabled {
+            return String::new();
+        }
+        let mut parts: Vec<String> = Vec::new();
+        let style = self.style_text();
+        if !style.is_empty() {
+            parts.push(style);
+        }
+        for p in [&self.era, &self.light, &self.camera] {
+            let p = p.trim();
+            if !p.is_empty() {
+                parts.push(p.to_string());
+            }
+        }
+        parts.join("，")
+    }
+
+    /// 把设定拼到这一格的画面描述前面。纯函数，边界都钉在单测里。
+    pub fn compose(&self, raw: &str) -> String {
+        let raw = raw.trim();
+        if !self.enabled {
+            return raw.to_string();
+        }
+        let prefix = self.prefix();
+        if prefix.is_empty() {
+            return raw.to_string();
+        }
+        if raw.is_empty() {
+            return prefix;
+        }
+        // 已经带过前缀（用户手动粘过）就别再叠一层
+        if raw.starts_with(&prefix) {
+            return raw.to_string();
+        }
+        format!("{prefix}，{raw}")
+    }
+}
+
+fn file(cfg: &Path, project: &str) -> PathBuf {
+    cfg.join("projects").join(project).join("story.json")
+}
+
+pub fn load(cfg: &Path, project: &str) -> Story {
+    let p = file(cfg, project);
+    std::fs::read_to_string(p)
+        .ok()
+        .and_then(|t| serde_json::from_str::<Story>(&t).ok())
+        .unwrap_or_default()
+}
+
+pub fn save(cfg: &Path, project: &str, s: &Story) -> Result<(), String> {
+    crate::project::load(cfg, project)?;
+    if crate::vault::is_private(cfg, project) {
+        return Err("私密项目暂不支持剧本设定".into());
+    }
+    let text = serde_json::to_string_pretty(s).map_err(|e| e.to_string())?;
+    crate::fsutil::atomic_write_str(&file(cfg, project), &text)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn full() -> Story {
+        Story {
+            enabled: true,
+            style: "guofeng".into(),
+            style_custom: String::new(),
+            era: "宋代江南，雨夜".into(),
+            light: "低饱和冷调，暖黄灯笼光".into(),
+            camera: "35mm 电影感，浅景深".into(),
+            negative: "低清，畸形手".into(),
+        }
+    }
+
+    #[test]
+    fn composes_style_then_era_light_camera_then_raw() {
+        let s = full();
+        assert_eq!(
+            s.compose("她回头看向巷口"),
+            "国风工笔画，绢本质感，淡彩晕染，留白构图，宋代江南，雨夜，低饱和冷调，暖黄灯笼光，35mm 电影感，浅景深，她回头看向巷口"
+        );
+        assert_eq!(s.prefix(), "国风工笔画，绢本质感，淡彩晕染，留白构图，宋代江南，雨夜，低饱和冷调，暖黄灯笼光，35mm 电影感，浅景深");
+    }
+
+    #[test]
+    fn disabled_is_a_verbatim_no_op() {
+        let mut s = full();
+        s.enabled = false;
+        assert_eq!(s.compose("她回头看向巷口"), "她回头看向巷口");
+        assert_eq!(s.compose("  她回头  "), "她回头");
+        assert_eq!(s.prefix(), "");
+    }
+
+    #[test]
+    fn empty_fields_are_skipped() {
+        let s = Story { era: "  ".into(), light: String::new(), ..full() };
+        let out = s.compose("x");
+        assert!(out.ends_with("，x"));
+        assert!(!out.contains("，，"), "空字段不能留下空逗号：{out}");
+        assert_eq!(out, "国风工笔画，绢本质感，淡彩晕染，留白构图，35mm 电影感，浅景深，x");
+    }
+
+    #[test]
+    fn custom_style_uses_the_free_text() {
+        let s = Story { style: "custom".into(), style_custom: "像素画，16 色".into(), era: String::new(), light: String::new(), camera: String::new(), ..full() };
+        assert_eq!(s.compose("x"), "像素画，16 色，x");
+    }
+
+    #[test]
+    fn already_prefixed_text_is_not_doubled() {
+        let s = full();
+        let once = s.compose("x");
+        assert_eq!(s.compose(&once), once);
+    }
+
+    #[test]
+    fn empty_raw_returns_just_the_prefix() {
+        assert_eq!(full().compose("  "), full().prefix());
+    }
+
+    #[test]
+    fn presets_are_complete_and_ui_facing() {
+        let p = presets();
+        let arr = p.as_array().unwrap();
+        assert!(arr.len() >= 8);
+        assert!(arr.iter().any(|x| x["id"] == "photoreal" && !x["text"].as_str().unwrap().is_empty()));
+        assert!(arr.iter().any(|x| x["id"] == "custom" && x["text"].as_str().unwrap().is_empty()));
+        // 每个 id 都要能在 preset_text 里查到（custom 除外）
+        for it in arr {
+            let id = it["id"].as_str().unwrap();
+            if id == "custom" {
+                continue;
+            }
+            assert!(!preset_text(id).is_empty(), "预设 {id} 没有对应词");
+        }
+    }
+}
