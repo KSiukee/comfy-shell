@@ -27,7 +27,12 @@ pub async fn layout_draft(
 }
 
 #[tauri::command]
-pub async fn story_split(app: tauri::AppHandle, text: String, max_panels: u32) -> Result<Vec<String>, String> {
+pub async fn story_split(
+    app: tauri::AppHandle,
+    text: String,
+    max_panels: u32,
+    project: Option<String>,
+) -> Result<Vec<String>, String> {
     if text.trim().is_empty() {
         return Err("先贴一段剧情".into());
     }
@@ -37,7 +42,11 @@ pub async fn story_split(app: tauri::AppHandle, text: String, max_panels: u32) -
         if api::health(port).is_none() {
             return Err("ComfyUI 没有在运行".into());
         }
-        Ok(enhance::story_split(port, &text, max_panels))
+        // #91：拆的时候就带上这部戏的设定（画风/时代/光线），别等出图才对齐
+        let ctx = project
+            .map(|p| story::load(&state::cfg_dir(&handle), &p).split_context())
+            .filter(|c| !c.trim().is_empty());
+        Ok(enhance::story_split(port, &text, max_panels, ctx.as_deref()))
     })
     .await
     .map_err(|e| format!("拆分任务失败: {e}"))?
@@ -119,4 +128,13 @@ pub async fn face_detect(app: tauri::AppHandle, image: String) -> Result<serde_j
     })
     .await
     .map_err(|e| format!("找脸任务失败: {e}"))?
+}
+
+/// #91：拆分实际会发给模型的正文（界面/测试都能看到设定有没有带上）。
+#[tauri::command]
+pub fn story_split_preview(app: tauri::AppHandle, project: Option<String>, text: String, max_panels: u32) -> String {
+    let ctx = project
+        .map(|p| crate::story::load(&crate::state::cfg_dir(&app), &p).split_context())
+        .filter(|c| !c.trim().is_empty());
+    crate::enhance::split_prompt(&text, max_panels.clamp(1, 40), ctx.as_deref())
 }

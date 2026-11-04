@@ -513,13 +513,18 @@ pub fn enhance_free(port: u16, prompt: &str, ref_image: Option<&str>) -> Result<
 
 /// Split a story into panel descriptions with the local LLM.
 /// Falls back to sentence chunking when the model is unavailable.
-pub fn story_split(port: u16, text: &str, max_panels: u32) -> Vec<String> {
+/// 拆分请求的正文：先给设定（有的话），再给剧情。纯函数，单测钉住顺序与空值。
+pub fn split_prompt(text: &str, max: u32, context: Option<&str>) -> String {
+    let body = format!("最多拆 {} 格。剧情如下：\n{}", max, text.trim());
+    match context.map(|c| c.trim()).filter(|c| !c.is_empty()) {
+        Some(ctx) => format!("这部戏的设定（每格都要符合）：\n{ctx}\n\n{body}"),
+        None => body,
+    }
+}
+
+pub fn story_split(port: u16, text: &str, max_panels: u32, context: Option<&str>) -> Vec<String> {
     let max = max_panels.clamp(1, 40);
-    let prompt = format!(
-        "最多拆 {} 格。剧情如下：\n{}",
-        max,
-        text.trim()
-    );
+    let prompt = split_prompt(text, max, context);
     let wf = json!({
         "1": {"class_type": "CLIPLoader",
               "inputs": {"clip_name": "qwen35_9b_heretic_int8_convrot.safetensors",
@@ -692,4 +697,24 @@ pub fn layout_draft(port: u16, request: &str, width: i64, height: i64) -> Result
         prompt = format!("{base}\n\n上一次的问题：{last}\n只输出修正后的 JSON，不要解释。");
     }
     Err(format!("没写出合格的排版：{last}"))
+}
+
+#[cfg(test)]
+mod split_prompt_tests {
+    use super::split_prompt;
+
+    #[test]
+    fn context_goes_before_the_story_block() {
+        let p = split_prompt("她站在雨里", 6, Some("画风：国风工笔\n时代 / 地点：宋代"));
+        assert!(p.starts_with("这部戏的设定（每格都要符合）：\n画风：国风工笔"));
+        assert!(p.contains("最多拆 6 格。剧情如下：\n她站在雨里"));
+        assert!(p.find("这部戏的设定").unwrap() < p.find("最多拆").unwrap());
+    }
+
+    #[test]
+    fn empty_or_missing_context_is_the_old_request() {
+        let old = split_prompt("她站在雨里", 6, None);
+        assert_eq!(old, "最多拆 6 格。剧情如下：\n她站在雨里");
+        assert_eq!(split_prompt("她站在雨里", 6, Some("   ")), old);
+    }
 }

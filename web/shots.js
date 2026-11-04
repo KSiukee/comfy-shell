@@ -249,12 +249,14 @@ $("shotsGoSplit").onclick = async () => {
   btn.textContent = "拆分中…";
   $("shotsSplitState").textContent = "思考中…";
   try {
+    const pj = shotProject();
     const panels = await api.call("story_split", {
       text,
       maxPanels: Number($("shotsMax").value) || 12,
+      project: pj ? pj.id : null,
     });
     $("shotsPanels").value = (panels || []).join("\n");
-    $("shotsSplitState").textContent = `拆出 ${(panels || []).length} 格，可先改再存`;
+    $("shotsSplitState").textContent = `拆出 ${(panels || []).length} 格（${pj ? "已按剧本设定" : "未带设定"}），可先改再存`;
   } catch (e) {
     $("shotsSplitState").textContent = "";
     toast(String(e), true);

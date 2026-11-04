@@ -105,6 +105,24 @@ impl Story {
         parts.join("，")
     }
 
+    /// #91：给「拆镜头」用的设定块（拆的时候就要按这部戏的画风/时代写）。
+    /// 关掉或全空时返回空串——拆分就退回旧行为。
+    pub fn split_context(&self) -> String {
+        if !self.enabled {
+            return String::new();
+        }
+        // 只给「世界」不给「画风」：画风词一旦进了拆分上下文，模型会把它写进每格正文，
+        // 出图时再拼一次前缀就是重复（实测 4 格里 1 格漏了「淡彩晕染出绢本质感」）。
+        let mut lines: Vec<String> = Vec::new();
+        for (label, v) in [("时代 / 地点", &self.era), ("光线 / 色彩", &self.light)] {
+            let v = v.trim();
+            if !v.is_empty() {
+                lines.push(format!("{label}：{v}"));
+            }
+        }
+        lines.join("\n")
+    }
+
     /// #90：再带一句「接上一格：…」（上一格结束时的人物状态/位置/时间）。
     /// enabled = false 时连这句也一起撤掉（逐字回退）。
     pub fn compose_with_lead(&self, lead: Option<&str>, raw: &str) -> String {
@@ -301,5 +319,42 @@ mod lead_tests {
         let once = s().compose_with_lead(Some("上一格状态"), "这一格画面");
         let twice = s().compose_with_lead(Some("上一格状态"), &once);
         assert_eq!(once, twice);
+    }
+}
+
+#[cfg(test)]
+mod split_ctx_tests {
+    use super::*;
+
+    fn s() -> Story {
+        Story {
+            enabled: true,
+            style: "guofeng".into(),
+            style_custom: String::new(),
+            era: "宋代江南，雨夜".into(),
+            light: "低饱和冷调".into(),
+            camera: String::new(),
+            negative: String::new(),
+        }
+    }
+
+    #[test]
+    fn context_lists_only_filled_fields_in_a_fixed_order() {
+        let c = s().split_context();
+        assert_eq!(c, "时代 / 地点：宋代江南，雨夜\n光线 / 色彩：低饱和冷调");
+        // 画风词不进拆分上下文（否则会被写进每格正文，出图时重复）
+        assert!(!c.contains("画风"));
+        assert!(!c.contains("工笔"));
+    }
+
+    #[test]
+    fn disabled_or_empty_context_is_empty() {
+        let mut d = s();
+        d.enabled = false;
+        assert_eq!(d.split_context(), "");
+        let e = Story { era: "  ".into(), light: String::new(), ..Story::default() };
+        // 默认画风是 photoreal，所以这里只验证空字段不产生行
+        assert!(!e.split_context().contains("时代"));
+        assert!(!e.split_context().contains("光线"));
     }
 }

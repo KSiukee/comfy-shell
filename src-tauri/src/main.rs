@@ -205,6 +205,7 @@ fn main() {
             commands::projects::project_import,
             commands::projects::workspace_get,
             commands::projects::workspace_save,
+            commands::ai::story_split_preview,
             commands::continuity::shot_prompt,
             commands::continuity::shot_set_continuity,
             commands::continuity::shots_continuity,
