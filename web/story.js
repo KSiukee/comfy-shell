@@ -82,7 +82,7 @@ function storyField(label, id, value, placeholder) {
   inp.placeholder = placeholder || "";
   inp.oninput = () => {
     const d = storyData();
-    const key = { storyEra: "era", storyLight: "light", storyCam: "camera", storyNeg: "negative", storyCustom: "styleCustom" }[id];
+    const key = { storyEra: "era", storyLight: "light", storyCam: "camera", storyNeg: "negative", storyCustom: "styleCustom", storyRefText: "styleRefText" }[id];
     if (key) d[key] = inp.value;
     storySaveSoon();
   };
@@ -160,12 +160,88 @@ function storyRender() {
 
   box.appendChild(storyField("统一负面词（格子自己没填时用它）", "storyNeg", d.negative, "低清，畸形手，多余手指，文字水印"));
 
+  // #92 风格参考图：只读它的画风（不当生成参考图，免得模型抄内容）
+  const refRow = document.createElement("div");
+  refRow.className = "row tight";
+  const refBtn = document.createElement("button");
+  refBtn.className = "btn small";
+  refBtn.id = "storyRefPick";
+  refBtn.textContent = "🖼 用当前大图提取画风";
+  refBtn.title = "用本机视觉模型看当前这张图，抽出色彩/光线/质感，拼进每格提示词；不把图片当参考图直接喂给模型";
+  refBtn.onclick = () => storyPickStyleRef(refBtn);
+  const refName = document.createElement("span");
+  refName.className = "muted mono";
+  refName.id = "storyRefName";
+  refName.style.fontSize = "11px";
+  refName.textContent = d.styleRef ? String(d.styleRef).split(/[\\/]/).pop() : "参考图：未选";
+  const refClear = document.createElement("button");
+  refClear.className = "btn small ghost";
+  refClear.id = "storyRefClear";
+  refClear.textContent = "清除";
+  refClear.onclick = () => {
+    const dd = storyData();
+    dd.styleRef = "";
+    dd.styleRefText = "";
+    storySaveSoon();
+    storyRender();
+  };
+  refRow.append(refBtn, refName, refClear);
+  box.appendChild(refRow);
+  box.appendChild(
+    storyField("从参考图读出的画风（可改）", "storyRefText", d.styleRefText, "例：暖黄低饱和，窗边侧光，细腻颗粒")
+  );
+
   const prev = document.createElement("div");
   prev.className = "muted mono";
   prev.id = "storyPreview";
   prev.style.cssText = "font-size:11px;margin-top:4px;white-space:normal";
   box.appendChild(prev);
   storyPreview();
+}
+
+function storyParseAnalyze(raw) {
+  const t = String(raw || "");
+  const m = t.match(/\{[\s\S]*\}/);
+  if (!m) return null;
+  try {
+    return JSON.parse(m[0]);
+  } catch {
+    return null;
+  }
+}
+
+/// 用当前大图当画风参考：视觉模型只读 style/colors/lighting 三段，拼成一句中文可改。
+async function storyPickStyleRef(btn) {
+  const it = viewer.list[viewer.idx];
+  if (!it) return toast("先在大图里打开一张想当画风参考的图", true);
+  const old = btn.textContent;
+  btn.disabled = true;
+  btn.textContent = "读图中…";
+  try {
+    const dataUrl = await api.call("image_data_url", { path: it.path });
+    const name = await api.call("save_ref_image", { name: "story_style_ref.png", dataUrl });
+    const raw = await api.call("analyze_image", { image: name });
+    const obj = storyParseAnalyze(raw);
+    const d = storyData();
+    d.styleRef = it.path;
+    // style 里常混进景别词（medium shot / close-up）——那是每格自己的事，不能锁死全片
+    const styleClean = String(obj?.style || "")
+      .split(/[,，]/)
+      .map((x) => x.trim())
+      .filter((x) => x && !/(shot|view|angle|close-?up|frame|perspective|camera|portrait)/i.test(x))
+      .join(", ");
+    d.styleRefText = obj
+      ? [styleClean, obj.colors, obj.lighting].filter((x) => x && String(x).trim()).join("，")
+      : String(raw || "").trim().slice(0, 120);
+    storySaveSoon();
+    storyRender();
+    toast(obj ? "已从这张图读出画风（可手改）" : "模型没给结构化结果，已把原文塞进去，建议手改");
+  } catch (e) {
+    toast(String(e), true);
+  } finally {
+    btn.disabled = false;
+    btn.textContent = old;
+  }
 }
 
 /// 把设定拼到一段画面描述前面（Rust 算，避免两份实现走样）。

@@ -27,6 +27,8 @@ mod shots;
 mod single_instance;
 mod state;
 mod story;
+#[cfg(test)]
+mod story_tests;
 mod vault;
 mod versions;
 mod vault_ops;
