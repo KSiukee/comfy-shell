@@ -104,7 +104,13 @@ function shotRow(s) {
       toast(String(e), true);
     }
   };
-  row.append(idx, prompt, shotCastChips(s), count, fill, again, swap, del);
+  const maskBtn = document.createElement("button");
+  maskBtn.className = "btn small ghost";
+  maskBtn.textContent = "蒙";
+  maskBtn.title = "手动画头蒙版再换头（保构图模式用；侧脸/回头靠它）";
+  maskBtn.hidden = (typeof shotSwapMode === "function" && document.querySelector('input[name="shotSwapMode"]:checked') || {}).value !== "keep";
+  maskBtn.onclick = () => openShotMask(s);
+  row.append(idx, prompt, shotCastChips(s), count, fill, again, swap, maskBtn, del);
   return row;
 }
 

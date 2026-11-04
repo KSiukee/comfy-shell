@@ -158,40 +158,43 @@ shotSwapFillCards();
 
 /// 换头但保构图（#97）：只把「头那一块」用局部重绘换成角色卡的发型与头饰，身体、衣服、背景原样。
 /// 和整图换头的区别：不动构图，代价是只换得到头发/头饰，脸换得没那么「整」。
-async function shotSwapHeadKeepOne(s, card) {
+async function shotSwapHeadKeepOne(s, card, maskOverride) {
   const src = (s.images || []).slice(-1)[0];
   if (!src) throw new Error("这一格还没有图");
-  const dataUrl = await api.call("image_data_url", { path: src });
-  const probe = await api.call("save_ref_image", { name: "shot_keep_probe.png", dataUrl });
-  const box = await api.call("face_detect", { image: probe });
-  if (!box || !box.bbox) throw new Error("这一格里没找到脸（侧脸/背影换不了）");
-  const img = await qsImage(dataUrl);
-  const W = img.naturalWidth;
-  const H = img.naturalHeight;
-  const fb = box.bbox;
-  const bw = fb[2];
-  const bh = fb[3];
-  const cx = (fb[0] + bw / 2) * W;
-  const faceH = Math.max(8, bh * H);
-  // 头比脸框大得多（后脑勺的头发常在脸框外），蒙版给到 2.9 倍脸宽，否则会出现两个头
-  const w = Math.max(32, bw * W * 2.9);
-  const top = Math.max(0, fb[1] * H - faceH * 1.35);
-  const bottom = Math.min(H, (fb[1] + bh) * H + faceH * 0.45);
-  const x0 = Math.max(0, Math.min(W - w, cx - w / 2));
-  const h = Math.max(32, bottom - top);
-  const c = document.createElement("canvas");
-  c.width = W;
-  c.height = H;
-  const g = c.getContext("2d");
-  g.fillStyle = "#000000";
-  g.fillRect(0, 0, W, H);
-  g.fillStyle = "#ffffff";
-  const r = Math.min(w, h) * 0.18;
-  g.beginPath();
-  if (g.roundRect) g.roundRect(x0, top, w, h, r);
-  else g.rect(x0, top, w, h);
-  g.fill();
-  const maskDataUrl = c.toDataURL("image/png");
+  let maskDataUrl = maskOverride || "";
+  if (!maskDataUrl) {
+    const dataUrl = await api.call("image_data_url", { path: src });
+    const probe = await api.call("save_ref_image", { name: "shot_keep_probe.png", dataUrl });
+    const box = await api.call("face_detect", { image: probe });
+    if (!box || !box.bbox) throw new Error("这一格里没找到脸（侧脸/背影换不了，可以点「蒙」手动画）");
+    const img = await qsImage(dataUrl);
+    const W = img.naturalWidth;
+    const H = img.naturalHeight;
+    const fb = box.bbox;
+    const bw = fb[2];
+    const bh = fb[3];
+    const cx = (fb[0] + bw / 2) * W;
+    const faceH = Math.max(8, bh * H);
+    // 头比脸框大得多（后脑勺的头发常在脸框外），蒙版给到 2.9 倍脸宽，否则会出现两个头
+    const w = Math.max(32, bw * W * 2.9);
+    const top = Math.max(0, fb[1] * H - faceH * 1.35);
+    const bottom = Math.min(H, (fb[1] + bh) * H + faceH * 0.45);
+    const x0 = Math.max(0, Math.min(W - w, cx - w / 2));
+    const h = Math.max(32, bottom - top);
+    const c = document.createElement("canvas");
+    c.width = W;
+    c.height = H;
+    const g = c.getContext("2d");
+    g.fillStyle = "#000000";
+    g.fillRect(0, 0, W, H);
+    g.fillStyle = "#ffffff";
+    const r = Math.min(w, h) * 0.18;
+    g.beginPath();
+    if (g.roundRect) g.roundRect(x0, top, w, h, r);
+    else g.rect(x0, top, w, h);
+    g.fill();
+    maskDataUrl = c.toDataURL("image/png");
+  }
 
   const plateUrl = await api.call("image_data_url", { path: card.identityPlate });
   const plateImg = await qsImage(plateUrl);
@@ -204,14 +207,14 @@ async function shotSwapHeadKeepOne(s, card) {
     req: {
       profile: "flux3",
       prompt:
-        "把这一块换成参考角色的发型与发饰（发簪、花钿），保留原来的脸朝向、光照和背景；只改头发与头饰，不要改变构图",
+        "只把这一块里的头发和头饰换成参考角色的发型与发饰（发簪、花钿）：保持原来头部的大小、位置与朝向，脸不要放大，不要改变构图，保留原来的光照和背景",
       negative: "不同的脸型，换脸，变形，多余的头",
       source: src,
       maskDataUrl,
       steps: 16,
       cfg: 1,
       seed: -1,
-      denoise: 0.9,
+      denoise: 0.8,
       feather: 28,
       refImageDataUrl,
     },
@@ -221,3 +224,10 @@ async function shotSwapHeadKeepOne(s, card) {
   return res.images[0].path;
 }
 
+
+// 换方式时重画镜头列表：只有「换头·保构图」才显示手画蒙版按钮
+document.querySelectorAll('input[name="shotSwapMode"]').forEach((el) => {
+  el.addEventListener("change", () => {
+    if (typeof shotsRefresh === "function") shotsRefresh();
+  });
+});
