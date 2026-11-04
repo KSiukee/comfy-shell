@@ -439,7 +439,7 @@ dependencies = [
 
 [[package]]
 name = "comfy-shell"
-version = "0.118.1"
+version = "0.118.2"
 dependencies = [
  "argon2",
  "base64 0.22.1",

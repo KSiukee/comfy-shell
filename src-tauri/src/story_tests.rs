@@ -200,3 +200,38 @@ mod style_ref {
         assert_eq!(s.prefix(), "写实摄影，真实皮肤质感，自然光影，电影剧照");
     }
 }
+
+mod clean {
+    use super::*;
+
+    #[test]
+    fn drops_director_talk_but_keeps_the_picture() {
+        let raw = "她撑着油纸伞走进巷口，动作连贯推进，肩头水珠滑落，定格瞬间。";
+        let out = clean_panel(raw);
+        assert_eq!(out, "她撑着油纸伞走进巷口，肩头水珠滑落。");
+    }
+
+    #[test]
+    fn drops_comparison_and_mood_talk() {
+        let raw = "掌柜抬头看她，茶楼内景与室外雨夜形成冷暖对比，画面感很强。";
+        let out = clean_panel(raw);
+        assert_eq!(out, "掌柜抬头看她。");
+    }
+
+    #[test]
+    fn keeps_original_when_everything_is_meta() {
+        let raw = "动作连贯推进，定格瞬间。";
+        assert_eq!(clean_panel(raw), raw);
+    }
+
+    #[test]
+    fn empty_is_empty() {
+        assert_eq!(clean_panel("   "), "");
+    }
+
+    #[test]
+    fn plain_text_is_untouched() {
+        let raw = "她摘下雨帽，露出一支白玉发簪，肩头还挂着水珠。";
+        assert_eq!(clean_panel(raw), raw);
+    }
+}

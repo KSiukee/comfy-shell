@@ -542,8 +542,10 @@ pub fn story_split(port: u16, text: &str, max_panels: u32, context: Option<&str>
                     .trim()
                     .trim_start_matches(|c: char| c.is_ascii_digit() || c == '.' || c == '、' || c == '-' || c == '*')
                     .trim();
-                if line.chars().count() >= 8 && !line.starts_with('（') {
-                    panels.push(line.to_string());
+                // #96：先清导演腔（动作连贯推进/定格瞬间/冷暖对比…），清完还太短就整行不要
+                let cleaned = crate::story::clean_panel(line);
+                if cleaned.chars().count() >= 8 && !cleaned.starts_with('（') {
+                    panels.push(cleaned);
                 }
             }
         }
@@ -587,7 +589,9 @@ pub fn continuity_states(port: u16, panels: &[String]) -> Vec<String> {
                     .trim_start_matches(|c: char| c.is_ascii_digit() || c == '.' || c == ':' || c == '：' || c == '、' || c == '-' || c == '*')
                     .trim();
                 if !line.is_empty() && !line.starts_with('（') {
-                    out.push(line.chars().take(60).collect());
+                    let cleaned = crate::story::clean_panel(line);
+                    let cleaned = if cleaned.is_empty() { line.to_string() } else { cleaned };
+                    out.push(cleaned.chars().take(60).collect());
                 }
             }
         }

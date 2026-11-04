@@ -188,6 +188,35 @@ impl Story {
     }
 }
 
+/// #96：清掉分镜描述里的「导演腔」——模型爱写"动作连贯推进""定格瞬间""冷暖对比"这类评论，
+/// 它们对生图没有信息量，还会把画面往奇怪方向带。按分句过滤，全被过滤就原样返回（宁可留着也别清空）。
+const META_PHRASES: &[&str] = &[
+    "动作连贯", "连贯推进", "自然推进", "定格", "冷暖对比", "形成对比",
+    "画面感", "镜头感", "视觉冲击", "叙事", "分镜", "转场", "景别变化", "构成一幅",
+    "整体氛围", "情绪张力", "张力", "氛围感", "瞬间",
+];
+
+pub fn clean_panel(raw: &str) -> String {
+    let trimmed = raw.trim();
+    if trimmed.is_empty() {
+        return String::new();
+    }
+    let segs: Vec<&str> = trimmed.split(['，', '。', '；', '、']).collect();
+    let kept: Vec<&str> = segs
+        .iter()
+        .map(|s| s.trim())
+        .filter(|s| !s.is_empty() && !META_PHRASES.iter().any(|m| s.contains(m)))
+        .collect();
+    if kept.is_empty() {
+        return trimmed.to_string();
+    }
+    let mut out = kept.join("，");
+    if trimmed.ends_with('。') {
+        out.push('。');
+    }
+    out
+}
+
 fn file(cfg: &Path, project: &str) -> PathBuf {
     cfg.join("projects").join(project).join("story.json")
 }
