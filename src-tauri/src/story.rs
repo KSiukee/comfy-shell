@@ -105,6 +105,37 @@ impl Story {
         parts.join("，")
     }
 
+    /// #90：再带一句「接上一格：…」（上一格结束时的人物状态/位置/时间）。
+    /// enabled = false 时连这句也一起撤掉（逐字回退）。
+    pub fn compose_with_lead(&self, lead: Option<&str>, raw: &str) -> String {
+        let raw = raw.trim();
+        if !self.enabled {
+            return raw.to_string();
+        }
+        let prefix = self.prefix();
+        let lead = lead.map(|s| s.trim()).unwrap_or("");
+        let lead_line = if lead.is_empty() {
+            String::new()
+        } else {
+            format!("接上一格：{lead}")
+        };
+        // 已经拼过（用户手动粘过整段）就别再来一遍
+        if !raw.is_empty() && raw.starts_with(&prefix) && (lead_line.is_empty() || raw.contains(&lead_line)) {
+            return raw.to_string();
+        }
+        let mut parts: Vec<&str> = Vec::new();
+        if !prefix.is_empty() {
+            parts.push(&prefix);
+        }
+        if !lead_line.is_empty() && !raw.contains(&lead_line) {
+            parts.push(&lead_line);
+        }
+        if !raw.is_empty() {
+            parts.push(raw);
+        }
+        parts.join("，")
+    }
+
     /// 把设定拼到这一格的画面描述前面。纯函数，边界都钉在单测里。
     pub fn compose(&self, raw: &str) -> String {
         let raw = raw.trim();
@@ -224,5 +255,51 @@ mod tests {
             }
             assert!(!preset_text(id).is_empty(), "预设 {id} 没有对应词");
         }
+    }
+}
+
+#[cfg(test)]
+mod lead_tests {
+    use super::*;
+
+    fn s() -> Story {
+        Story {
+            enabled: true,
+            style: "photoreal".into(),
+            style_custom: String::new(),
+            era: String::new(),
+            light: String::new(),
+            camera: String::new(),
+            negative: String::new(),
+        }
+    }
+
+    #[test]
+    fn lead_goes_after_the_style_prefix_and_before_the_panel() {
+        let out = s().compose_with_lead(Some("她把伞收拢，退到檐下"), "她抬头看雨");
+        assert!(out.ends_with("接上一格：她把伞收拢，退到檐下，她抬头看雨"));
+        assert!(out.starts_with("写实摄影"));
+    }
+
+    #[test]
+    fn empty_lead_is_skipped_without_extra_separators() {
+        let out = s().compose_with_lead(Some("   "), "她抬头看雨");
+        assert!(!out.contains("接上一格"));
+        assert!(!out.contains("，，"));
+        assert!(out.ends_with("她抬头看雨"));
+    }
+
+    #[test]
+    fn disabled_story_drops_the_lead_too() {
+        let mut st = s();
+        st.enabled = false;
+        assert_eq!(st.compose_with_lead(Some("上一格状态"), "这一格画面"), "这一格画面");
+    }
+
+    #[test]
+    fn lead_is_not_doubled_when_already_present() {
+        let once = s().compose_with_lead(Some("上一格状态"), "这一格画面");
+        let twice = s().compose_with_lead(Some("上一格状态"), &once);
+        assert_eq!(once, twice);
     }
 }

@@ -6,6 +6,46 @@ function shotProject() {
   return window.projectUI && window.projectUI.currentObj ? window.projectUI.currentObj() : null;
 }
 
+// #90 分镜连续性：每格写「这一格结束时」的状态，下一格拼成「接上一格：…」。
+function continuityRender() {
+  const box = $("continuityBody");
+  if (!box) return;
+  box.textContent = "";
+  if (!shotsCache.length) {
+    const d = document.createElement("div");
+    d.className = "muted";
+    d.textContent = "还没有镜头";
+    box.appendChild(d);
+    return;
+  }
+  for (const s of shotsCache) {
+    const row = document.createElement("div");
+    row.className = "row tight";
+    const idx = document.createElement("span");
+    idx.className = "mono muted";
+    idx.style.cssText = "flex:0 0 34px;font-size:11px";
+    idx.textContent = "#" + s.index;
+    const inp = document.createElement("input");
+    inp.value = s.continuity || "";
+    inp.style.flex = "1";
+    inp.placeholder = s.index === 1 ? "第一格不用填（它没有上一格）" : "例：退到檐下，右肩湿透，攥着断掉的伞骨";
+    inp.onchange = async () => {
+      const p = shotProject();
+      if (!p) return;
+      try {
+        const r = await api.call("shot_set_continuity", { project: p.id, id: s.id, text: inp.value });
+        s.continuity = r.continuity;
+        toast("第 " + s.index + " 格落点已存");
+      } catch (e) {
+        toast(String(e), true);
+      }
+    };
+    row.append(idx, inp);
+    box.appendChild(row);
+  }
+}
+
+
 function shotRow(s) {
   const row = document.createElement("div");
   row.className = "row tight";
@@ -87,16 +127,28 @@ async function shotsRefresh() {
     empty.append(t, b);
     box.appendChild(empty);
     shotSummaryUpdate();
+    continuityRender();
     return;
   }
   for (const s of shotsCache) box.appendChild(shotRow(s));
   shotSummaryUpdate();
+  continuityRender();
 }
 
 async function fillShot(s) {
-  // 剧本设定（#90）：提示词 = 设定前缀 + 这一格的原文；负面词没填时用统一的
-  $("prompt").value = await storyComposeText(s.prompt || "");
-  $("negative").value = s.negative || (typeof storyNegative === "function" ? storyNegative() : "");
+  // 最终提示词由后端拼（#94 画风前缀 + #90 上一格落点 + 本格原文），前端不重复拼
+  let prompt = s.prompt || "";
+  let negative = s.negative || "";
+  try {
+    const p = shotProject();
+    if (p) {
+      const r = await api.call("shot_prompt", { project: p.id, id: s.id });
+      prompt = r.prompt;
+      negative = r.negative;
+    }
+  } catch {}
+  $("prompt").value = prompt;
+  $("negative").value = negative;
   $("width").value = s.width;
   $("height").value = s.height;
   $("steps").value = s.steps;
@@ -145,6 +197,27 @@ $("shotsExport").onclick = async () => {
   }
 };
 $("shotsClose").onclick = () => ($("shotsModal").hidden = true);
+$("continuityAuto").onclick = async () => {
+  const p = shotProject();
+  if (!p) return toast("先选一个项目", true);
+  if (!shotsCache.length) return toast("还没有镜头", true);
+  const btn = $("continuityAuto");
+  btn.disabled = true;
+  btn.textContent = "补落点中…";
+  $("continuityState").textContent = "本地模型在想…";
+  try {
+    const r = await api.call("shots_continuity", { project: p.id });
+    $("continuityState").textContent = `补了 ${r.written}/${r.total} 格`;
+    await shotsRefresh();
+    toast(`已补 ${r.written} 格的落点`);
+  } catch (e) {
+    $("continuityState").textContent = "";
+    toast(String(e), true);
+  } finally {
+    btn.disabled = false;
+    btn.textContent = "自动补落点（本地模型）";
+  }
+};
 
 function shotDefaults() {
   return {

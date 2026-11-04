@@ -54,6 +54,9 @@ pub struct Shot {
     pub characters: Vec<String>,
     /// 上一次出图实际用到的角色与底板（存证据）
     pub cast: Vec<CastRef>,
+    /// #90 这一格**结束时**的人物状态/位置/时间（给下一格接续用；空 = 不拼）
+    #[serde(default)]
+    pub continuity: String,
     pub created_at: u64,
 }
 
@@ -76,6 +79,7 @@ impl Default for Shot {
             images: Vec::new(),
             characters: Vec::new(),
             cast: Vec::new(),
+            continuity: String::new(),
             created_at: 0,
         }
     }
@@ -158,6 +162,7 @@ pub fn add_many(
             images: Vec::new(),
             characters: Vec::new(),
             cast: Vec::new(),
+            continuity: String::new(),
             created_at: t,
         });
         next += 1;
@@ -214,6 +219,35 @@ pub fn set_characters(cfg: &Path, project: &str, id: &str, ids: Vec<String>) -> 
     };
     save(cfg, project, &shots)?;
     Ok(updated)
+}
+
+/// #90 写一格的「落点」：这一格结束时人物在哪、什么状态、时间推进到哪。
+pub fn set_continuity(cfg: &Path, project: &str, id: &str, text: &str) -> Result<Shot, String> {
+    let mut shots = load(cfg, project)?;
+    let updated = {
+        let s = shots.iter_mut().find(|s| s.id == id).ok_or("镜头不存在")?;
+        s.continuity = text.trim().chars().take(80).collect();
+        s.clone()
+    };
+    save(cfg, project, &shots)?;
+    Ok(updated)
+}
+
+/// #90 一次写完全部的落点（顺序与镜头一致）。落点为空的格子不覆盖。
+pub fn set_continuity_all(cfg: &Path, project: &str, texts: &[String]) -> Result<usize, String> {
+    let mut shots = load(cfg, project)?;
+    let mut n = 0;
+    for (i, s) in shots.iter_mut().enumerate() {
+        if let Some(t) = texts.get(i) {
+            let t = t.trim();
+            if !t.is_empty() {
+                s.continuity = t.chars().take(80).collect();
+                n += 1;
+            }
+        }
+    }
+    save(cfg, project, &shots)?;
+    Ok(n)
 }
 
 /// 记下这次出图实际用到的角色与底板（体检据此判「跨格是不是同一张底板」）。

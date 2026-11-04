@@ -47,8 +47,12 @@ function shotCastOf(s) {
 
 /// 出图要用的提示词：原文 + 这一镜挂的 `@名字`（原文里已经写了的就不重复塞）。
 async function shotCastPrompt(s) {
-  // 先拼剧本设定（#90），再挂 @角色名——两者不冲突：设定管画风/时代/光线，@ 管身份
-  const raw = (await storyComposeText((s.prompt || "").trim())).trim();
+  // 后端拼好「画风前缀 + 上一格落点 + 本格原文」（#94 + #90），这里只追加 @角色名
+  let raw = (s.prompt || "").trim();
+  try {
+    const p = shotProject();
+    if (p) raw = String((await api.call("shot_prompt", { project: p.id, id: s.id })).prompt || "").trim();
+  } catch {}
   const toks = [];
   for (const x of shotCastOf(s)) {
     if (!x.card || !SHOT_CAST_NAME_RE.test(x.card.name)) continue;

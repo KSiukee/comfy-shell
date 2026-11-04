@@ -1270,6 +1270,14 @@
   <div class="modal" id="shotsModal" hidden>
     <div class="modal-card" style="width: 780px">
       <h3>镜头 <span class="muted" style="font-size:12px">一话 = 一组镜头 · 每格可挂角色</span> <span class="shot-summary" id="shotsSummary"></span></h3>
+      <details class="shots-split" id="continuityBox">
+        <summary>🔗 分镜连续性 <span class="muted">每格「结束时」的状态，会作为下一格的「接上一格」</span></summary>
+        <div class="row tight" style="margin-top:6px">
+          <button class="btn small" id="continuityAuto">自动补落点（本地模型）</button>
+          <span class="muted mono" id="continuityState" style="font-size:11px"></span>
+        </div>
+        <div id="continuityBody"></div>
+      </details>
       <details class="shots-split" id="storyBox">
         <summary>🎬 剧本设定 <span class="muted">画风 / 时代 / 光线 —— 逐格拼在每格描述前面</span></summary>
         <div id="storyBody"></div>

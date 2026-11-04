@@ -14,6 +14,7 @@ const MOSS_T2I: &str = include_str!("../prompts/moss_t2i.txt");
 const TRANSLATE_SYS: &str = include_str!("../prompts/translate.txt");
 const FREE_SYS: &str = include_str!("../prompts/enhance_free.txt");
 const STORY_SPLIT_SYS: &str = include_str!("../prompts/story_split.txt");
+const CONTINUITY_SYS: &str = include_str!("../prompts/continuity.txt");
 
 struct Enhancer {
     clip: &'static str,
@@ -547,6 +548,50 @@ pub fn story_split(port: u16, text: &str, max_panels: u32) -> Vec<String> {
     }
     panels.truncate(max as usize);
     panels
+}
+
+/// #90：给每一格写「这一格结束时」的状态，供下一格接续。
+/// 返回的行数尽量与输入对齐（模型少写就补空，多写就截）。
+pub fn continuity_states(port: u16, panels: &[String]) -> Vec<String> {
+    let n = panels.len();
+    if n == 0 {
+        return Vec::new();
+    }
+    let list = panels
+        .iter()
+        .enumerate()
+        .map(|(i, p)| format!("{}: {}", i + 1, p.trim()))
+        .collect::<Vec<_>>()
+        .join("\n");
+    let prompt = format!("一话共 {} 格：\n{}", n, list);
+    let wf = json!({
+        "1": {"class_type": "CLIPLoader",
+              "inputs": {"clip_name": "qwen35_9b_heretic_int8_convrot.safetensors",
+                         "type": "flux3", "device": "default"}},
+        "2": {"class_type": "TextGenerate",
+              "inputs": {"clip": ["1", 0], "prompt": prompt, "max_length": 900,
+                         "sampling_mode": "off", "system_prompt": CONTINUITY_SYS}},
+        "3": {"class_type": "PreviewAny", "inputs": {"source": ["2", 0]}},
+    });
+    let mut out: Vec<String> = Vec::new();
+    if let Ok(outputs) = api::run_raw(port, wf, 420) {
+        if let Ok(raw) = extract_text(outputs) {
+            for line in raw.lines() {
+                let line = line
+                    .trim()
+                    .trim_start_matches(|c: char| c.is_ascii_digit() || c == '.' || c == ':' || c == '：' || c == '、' || c == '-' || c == '*')
+                    .trim();
+                if !line.is_empty() && !line.starts_with('（') {
+                    out.push(line.chars().take(60).collect());
+                }
+            }
+        }
+    }
+    out.truncate(n);
+    while out.len() < n {
+        out.push(String::new());
+    }
+    out
 }
 
 fn split_fallback(text: &str, max: usize) -> Vec<String> {
