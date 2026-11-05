@@ -98,12 +98,21 @@ pub async fn analyze_image(app: tauri::AppHandle, image: String, two_pass: Optio
     .map_err(|e| format!("解析任务失败: {e}"))?
 }
 
-/// 云端解析许不许发：私密项目一律不行，没 key 只能本地。
+/// 云端解析许不许发：项目开关必须先开；私密项目默认就是关的。没 key 只能本地。
 ///
-/// 返回 Ok(true) = 可以发云端；Ok(false) = 走本地；Err = 用户明确要云端但项目是私密的。
-fn cloud_allowed(private: bool, want_cloud: bool, has_key: bool) -> Result<bool, String> {
-    if want_cloud && private {
-        return Err("私密项目不走云端看图（红线）——用本地 Qwen3-VL".into());
+/// 返回 Ok(true) = 可以发云端；Ok(false) = 走本地；Err = 用户明确要云端但这个项目不放行。
+fn cloud_allowed(
+    private: bool,
+    project_allows: bool,
+    want_cloud: bool,
+    has_key: bool,
+) -> Result<bool, String> {
+    if want_cloud && !project_allows {
+        return Err(if private {
+            "这个私密项目没开云端看图——默认只用本地（项目菜单里可以二次确认打开）".into()
+        } else {
+            "这个项目关掉了云端看图——项目菜单里可以打开，或者直接用本地".into()
+        });
     }
     Ok(want_cloud && has_key)
 }
@@ -134,8 +143,20 @@ pub async fn analyze_blocks(
         let mut notes: Vec<String> = Vec::new();
         let t0 = std::time::Instant::now();
 
+        // #84：项目级开关决定「许不许发」，私密项目没显式打开就是关的
+        let project_rec = project
+            .as_deref()
+            .and_then(|p| crate::project::load(&cfg, p).ok());
+        let allows = match project.as_deref() {
+            Some(_) => project_rec
+                .as_ref()
+                .map(|p| p.cloud_vision_on(private))
+                .unwrap_or(false),
+            None => !private,
+        };
+
         // ① 云端（只有被允许时才走）
-        if cloud_allowed(private, want_cloud, agent::has_key(&cfg))? {
+        if cloud_allowed(private, allows, want_cloud, agent::has_key(&cfg))? {
             let tried = vision::load_input_image(&s.comfy_root, &image)
                 .and_then(|(mime, b64)| vision::ask(&cfg, &s, &mime, &b64, enhance::BLOCKS_PROMPT))
                 .and_then(|raw| crate::vblocks::parse(&raw).map(|b| (raw, b)));
@@ -177,6 +198,19 @@ pub async fn analyze_blocks(
     })
     .await
     .map_err(|e| format!("解析任务失败: {e}"))?
+}
+
+/// #84：前端「发送确认」要展示的原文——发到哪、用哪个模型、真正会发出去的那段提示词。
+#[tauri::command]
+pub fn vision_info(app: tauri::AppHandle) -> serde_json::Value {
+    let state = app.state::<AppState>();
+    let s = state.settings.lock().unwrap().clone();
+    serde_json::json!({
+        "base": vision::base(&s),
+        "model": vision::model(&s),
+        "prompt": enhance::BLOCKS_PROMPT,
+        "hasKey": agent::has_key(&cfg_dir(&app)),
+    })
 }
 
 #[tauri::command]
@@ -225,17 +259,26 @@ mod policy_tests {
     use super::cloud_allowed;
 
     #[test]
-    fn private_projects_never_go_cloud() {
-        let err = cloud_allowed(true, true, true).unwrap_err();
+    fn private_projects_default_closed_and_say_so() {
+        // 开关没开（私密默认）→ 拒绝，并提示去项目菜单
+        let err = cloud_allowed(true, false, true, true).unwrap_err();
         assert!(err.contains("私密项目"), "{err}");
+        // 显式打开之后才放行
+        assert_eq!(cloud_allowed(true, true, true, true).unwrap(), true);
         // 私密项目选了本地：正常放行到本地
-        assert_eq!(cloud_allowed(true, false, true).unwrap(), false);
+        assert_eq!(cloud_allowed(true, false, false, true).unwrap(), false);
+    }
+
+    #[test]
+    fn closed_projects_stay_local_even_when_asked() {
+        let err = cloud_allowed(false, false, true, true).unwrap_err();
+        assert!(err.contains("关掉了云端"), "{err}");
     }
 
     #[test]
     fn cloud_needs_the_flag_and_a_key() {
-        assert_eq!(cloud_allowed(false, true, true).unwrap(), true);
-        assert_eq!(cloud_allowed(false, true, false).unwrap(), false);
-        assert_eq!(cloud_allowed(false, false, true).unwrap(), false);
+        assert_eq!(cloud_allowed(false, true, true, true).unwrap(), true);
+        assert_eq!(cloud_allowed(false, true, true, false).unwrap(), false);
+        assert_eq!(cloud_allowed(false, true, false, true).unwrap(), false);
     }
 }

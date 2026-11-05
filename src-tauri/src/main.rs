@@ -192,6 +192,7 @@ fn main() {
             commands::projects::project_rename,
             commands::projects::project_set_active,
             commands::projects::project_set_hidden,
+            commands::projects::project_set_cloud_vision,
             commands::projects::project_delete,
             commands::projects::project_trash,
             commands::projects::project_restore,
@@ -264,6 +265,7 @@ fn main() {
             commands::ai::layout_draft,
             commands::ai::analyze_image,
             commands::ai::analyze_blocks,
+            commands::ai::vision_info,
             commands::ai::layout_detect,
             commands::ai::face_detect,
             commands::training_files::train_lora_files,
@@ -281,18 +283,3 @@ fn main() {
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

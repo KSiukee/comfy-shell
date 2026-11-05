@@ -45,6 +45,7 @@
       <button class="btn small ghost" id="projNew" title="新建项目（自动开工）">＋ 新建</button>
       <button class="btn small ghost" id="projRename" title="只改显示名，不动图片目录">重命名</button>
       <button class="btn small ghost" id="projHide" title="隐藏只是不显示，文件仍是明文">隐藏</button>
+      <button class="btn small ghost" id="projCloud" title="这个项目能不能把图发去云端（私密项目默认不许）">云端看图：—</button>
       <button class="btn small ghost" id="projDelete" title="移到回收站，可恢复">删除</button>
       <button class="btn small ghost" id="projTrashBtn" title="回收站">回收站</button>
       <button class="btn small ghost" id="vaultBtn" title="锁定区：加密的私密项目">🔒 锁定区</button>
@@ -406,7 +407,7 @@
   <!-- 看图拆提示词（#82）：五块候选，点一下接进提示词 -->
   <div class="modal" id="anaModal" hidden>
     <div class="modal-card" style="width: 880px; max-height: calc(100vh - 40px); overflow: auto">
-      <h3>看图拆提示词 <span class="muted" style="font-size:12px">本地 Qwen3-VL · 五块候选 · 点一下接进提示词 · 不联网</span></h3>
+      <h3>看图拆提示词 <span class="muted" style="font-size:12px">云端 / 本地可选 · 五块候选 · 点一下接进提示词</span></h3>
       <div class="row tight">
         <input type="file" id="anaFile" accept="image/png,image/jpeg,image/webp" hidden />
         <button class="btn small" id="anaPick">选择图片</button>
@@ -420,6 +421,7 @@
         <span class="spacer"></span>
         <button class="btn ghost small" id="anaClose">关闭</button>
       </div>
+      <div class="muted" id="anaEngineHint" style="font-size:11.5px"></div>
       <div class="row tight" style="align-items:flex-start">
         <img id="anaPreview" alt="" style="width:220px;max-height:360px;object-fit:contain;border-radius:8px;background:#0f1116;flex:0 0 auto" />
         <div id="anaBlocks" style="flex:1;display:flex;flex-direction:column;gap:10px;min-width:0"></div>
@@ -434,6 +436,26 @@
         <summary>原始输出</summary>
         <textarea id="anaRaw" rows="6" style="width:100%;font-size:11px"></textarea>
       </details>
+    </div>
+  </div>
+
+  <!-- #84 云端发送确认：把「这次会发什么」摊开，可取消 -->
+  <div class="modal" id="cloudSend" hidden>
+    <div class="modal-card" style="width: 720px; max-height: calc(100vh - 40px); overflow: auto">
+      <h3>这次会发出去 <span class="muted" style="font-size:12px">图片会离开本机</span></h3>
+      <div class="row tight" style="align-items:flex-start">
+        <img id="cloudSendImg" alt="" style="width:180px;max-height:240px;object-fit:contain;border-radius:8px;background:#0f1116;flex:0 0 auto" />
+        <div style="flex:1;display:flex;flex-direction:column;gap:8px;min-width:0">
+          <div class="muted" style="font-size:12px">发给 <b class="mono" id="cloudSendTo">…</b></div>
+          <div class="muted" style="font-size:12px">这次只发：这张图（base64）+ 下面这段提示词。项目名、提示词框里的字都不会带。</div>
+          <textarea id="cloudSendPrompt" rows="8" readonly style="width:100%;font-size:11px"></textarea>
+        </div>
+      </div>
+      <div class="row tight">
+        <span class="spacer"></span>
+        <button class="btn small ghost" id="cloudSendNo">取消</button>
+        <button class="btn small primary" id="cloudSendYes">发出去</button>
+      </div>
     </div>
   </div>
 

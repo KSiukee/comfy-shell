@@ -119,10 +119,41 @@ async function analyzeUseRef() {
 }
 
 const ANA_ENGINE_KEY = "cs.anaEngine";
-let anaCloudConfirmed = false;
 
 function anaProject() {
   return (window.projectUI && projectUI.current && projectUI.current()) || null;
+}
+
+function anaProjObj() {
+  return (window.projectUI && projectUI.currentObj && projectUI.currentObj()) || null;
+}
+
+/// #84：这个项目允许把图发去云端吗。没归项目的「临时」按允许算（否则每次都要先建项目）。
+function anaCloudAllowed() {
+  const p = anaProjObj();
+  if (!p) return true;
+  return p.cloudVision === null || p.cloudVision === undefined ? !p.private : !!p.cloudVision;
+}
+
+/// 项目开关一变，引擎选择要跟着收：不许云端的项目只有本地一条路，并且说清为什么。
+function anaSyncEngine() {
+  const sel = $("anaEngine");
+  if (!sel) return;
+  const allow = anaCloudAllowed();
+  const opt = [...sel.options].find((o) => o.value === "cloud");
+  if (opt) opt.disabled = !allow;
+  if (!allow && sel.value === "cloud") sel.value = "local";
+  const hint = $("anaEngineHint");
+  if (!hint) return;
+  const p = anaProjObj();
+  if (allow) {
+    hint.textContent = "";
+  } else {
+    hint.textContent =
+      p && p.private
+        ? "这个私密项目没开云端看图（项目菜单 ▸ 云端看图）——只能用本地"
+        : "这个项目关掉了云端看图（项目菜单 ▸ 云端看图）——只能用本地";
+  }
 }
 
 /// 引擎选择：记住上次用的；默认云端（有 key 时更快，也不吃显卡）。
@@ -136,20 +167,49 @@ function anaInitEngine() {
   };
 }
 
+/// #84：发送前把「这次会发什么」摊开——图 + 端点 + 那段提示词，可取消。
+function askCloudSend() {
+  return new Promise((resolve) => {
+    const box = $("cloudSend");
+    $("cloudSendImg").src = $("anaPreview").src || "";
+    $("cloudSendPrompt").value = "…";
+    $("cloudSendTo").textContent = "…";
+    const done = (ok) => {
+      box.hidden = true;
+      box.onclick = null;
+      document.removeEventListener("keydown", onKey);
+      resolve(ok);
+    };
+    const onKey = (e) => {
+      if (e.key === "Escape") done(false);
+    };
+    $("cloudSendNo").onclick = () => done(false);
+    $("cloudSendYes").onclick = () => done(true);
+    box.onclick = (e) => {
+      if (e.target === box) done(false);
+    };
+    document.addEventListener("keydown", onKey);
+    box.hidden = false;
+    api.call("vision_info")
+      .then((info) => {
+        $("cloudSendTo").textContent = `${info.base} · ${info.model}`;
+        $("cloudSendPrompt").value = info.prompt || "";
+      })
+      .catch(() => {
+        $("cloudSendTo").textContent = "（读不到云端设置）";
+      });
+  });
+}
+
 async function runAnalyze() {
   if (!anaDataUrl && !anaImageName) return toast("先选一张图", true);
-  if ($("anaEngine").value === "cloud" && !anaCloudConfirmed) {
-    const base = (state.settings && state.settings.visionBase) || "https://api.deepseek.com";
-    const model = (state.settings && state.settings.visionModel) || "deepseek-flash";
-    if (
-      !confirm(
-        `这次会把这张图（base64）和一段提示词发到 ${base}（${model}）。\n` +
-          "图片会离开本机；私密项目请切回「本地」。\n\n继续？"
-      )
-    ) {
-      return;
+  if ($("anaEngine").value === "cloud") {
+    if (!anaCloudAllowed()) {
+      anaSyncEngine();
+      return toast("这个项目没开云端看图，只能用本地", true);
     }
-    anaCloudConfirmed = true;
+    // 每次发云端都摊开给人看：发去哪、发什么
+    if (!(await askCloudSend())) return;
   }
   const btn = $("anaRun");
   btn.disabled = true;
@@ -182,9 +242,10 @@ async function runAnalyze() {
       return;
     } catch (e) {
       lastErr = String(e);
-      if (engine === "cloud" && lastErr.includes("私密项目")) {
+      if (engine === "cloud" && /(没开云端|关掉了云端|私密项目)/.test(lastErr)) {
         $("anaEngine").value = "local";
-        toast("私密项目只能本地，已切回", true);
+        anaSyncEngine();
+        toast("这个项目不许云端，已切回本地", true);
         continue;
       }
       break;
@@ -200,6 +261,7 @@ anaInitEngine();
 $("btnAnalyze").onclick = () => {
   $("layoutModal").hidden = true;
   $("poseModal").hidden = true;
+  anaSyncEngine();
   paintAna();
   $("anaModal").hidden = false;
 };

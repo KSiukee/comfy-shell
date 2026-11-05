@@ -240,6 +240,8 @@ pub fn make_private(cfg: &Path, output: &Path, id: &str) -> Result<Project, Stri
     }
     let mut project = crate::project::load(cfg, id)?;
     project.private = true;
+    // #84：变成私密项目就把云端看图收回默认关——红线不能因为「以前开过」漏过去
+    project.cloud_vision = Some(false);
 
     let src_imgs = output.join("projects").join(id);
     let dst_imgs = images_dir(cfg, id);
@@ -394,5 +396,4 @@ pub fn lib_items(cfg: &Path) -> Vec<crate::library::LibItem> {
 #[cfg(test)]
 #[path = "vault_tests.rs"]
 mod tests;
-
 pub use crate::vault_ops::{delete, seal_paths, set_active};

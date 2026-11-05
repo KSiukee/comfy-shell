@@ -64,3 +64,40 @@ use super::*;
         assert!(load(&cfg, "../x").is_err());
         let _ = std::fs::remove_dir_all(&cfg);
     }
+
+    // ---- #84 云端看图开关 ----
+
+    #[test]
+    fn cloud_vision_defaults_follow_the_red_line() {
+        let mut p = Project::default();
+        assert!(p.cloud_vision_on(false), "普通项目默认允许");
+        assert!(!p.cloud_vision_on(true), "私密项目默认关");
+        p.cloud_vision = Some(true);
+        assert!(p.cloud_vision_on(true), "显式选择优先");
+        p.cloud_vision = Some(false);
+        assert!(!p.cloud_vision_on(false), "显式关掉也算");
+    }
+
+    #[test]
+    fn cloud_vision_is_persisted_and_old_records_still_load() {
+        let cfg = tmpcfg("cloudvision");
+        let _ = std::fs::remove_dir_all(&cfg);
+        let a = create(&cfg, "海报").unwrap();
+        assert_eq!(load(&cfg, &a.id).unwrap().cloud_vision, None, "新项目按规矩");
+
+        let off = set_cloud_vision(&cfg, &a.id, Some(false)).unwrap();
+        assert_eq!(off.cloud_vision, Some(false));
+        assert!(!load(&cfg, &a.id).unwrap().cloud_vision_on(false));
+
+        // 老记录没有这个字段也要能读（serde default）
+        let file = project_file(&cfg, &a.id);
+        let mut v: serde_json::Value =
+            serde_json::from_str(&std::fs::read_to_string(&file).unwrap()).unwrap();
+        v.as_object_mut().unwrap().remove("cloudVision");
+        std::fs::write(&file, serde_json::to_string(&v).unwrap()).unwrap();
+        let old = load(&cfg, &a.id).unwrap();
+        assert_eq!(old.cloud_vision, None);
+        assert!(old.cloud_vision_on(false));
+
+        let _ = std::fs::remove_dir_all(&cfg);
+    }

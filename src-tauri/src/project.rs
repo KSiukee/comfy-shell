@@ -32,8 +32,20 @@ pub struct Project {
     pub hidden: bool,
     /// 占位：锁定区
     pub private: bool,
+    /// 云端视觉（#84）：`None` = 按规矩（私密项目默认关、普通项目默认开）；`Some` = 用户显式选择
+    pub cloud_vision: Option<bool>,
     /// 保留：测试项目 `_test`
     pub test: bool,
+}
+
+impl Project {
+    /// 这个项目现在允许把图发去云端吗。
+    ///
+    /// 显式选择优先；没选过就按规矩：**私密项目默认关**（红线是默认值，不是提醒），
+    /// 普通项目默认开（不打扰原来的用法）。
+    pub fn cloud_vision_on(&self, is_private: bool) -> bool {
+        self.cloud_vision.unwrap_or(!is_private)
+    }
 }
 
 impl Default for Project {
@@ -48,6 +60,7 @@ impl Default for Project {
             active: false,
             hidden: false,
             private: false,
+            cloud_vision: None,
             test: false,
         }
     }
@@ -202,6 +215,15 @@ pub fn rename(cfg: &Path, id: &str, name: &str) -> Result<Project, String> {
 pub fn set_hidden(cfg: &Path, id: &str, hidden: bool) -> Result<Project, String> {
     let mut p = load(cfg, id)?;
     p.hidden = hidden;
+    p.updated_at = now_ms();
+    save(cfg, &p)?;
+    Ok(p)
+}
+
+/// #84：写项目级的云端视觉开关（`None` = 回到「按规矩」）。
+pub fn set_cloud_vision(cfg: &Path, id: &str, on: Option<bool>) -> Result<Project, String> {
+    let mut p = load(cfg, id)?;
+    p.cloud_vision = on;
     p.updated_at = now_ms();
     save(cfg, &p)?;
     Ok(p)

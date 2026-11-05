@@ -50,6 +50,20 @@ async function projRefresh(selectId) {
   sel.value = projState.current;
   const cur = projCurrent();
   $("projHide").textContent = cur && cur.hidden ? "取消隐藏" : "隐藏";
+  const cloudBtn = $("projCloud");
+  if (cloudBtn) {
+    if (!cur) {
+      cloudBtn.textContent = "云端看图：—";
+      cloudBtn.disabled = true;
+      cloudBtn.title = "先选一个项目";
+    } else {
+      cloudBtn.disabled = false;
+      cloudBtn.textContent = `云端看图：${projCloudAllowed(cur) ? "开" : "关"}`;
+      cloudBtn.title = cur.private
+        ? "私密项目默认关；打开要二次确认（图会离开本机）"
+        : "关掉后这个项目只能用本地视觉模型";
+    }
+  }
   const scope = document.getElementById("libScope");
   if (scope) scope.options[0].textContent = `本项目（${active ? active.name : "临时"}）`;
   const tag = document.getElementById("resScopeTag");
@@ -156,6 +170,35 @@ $("projHide").onclick = async () => {
     const updated = await api.call("project_set_hidden", { id: p.id, hidden: !p.hidden });
     await projRefresh(updated.hidden ? "" : p.id);
     toast(updated.hidden ? `已隐藏：${p.name}（只是不显示，文件仍是明文）` : `已取消隐藏：${p.name}`);
+  } catch (e) {
+    toast(String(e), true);
+  }
+};
+
+// #84：项目级的「云端看图」开关。私密项目默认关，打开要二次确认（后端也要求 confirm）。
+function projCloudAllowed(p) {
+  if (!p) return false;
+  return p.cloudVision === null || p.cloudVision === undefined ? !p.private : !!p.cloudVision;
+}
+
+$("projCloud").onclick = async () => {
+  const p = projCurrent();
+  if (!p) return toast("先选一个项目", true);
+  const on = !projCloudAllowed(p);
+  if (on && p.private) {
+    const yes = confirm(
+      `「${p.name}」在锁定区里（私密项目）。\n\n` +
+        "打开云端看图后，每次「解析图」选云端，这张图都会被发到视觉 API（离开本机）。\n" +
+        "默认只用本地 Qwen3-VL。\n\n确定要为这个项目打开云端看图吗？"
+    );
+    if (!yes) return;
+  }
+  try {
+    const updated = await api.call("project_set_cloud_vision", { id: p.id, on, confirm: on && p.private });
+    // 列表刷新要走两趟后端，先把按钮改掉——不然点了像没反应
+    $("projCloud").textContent = `云端看图：${on ? "开" : "关"}`;
+    await projRefresh(p.id);
+    toast(`「${updated.name}」云端看图已${on ? "打开" : "关掉"}`);
   } catch (e) {
     toast(String(e), true);
   }
