@@ -14,6 +14,9 @@ function collectSettings() {
     freeEnhance: $("setFreeEnhance").checked,
     // #86 超分后替换原图（默认关）
     replaceOriginal: $("setReplaceOriginal") ? $("setReplaceOriginal").checked : false,
+    // #82 云端视觉端点（留空 = DeepSeek / deepseek-flash）
+    visionBase: $("aiVisionBase") ? $("aiVisionBase").value.trim() : "",
+    visionModel: $("aiVisionModel") ? $("aiVisionModel").value.trim() : "",
   });
 }
 

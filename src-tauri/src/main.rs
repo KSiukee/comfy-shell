@@ -33,6 +33,7 @@ mod story_tests;
 mod vault;
 mod vblocks;
 mod versions;
+mod vision;
 mod vault_ops;
 mod workspace;
 

@@ -309,7 +309,7 @@ pub fn analyze(port: u16, image: &str) -> Result<String, String> {
     vision_json(port, image, ANALYZE_PROMPT, 700)
 }
 
-const BLOCKS_PROMPT: &str = include_str!("../prompts/analyze_blocks.txt");
+pub const BLOCKS_PROMPT: &str = include_str!("../prompts/analyze_blocks.txt");
 
 /// 一张图 → 视觉模型的一段 JSON。`extract_text` + 切 JSON 是两条分析路共用的收口。
 fn vision_json(port: u16, image: &str, prompt: &str, max_length: u32) -> Result<String, String> {

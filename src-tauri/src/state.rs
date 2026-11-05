@@ -58,6 +58,12 @@ pub(crate) struct Settings {
     /// 自定义 Pi 引擎目录（空 = 自动找 PATH / 应用数据）
     #[serde(default)]
     pub(crate) pi_path: String,
+    /// 云端视觉（#82 云解析）：OpenAI 兼容端点；空 = 默认 DeepSeek
+    #[serde(default)]
+    pub(crate) vision_base: String,
+    /// 云端视觉模型名；空 = deepseek-flash（实测能看图）
+    #[serde(default)]
+    pub(crate) vision_model: String,
     /// 超分后替换原图（#86，默认关）：原图进回收站，新图继承收藏与提示词参数
     #[serde(default)]
     pub(crate) replace_original: bool,
@@ -79,6 +85,8 @@ impl Default for Settings {
             ai_provider: String::new(),
             ai_model: String::new(),
             pi_path: String::new(),
+            vision_base: String::new(),
+            vision_model: String::new(),
             replace_original: false,
         }
     }

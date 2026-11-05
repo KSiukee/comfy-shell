@@ -411,6 +411,10 @@
         <input type="file" id="anaFile" accept="image/png,image/jpeg,image/webp" hidden />
         <button class="btn small" id="anaPick">选择图片</button>
         <button class="btn small ghost" id="anaUseRef" title="用当前参考图里的第一张（不用再选文件）">用参考图</button>
+        <select id="anaEngine" style="flex:0 0 176px" title="云端会把这张图发给视觉 API；私密项目只能本地">
+          <option value="cloud">云端（DeepSeek 视觉）</option>
+          <option value="local">本地（Qwen3-VL）</option>
+        </select>
         <button class="btn small primary" id="anaRun" disabled>解析</button>
         <span class="muted mono" id="anaState"></span>
         <span class="spacer"></span>
@@ -1080,6 +1084,13 @@
               </div>
               <div class="hint">key 用 Windows DPAPI 加密后存在配置目录，不写进 settings.json。</div>
             </div>
+            <div class="set-row">
+              <div class="set-label">云端看图<small>看图拆提示词用；留空 = DeepSeek / deepseek-flash</small></div>
+              <div class="row tight">
+                <input id="aiVisionBase" placeholder="https://api.deepseek.com" style="width:230px" spellcheck="false" />
+                <input id="aiVisionModel" placeholder="deepseek-flash" style="width:150px" spellcheck="false" />
+              </div>
+            </div>
             <div class="set-sep"></div>
             <div class="set-row">
               <div class="set-label">体检 / 助手<small id="aiEnvHint">先跑一次看环境</small></div>
@@ -1574,7 +1585,8 @@
   <script src="inpaint.js"></script>
   <script src="faceswap.js"></script>
   <script src="layout-editor.js"></script>
-  <script src="tools.js"></script>
+  <script src="analyze.js"></script>
+<script src="tools.js"></script>
   <script src="region.js"></script>
   <script src="meta.js"></script>
   <script src="detail.js"></script>

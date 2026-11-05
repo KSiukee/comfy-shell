@@ -20,6 +20,8 @@ async function refreshAiSettings() {
       const s = state.settings || (await api.call("settings_get"));
       if ($("aiProvider")) $("aiProvider").value = s.aiProvider || "deepseek";
       if ($("aiModel")) $("aiModel").value = s.aiModel || "deepseek-chat";
+      if ($("aiVisionBase")) $("aiVisionBase").value = s.visionBase || "";
+      if ($("aiVisionModel")) $("aiVisionModel").value = s.visionModel || "";
     } catch {}
     const st = await api.call("ai_engine_status").catch(() => null);
     if (st && st.found) {
