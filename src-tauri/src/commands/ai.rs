@@ -98,6 +98,33 @@ pub async fn analyze_image(app: tauri::AppHandle, image: String, two_pass: Optio
     .map_err(|e| format!("解析任务失败: {e}"))?
 }
 
+/// #82 看图拆提示词：五块候选（主体/镜头/光线/色彩/风格），每块 2~3 条短句，界面点一下接进提示词。
+/// 本地视觉模型（Qwen3-VL），不联网；私密项目因此天然满足红线（与 #84 无关地安全）。
+#[tauri::command]
+pub async fn analyze_blocks(app: tauri::AppHandle, image: String) -> Result<serde_json::Value, String> {
+    let handle = app.clone();
+    tauri::async_runtime::spawn_blocking(move || {
+        let state = handle.state::<AppState>();
+        let port = state.settings.lock().unwrap().port;
+        if api::health(port).is_none() {
+            return Err("ComfyUI 没有在运行".to_string());
+        }
+        let t0 = std::time::Instant::now();
+        let raw = enhance::blocks(port, &image)?;
+        let blocks = crate::vblocks::parse(&raw)?;
+        Ok(serde_json::json!({
+            "blocks": blocks
+                .iter()
+                .map(|b| serde_json::json!({"key": b.key, "items": b.items}))
+                .collect::<Vec<_>>(),
+            "raw": raw,
+            "ms": t0.elapsed().as_millis() as u64,
+        }))
+    })
+    .await
+    .map_err(|e| format!("解析任务失败: {e}"))?
+}
+
 #[tauri::command]
 pub async fn layout_detect(app: tauri::AppHandle, image: String) -> Result<serde_json::Value, String> {
     let handle = app.clone();

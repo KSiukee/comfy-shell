@@ -403,34 +403,33 @@
     </div>
   </div>
 
-  <!-- image analyzer -->
+  <!-- 看图拆提示词（#82）：五块候选，点一下接进提示词 -->
   <div class="modal" id="anaModal" hidden>
-    <div class="modal-card" style="width: 860px">
-      <h3>看图拆提示词 <span class="muted" style="font-size:12px">本地 Qwen3-VL · 分类整理 · 不联网</span></h3>
+    <div class="modal-card" style="width: 880px; max-height: calc(100vh - 40px); overflow: auto">
+      <h3>看图拆提示词 <span class="muted" style="font-size:12px">本地 Qwen3-VL · 五块候选 · 点一下接进提示词 · 不联网</span></h3>
       <div class="row tight">
         <input type="file" id="anaFile" accept="image/png,image/jpeg,image/webp" hidden />
         <button class="btn small" id="anaPick">选择图片</button>
+        <button class="btn small ghost" id="anaUseRef" title="用当前参考图里的第一张（不用再选文件）">用参考图</button>
         <button class="btn small primary" id="anaRun" disabled>解析</button>
-        <label class="check" style="font-size:12px"><input type="checkbox" id="anaTwoPass" checked /> 两段式（更准，慢一点）</label>
         <span class="muted mono" id="anaState"></span>
         <span class="spacer"></span>
         <button class="btn ghost small" id="anaClose">关闭</button>
       </div>
       <div class="row tight" style="align-items:flex-start">
-        <img id="anaPreview" alt="" style="width:220px;max-height:300px;object-fit:contain;border-radius:8px;background:#0f1116" />
-        <div style="flex:1;display:flex;flex-direction:column;gap:6px" id="anaFields"></div>
+        <img id="anaPreview" alt="" style="width:220px;max-height:360px;object-fit:contain;border-radius:8px;background:#0f1116;flex:0 0 auto" />
+        <div id="anaBlocks" style="flex:1;display:flex;flex-direction:column;gap:10px;min-width:0"></div>
       </div>
-      <details id="anaRawBox">
-        <summary>完整提示词 / 原始 JSON</summary>
-        <textarea id="anaPrompt" rows="3" style="width:100%"></textarea>
-        <textarea id="anaRaw" rows="5" style="width:100%;font-size:11px"></textarea>
-      </details>
-      <div id="anaExtras" style="display:flex;flex-direction:column;gap:6px"></div>
       <div class="row tight">
-        <button class="btn small ghost" id="anaAddExtra">＋ 加分类</button>
-        <button class="btn small primary" id="anaFillPrompt">组合成提示词</button>
+        <span class="muted" style="font-size:11.5px">点候选＝接进提示词（再点一次撤回）；只动提示词，步数 / CFG / 尺寸不变。</span>
+        <span class="spacer"></span>
+        <button class="btn small ghost" id="anaAll">全部接进去</button>
         <button class="btn small ghost" id="anaCopy">复制 JSON</button>
       </div>
+      <details id="anaRawBox">
+        <summary>原始输出</summary>
+        <textarea id="anaRaw" rows="6" style="width:100%;font-size:11px"></textarea>
+      </details>
     </div>
   </div>
 

@@ -306,19 +306,32 @@ Image description:
 
 /// Detailed, category-sorted description of one input image.
 pub fn analyze(port: u16, image: &str) -> Result<String, String> {
+    vision_json(port, image, ANALYZE_PROMPT, 700)
+}
+
+const BLOCKS_PROMPT: &str = include_str!("../prompts/analyze_blocks.txt");
+
+/// 一张图 → 视觉模型的一段 JSON。`extract_text` + 切 JSON 是两条分析路共用的收口。
+fn vision_json(port: u16, image: &str, prompt: &str, max_length: u32) -> Result<String, String> {
     let wf = json!({
         "1": {"class_type": "LoadImage", "inputs": {"image": image}},
         "2": {"class_type": "CLIPLoader",
               "inputs": {"clip_name": "qwen3vl_8b_int8_convrot.safetensors",
                          "type": "qwen_image", "device": "default"}},
         "3": {"class_type": "TextGenerate",
-              "inputs": {"clip": ["2", 0], "prompt": ANALYZE_PROMPT, "image": ["1", 0],
-                         "max_length": 700, "sampling_mode": "off"}},
+              "inputs": {"clip": ["2", 0], "prompt": prompt, "image": ["1", 0],
+                         "max_length": max_length, "sampling_mode": "off"}},
         "4": {"class_type": "PreviewAny", "inputs": {"source": ["3", 0]}},
     });
     let outputs = api::run_raw(port, wf, 600)?;
     let text = extract_text(outputs)?;
     Ok(extract_json(&text))
+}
+
+/// #82 看图拆提示词：五块候选（主体 / 镜头 / 光线 / 色彩 / 风格），每块 2~3 条。
+/// 只出 JSON 文本；怎么收口（去重、限长、块数校验）在 `vblocks::parse`。
+pub fn blocks(port: u16, image: &str) -> Result<String, String> {
+    vision_json(port, image, BLOCKS_PROMPT, 520)
 }
 
 /// Ask the vision model to ground text blocks + objects, then convert its answer

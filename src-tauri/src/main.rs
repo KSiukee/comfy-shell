@@ -31,6 +31,7 @@ mod story;
 #[cfg(test)]
 mod story_tests;
 mod vault;
+mod vblocks;
 mod versions;
 mod vault_ops;
 mod workspace;
@@ -261,6 +262,7 @@ fn main() {
             commands::compile::prompt_dialect,
             commands::ai::layout_draft,
             commands::ai::analyze_image,
+            commands::ai::analyze_blocks,
             commands::ai::layout_detect,
             commands::ai::face_detect,
             commands::training_files::train_lora_files,

@@ -1,135 +1,188 @@
 // 看图分析 / 姿势库（从 app.js 拆出；依赖 app.js 的全局）
 
-// ---------------------------------------------------------------- image analyzer
+// ---------------------------------------------------------------- image analyzer（#82）
+// 五块候选（主体/镜头/光线/色彩/风格），点一下接进提示词，再点一次撤回。
+// 只动提示词，不动参数；视觉模型在本地跑（不联网）。
 
-const ANA_FIELDS = [
-  ["pose", "姿势"],
-  ["expression", "表情"],
-  ["clothing", "衣着"],
-  ["accessories", "配饰"],
-  ["background", "背景"],
+const ANA_BLOCKS = [
+  ["subject", "主体"],
+  ["camera", "镜头"],
+  ["light", "光线"],
+  ["color", "色彩"],
   ["style", "风格"],
-  ["colors", "色彩"],
-  ["lighting", "光线"],
-  ["mood", "氛围"],
 ];
 let anaDataUrl = "";
+let anaImageName = ""; // 已经在 ComfyUI/input 里的名字（选了新图或用了参考图）
+let anaBlocks = []; // [{key, items:[…]}]
+let anaPicked = new Set(); // 这一轮点进去的片段（只给按钮状态与撤回用）
 
-function buildAnaFields() {
-  const box = $("anaFields");
-  box.innerHTML = "";
-  for (const [key, label] of ANA_FIELDS) {
-    const row = document.createElement("label");
-    row.className = "ana-row";
-    row.innerHTML = `<span>${label}</span><input id="ana_${key}" placeholder="" />`;
+function anaLabel(key) {
+  const hit = ANA_BLOCKS.find(([k]) => k === key);
+  return hit ? hit[1] : key;
+}
+
+function paintAna() {
+  const box = $("anaBlocks");
+  if (!box) return;
+  box.textContent = "";
+  if (!anaBlocks.length) {
+    const hint = document.createElement("div");
+    hint.className = "muted";
+    hint.textContent = "选一张图 → 解析：会拆成「主体 / 镜头 / 光线 / 色彩 / 风格」五块，每块 2–3 条候选。";
+    box.appendChild(hint);
+    return;
+  }
+  for (const b of anaBlocks) {
+    const row = document.createElement("div");
+    row.className = "ana-block";
+    const head = document.createElement("div");
+    head.className = "ana-block-head";
+    const name = document.createElement("b");
+    name.textContent = anaLabel(b.key);
+    const count = document.createElement("span");
+    count.className = "muted";
+    count.textContent = `${b.items.length} 条`;
+    head.append(name, count);
+    const chips = document.createElement("div");
+    chips.className = "chips ana-chips";
+    for (const text of b.items) {
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "ana-chip" + (anaPicked.has(text) ? " on" : "");
+      btn.textContent = text;
+      btn.title = anaPicked.has(text) ? "再点一次从提示词里撤回" : "接进提示词";
+      btn.onclick = () => anaToggle(text);
+      chips.appendChild(btn);
+    }
+    row.append(head, chips);
     box.appendChild(row);
   }
+}
+
+function anaSep(text) {
+  return /[\u4e00-\u9fff]/.test(text) ? "，" : ", ";
+}
+
+function anaAppend(text) {
+  const ta = $("prompt");
+  const cur = (ta.value || "").trim().replace(/[，,]\s*$/, "");
+  ta.value = cur ? cur + anaSep(text) + text : text;
+  ta.dispatchEvent(new Event("input", { bubbles: true }));
+}
+
+/// 撤回：只在这一条还在末尾时动手（提示词被手动改过就如实说撤不了）。
+function anaRemove(text) {
+  const ta = $("prompt");
+  const cur = (ta.value || "").replace(/\s+$/, "");
+  if (!cur.endsWith(text)) return false;
+  let head = cur.slice(0, cur.length - text.length).replace(/\s+$/, "");
+  head = head.replace(/[，,]$/, "").replace(/\s+$/, "");
+  ta.value = head;
+  ta.dispatchEvent(new Event("input", { bubbles: true }));
+  return true;
+}
+
+function anaToggle(text) {
+  if (anaPicked.has(text)) {
+    if (!anaRemove(text)) return toast("提示词后来被改过，这条没法自动撤回", true);
+    anaPicked.delete(text);
+  } else {
+    anaAppend(text);
+    anaPicked.add(text);
+  }
+  paintAna();
 }
 
 async function analyzePicked(file) {
   if (!file) return;
   anaDataUrl = await readFileDataUrl(file);
+  anaImageName = "";
   $("anaPreview").src = anaDataUrl;
   $("anaRun").disabled = false;
   $("anaState").textContent = "";
 }
 
-let anaExtras = [];
-
-function renderExtras(list) {
-  anaExtras = (list || []).map((x) => ({ label: x.label || "", value: x.value || "" }));
-  paintExtras();
-}
-
-function paintExtras() {
-  const box = $("anaExtras");
-  box.innerHTML = "";
-  anaExtras.forEach((ex, i) => {
-    const row = document.createElement("div");
-    row.className = "xrow";
-    const label = document.createElement("input");
-    label.value = ex.label;
-    label.placeholder = "分类（如 weather）";
-    label.oninput = () => (ex.label = label.value);
-    const value = document.createElement("input");
-    value.value = ex.value;
-    value.placeholder = "内容（如 light rain）";
-    value.oninput = () => (ex.value = value.value);
-    const del = document.createElement("button");
-    del.className = "btn small ghost";
-    del.textContent = "×";
-    del.onclick = () => {
-      anaExtras.splice(i, 1);
-      paintExtras();
-    };
-    row.append(label, value, del);
-    box.appendChild(row);
-  });
-}
-
-$("anaAddExtra").onclick = () => {
-  anaExtras.push({ label: "", value: "" });
-  paintExtras();
-};
-
-async function runAnalyze() {
-  if (!$("ana_pose")) buildAnaFields();
-  if (!anaDataUrl) return toast("先选一张图", true);
-  const btn = $("anaRun");
-  btn.disabled = true;
-  $("anaState").textContent = "解析中…（首次加载视觉模型约 20–60 秒）";
+async function analyzeUseRef() {
+  const name = (state.refs || [])[0];
+  if (!name) return toast("当前没有参考图，先拖一张进来", true);
   try {
-    const name = await api.call("save_ref_image", { name: "ana_input.png", dataUrl: anaDataUrl });
-    const raw = await api.call("analyze_image", { image: name, twoPass: $("anaTwoPass").checked });
-    $("anaRaw").value = raw;
-    let data = {};
-    try {
-      data = JSON.parse(raw);
-    } catch {
-      $("anaState").textContent = "模型没返回标准 JSON，看下面原始输出";
-    }
-    for (const [key] of ANA_FIELDS) {
-      const el = $("ana_" + key);
-      if (el) el.value = data[key] || "";
-    }
-    renderExtras(data.extras || []);
-    $("anaPrompt").value = data.prompt || "";
-    $("anaRawBox").open = !Object.keys(data).length;
-    $("anaState").textContent = Object.keys(data).length ? "解析完成" : "解析完成（格式异常）";
+    const url = await api.call("ref_preview", { name });
+    anaDataUrl = "";
+    anaImageName = name;
+    $("anaPreview").src = url;
+    $("anaRun").disabled = false;
+    $("anaState").textContent = "用参考图：" + name;
   } catch (e) {
-    $("anaState").textContent = "";
     toast(String(e), true);
-  } finally {
-    btn.disabled = false;
   }
 }
 
+async function runAnalyze() {
+  if (!anaDataUrl && !anaImageName) return toast("先选一张图", true);
+  const attempts = 2;
+  let lastErr = "";
+  for (let attempt = 0; attempt < attempts; attempt++) {
+    const btn = $("anaRun");
+    btn.disabled = true;
+    $("anaState").textContent =
+      attempt === 0 ? "看图拆五块…（首次加载视觉模型约 20–60 秒）" : "模型没按五块回来，再试一次…";
+    try {
+      let name = anaImageName;
+      if (!name) {
+        name = await api.call("save_ref_image", { name: "ana_input.png", dataUrl: anaDataUrl });
+        anaImageName = name;
+      }
+      const res = await api.call("analyze_blocks", { image: name });
+      anaBlocks = (res.blocks || []).map((b) => ({ key: b.key, items: b.items || [] }));
+      anaPicked.clear();
+      $("anaRaw").value = res.raw || "";
+      paintAna();
+      $("anaState").textContent = `完成 · ${((res.ms || 0) / 1000).toFixed(1)} 秒`;
+      return;
+    } catch (e) {
+      lastErr = String(e);
+    } finally {
+      btn.disabled = false;
+    }
+  }
+  $("anaState").textContent = "";
+  toast(lastErr || "解析失败", true);
+}
+
 $("btnAnalyze").onclick = () => {
-  $("layoutModal").hidden = true; $("poseModal").hidden = true;
-  buildAnaFields();
+  $("layoutModal").hidden = true;
+  $("poseModal").hidden = true;
+  paintAna();
   $("anaModal").hidden = false;
 };
 $("anaClose").onclick = () => ($("anaModal").hidden = true);
 $("anaPick").onclick = () => $("anaFile").click();
 $("anaFile").onchange = (e) => analyzePicked(e.target.files[0]);
+$("anaUseRef").onclick = analyzeUseRef;
 $("anaRun").onclick = runAnalyze;
-$("anaFillPrompt").onclick = () => {
-  const parts = ANA_FIELDS.map(([k]) => ($("ana_" + k)?.value || "").trim()).filter(Boolean);
-  for (const ex of anaExtras) {
-    const v = (ex.value || "").trim();
-    if (v) parts.push(v);
+$("anaAll").onclick = () => {
+  if (!anaBlocks.length) return toast("还没有解析结果", true);
+  let n = 0;
+  for (const b of anaBlocks) {
+    for (const text of b.items) {
+      if (anaPicked.has(text)) continue;
+      anaAppend(text);
+      anaPicked.add(text);
+      n += 1;
+    }
   }
-  if (!parts.length) return toast("还没有解析结果", true);
-  const text = parts.join(", ");
-  $("prompt").value = text;
-  $("anaModal").hidden = true;
-  toast("已填入提示词");
+  paintAna();
+  toast(n ? `已接进 ${n} 条` : "五块已经全接进去了");
 };
 $("anaCopy").onclick = async () => {
   const raw = $("anaRaw").value.trim();
   if (!raw) return toast("还没有解析结果", true);
-  await navigator.clipboard.writeText(raw);
-  toast("已复制 JSON");
+  try {
+    await navigator.clipboard.writeText(raw);
+    toast("已复制 JSON");
+  } catch {
+    toast("复制失败，手动选一下原始输出", true);
+  }
 };
 
 // ---------------------------------------------------------------- pose library

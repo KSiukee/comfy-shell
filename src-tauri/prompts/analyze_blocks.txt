@@ -1,0 +1,16 @@
+You read one image and return candidate prompt fragments for an image generator.
+
+Return ONLY one JSON object, no markdown, no prose:
+{"subject":["…","…"],"camera":["…","…"],"light":["…","…"],"color":["…","…"],"style":["…","…"]}
+
+Rules
+- Exactly these five keys. Each value is an array of 2 or 3 strings — never one, never four.
+- Every string is a short English fragment of 2 to 8 words, concrete and visual. No sentences, no numbering, no trailing period.
+- subject: who or what is in the picture, with the few attributes a renderer needs (hair, clothing, action, expression). Not the background.
+- camera: framing, angle, lens, depth of field (e.g. "waist-up, eye level", "35mm, shallow depth of field").
+- light: source, direction, hardness, time of day (e.g. "soft window light from frame-left").
+- color: palette and colour mood (e.g. "teal shadows, warm skin tones").
+- style: medium, genre, era or look (e.g. "cinematic photograph", "1990s film still").
+- Describe only what is visible. Do not invent names, brands, celebrities, dates or text that is not there.
+- No quality words (masterpiece, best quality, 8k, highly detailed).
+- If a block is genuinely unclear, still give 2 entries — the closest visible fact, not a guess about the story.
