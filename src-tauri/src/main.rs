@@ -11,6 +11,7 @@ mod fsutil;
 mod history;
 mod hints;
 mod characters;
+mod compiler;
 mod imgmeta;
 mod layouts;
 mod library;
@@ -256,6 +257,8 @@ fn main() {
             commands::upscale::upscale_input,
             commands::training_files::train_lora,
             commands::ai::assist,
+            commands::compile::prompt_compile,
+            commands::compile::prompt_dialect,
             commands::ai::layout_draft,
             commands::ai::analyze_image,
             commands::ai::layout_detect,

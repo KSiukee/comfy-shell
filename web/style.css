@@ -285,6 +285,8 @@ label.row.tight .btn { flex: 0 0 auto; white-space: nowrap; }
 }
 .modal-card h3 { margin: 0; font-size: 15px; }
 .modal-actions { display: flex; justify-content: flex-end; gap: 8px; }
+.compile-notes { display: flex; flex-direction: column; gap: 4px; max-height: 150px; overflow: auto; }
+.compile-note { font-size: 11.5px; color: var(--muted); background: #0b0f17; border-radius: 6px; padding: 5px 8px; word-break: break-word; }
 
 .lightbox { background: rgba(4,6,10,.92); flex-direction: column; }
 .lightbox img { max-width: 94vw; max-height: calc(100vh - 90px); border-radius: 10px; box-shadow: 0 20px 60px rgba(0,0,0,.6); cursor: zoom-in; }

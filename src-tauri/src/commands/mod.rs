@@ -1,5 +1,6 @@
 pub mod agent;
 pub mod ai;
+pub mod compile;
 pub mod download;
 pub mod faceswap;
 pub mod feedback;

@@ -332,6 +332,36 @@
     </div>
   </div>
 
+  <!-- prompt compiler (#81) -->
+  <div class="modal" id="compileModal" hidden>
+    <div class="modal-card" style="width: 760px; max-height: calc(100vh - 40px); overflow: auto">
+      <h3>编译提示词 <span class="muted" style="font-size:12px" id="compileFor">当前模型</span></h3>
+      <textarea id="compileIdea" rows="2" placeholder="一句话：想画什么？例如：雨夜街头，穿红大衣的银发女孩回头看镜头"></textarea>
+      <div class="row tight">
+        <label class="check" title="引号里的文字、数量、专名一律原样保留；关掉就允许模型重写措辞">
+          <input type="checkbox" id="compileKeep" checked /> 保留我的用词
+        </label>
+        <span class="muted" style="font-size:11.5px">只填提示词，步数 / CFG / 尺寸都不动</span>
+        <span class="spacer"></span>
+        <button class="btn small primary" id="compileRun" title="Ctrl+Enter 也可以">编译</button>
+        <span class="muted mono" id="compileState"></span>
+        <button class="btn ghost small" id="compileClose">关闭</button>
+      </div>
+      <div id="compileOutWrap" hidden style="display:flex;flex-direction:column;gap:8px">
+        <textarea id="compileOut" rows="7"></textarea>
+        <div class="row tight">
+          <button class="btn small primary" id="compileFill">填入提示词</button>
+          <button class="btn small" id="compileAppend">接在末尾</button>
+          <button class="btn small ghost" id="compileCopy">复制</button>
+          <span class="spacer"></span>
+          <span class="muted mono" id="compileSize"></span>
+        </div>
+        <div id="compileNotes" class="compile-notes"></div>
+        <div class="muted" id="compileSend" style="font-size:11.5px"></div>
+      </div>
+    </div>
+  </div>
+
   <!-- MOSS layout editor -->
   <div class="modal" id="layoutModal" hidden>
     <div class="modal-card" style="width: 1000px">
@@ -1552,6 +1582,7 @@
 <script src="photoedit.js"></script>
 <script src="shortcuts.js"></script>
 <script src="aiagent.js"></script>
+<script src="compile.js"></script>
   <script src="ab.js"></script>
   <script src="workspace.js"></script>
   <script src="problems.js"></script>

@@ -492,6 +492,22 @@ fn looks_refused(text: &str) -> bool {
     NEEDLES.iter().any(|n| t.contains(n))
 }
 
+/// 通用本地改写（#81 编译器用）：同一个本地文本模型，系统提示由调用方给。
+/// 走 heretic 那份文本编码器——它是这台机器上唯一「你说什么它写什么」的本地写手。
+pub fn rewrite(port: u16, system: &str, prompt: &str, max_length: u32) -> Result<String, String> {
+    let wf = json!({
+        "1": {"class_type": "CLIPLoader",
+              "inputs": {"clip_name": "qwen3vl_8b_int8_convrot_heretic.safetensors",
+                         "type": "qwen_image", "device": "default"}},
+        "2": {"class_type": "TextGenerate",
+              "inputs": {"clip": ["1", 0], "prompt": prompt, "max_length": max_length,
+                         "sampling_mode": "off", "system_prompt": system}},
+        "3": {"class_type": "PreviewAny", "inputs": {"source": ["2", 0]}},
+    });
+    let outputs = api::run_raw(port, wf, 420)?;
+    extract_text(outputs)
+}
+
 /// Uncensored rewriter: local Qwen3-VL heretic, driven by `prompts/enhance_free.txt`.
 pub fn enhance_free(port: u16, prompt: &str, ref_image: Option<&str>) -> Result<String, String> {
     let mut wf = json!({

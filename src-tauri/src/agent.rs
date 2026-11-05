@@ -795,19 +795,22 @@ fn extract_json(text: &str) -> Option<serde_json::Value> {
     None
 }
 
-pub struct PlanResult {
-    pub plan: serde_json::Value,
-    pub raw: String,
+/// 一次 Pi 调用的结果：模型说的话 + 耗时。
+pub struct AskResult {
+    pub text: String,
     pub ms: u64,
 }
 
-pub fn run_plan(
+/// 组一次 Pi 命令行：系统提示落盘（`agent_tmp/system-<tag>.md`），正文走参数。
+///
+/// 工具全关：模型手里没有 shell、没有文件读写，只能把话写回来。
+fn pi_command(
     cfg: &Path,
     s: &Settings,
-    report: &EnvReport,
-    request: &str,
-    extra: Option<&str>,
-) -> Result<PlanResult, String> {
+    tag: &str,
+    system: &str,
+    user_msg: &str,
+) -> Result<Command, String> {
     let key = load_key(cfg).ok_or("还没填 API key（设置 → AI 助手）")?;
     let eng = resolve_engine(cfg, s);
     if !eng.found {
@@ -823,20 +826,10 @@ pub fn run_plan(
     } else {
         s.ai_model.trim()
     };
-
     let tmp = cfg.join("agent_tmp");
     let _ = std::fs::create_dir_all(&tmp);
-    let prompt_path = tmp.join("system.md");
-    let report_json = redact(&serde_json::to_string_pretty(report).unwrap_or_default());
-    let extra_block = match extra.map(str::trim).filter(|x| !x.is_empty()) {
-        Some(e) => format!("\n\n## 补充信息（刚刚查到的，以此为准）\n{}", redact(e)),
-        None => String::new(),
-    };
-    let sys = format!(
-        "{}\n\n## 体检报告\n```json\n{}\n```\n\n## 用户请求\n{}{}",
-        PLAN_SYSTEM, report_json, request, extra_block
-    );
-    crate::fsutil::atomic_write_str(&prompt_path, &sys)?;
+    let prompt_path = tmp.join(format!("system-{tag}.md"));
+    crate::fsutil::atomic_write_str(&prompt_path, system)?;
 
     let mut cmd = Command::new(&eng.node);
     cmd.arg(&eng.cli)
@@ -852,18 +845,21 @@ pub fn run_plan(
         .arg(key)
         .arg("--system-prompt")
         .arg(&prompt_path)
-        .arg("按系统提示输出 JSON 计划。")
+        .arg(user_msg)
         .current_dir(&tmp)
         .stdin(Stdio::null())
         .stdout(Stdio::piped())
         .stderr(Stdio::piped());
+    Ok(cmd)
+}
 
+/// 跑起来、收 stdout 的 JSON 事件流，返回 (assistant 正文, 最后一条错误, 毫秒)。
+fn spawn_collect(mut cmd: Command, timeout_secs: u64) -> Result<(String, String, u64), String> {
     #[cfg(windows)]
     {
         use std::os::windows::process::CommandExt;
         cmd.creation_flags(0x0800_0000);
     }
-
     let t0 = std::time::Instant::now();
     let mut child = cmd.spawn().map_err(|e| format!("启动 Pi 失败：{e}"))?;
     let stdout = child.stdout.take().ok_or("拿不到 Pi 输出")?;
@@ -882,23 +878,28 @@ pub fn run_plan(
         done_ref.store(true, Ordering::SeqCst);
     });
 
-    let deadline = std::time::Instant::now() + std::time::Duration::from_secs(150);
+    let deadline = std::time::Instant::now() + std::time::Duration::from_secs(timeout_secs);
     loop {
         if done.load(Ordering::SeqCst) || child.try_wait().ok().flatten().is_some() {
             break;
         }
         if std::time::Instant::now() > deadline {
             let _ = child.kill();
-            return Err("Pi 超时（150 秒）".into());
+            return Err(format!("Pi 超时（{timeout_secs} 秒）"));
         }
         std::thread::sleep(std::time::Duration::from_millis(120));
     }
     let _ = child.wait();
-
     let lines = collected.lock().map(|v| v.clone()).unwrap_or_default();
+    let (assistant, last_err) = parse_pi_lines(&lines);
+    Ok((assistant, last_err, t0.elapsed().as_millis() as u64))
+}
+
+/// 从 Pi 的 JSON 事件流里抠出最后一条 assistant 正文与最后一条错误。
+fn parse_pi_lines(lines: &[String]) -> (String, String) {
     let mut assistant = String::new();
     let mut last_err = String::new();
-    for line in &lines {
+    for line in lines {
         let Ok(v) = serde_json::from_str::<serde_json::Value>(line) else {
             continue;
         };
@@ -936,8 +937,20 @@ pub fn run_plan(
             _ => {}
         }
     }
+    (assistant, last_err)
+}
 
-    if assistant.trim().is_empty() {
+/// 一次性文本问答（#81 编译器用）：不给工具、不带上下文文件，只要模型把话说回来。
+pub fn run_text(
+    cfg: &Path,
+    s: &Settings,
+    system: &str,
+    user: &str,
+    timeout_secs: u64,
+) -> Result<AskResult, String> {
+    let cmd = pi_command(cfg, s, "text", system, user)?;
+    let (text, last_err, ms) = spawn_collect(cmd, timeout_secs)?;
+    if text.trim().is_empty() {
         return Err(if last_err.is_empty() {
             "Pi 没有返回内容（检查 key/provider/model）".into()
         } else {
@@ -947,9 +960,35 @@ pub fn run_plan(
             )
         });
     }
+    Ok(AskResult { text, ms })
+}
 
-    let plan = extract_json(&assistant).ok_or_else(|| {
-        let tail: String = assistant
+pub struct PlanResult {
+    pub plan: serde_json::Value,
+    pub raw: String,
+    pub ms: u64,
+}
+
+pub fn run_plan(
+    cfg: &Path,
+    s: &Settings,
+    report: &EnvReport,
+    request: &str,
+    extra: Option<&str>,
+) -> Result<PlanResult, String> {
+    let report_json = redact(&serde_json::to_string_pretty(report).unwrap_or_default());
+    let extra_block = match extra.map(str::trim).filter(|x| !x.is_empty()) {
+        Some(e) => format!("\n\n## 补充信息（刚刚查到的，以此为准）\n{}", redact(e)),
+        None => String::new(),
+    };
+    let sys = format!(
+        "{}\n\n## 体检报告\n```json\n{}\n```\n\n## 用户请求\n{}{}",
+        PLAN_SYSTEM, report_json, request, extra_block
+    );
+    let r = run_text(cfg, s, &sys, "按系统提示输出 JSON 计划。", 150)?;
+    let plan = extract_json(&r.text).ok_or_else(|| {
+        let tail: String = r
+            .text
             .chars()
             .rev()
             .take(160)
@@ -959,16 +998,17 @@ pub fn run_plan(
             .collect();
         format!(
             "模型没按 JSON 返回（{} 字）。尾部：{}",
-            assistant.chars().count(),
+            r.text.chars().count(),
             tail
         )
     })?;
     Ok(PlanResult {
         plan,
-        raw: assistant,
-        ms: t0.elapsed().as_millis() as u64,
+        raw: r.text,
+        ms: r.ms,
     })
 }
+
 
 #[cfg(test)]
 mod redact_tests {
