@@ -108,7 +108,7 @@ function shotRow(s) {
   maskBtn.className = "btn small ghost";
   maskBtn.textContent = "蒙";
   maskBtn.title = "手动画头蒙版再换头（保构图模式用；侧脸/回头靠它）";
-  maskBtn.hidden = (typeof shotSwapMode === "function" && document.querySelector('input[name="shotSwapMode"]:checked') || {}).value !== "keep";
+  maskBtn.hidden = true; // #101 收摊：手画蒙版只服务已藏起来的「局部重绘」模式
   maskBtn.onclick = () => openShotMask(s);
   row.append(idx, prompt, shotCastChips(s), count, fill, again, swap, maskBtn, del);
   return row;
