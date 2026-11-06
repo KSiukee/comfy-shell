@@ -9,6 +9,12 @@ window.PH_EXTRA = [
     onclick: () => openLint(),
   },
   {
+    icon: "🧯",
+    title: "崩图诊断",
+    desc: "看一张坏图 + 刚才的参数，说原因、给能直接应用的改法",
+    onclick: () => openDiagnose(),
+  },
+  {
     icon: "📐",
     title: "排版草稿",
     desc: "用本机模型按当前画布写一份 MOSS 排版 JSON，再进画布微调",

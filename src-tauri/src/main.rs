@@ -19,6 +19,7 @@ mod models;
 mod models_manifest;
 mod netdl;
 mod commands;
+mod diagnose;
 mod pose;
 mod project;
 mod promptlib;
@@ -175,6 +176,7 @@ fn main() {
             commands::system::custom_save,
             commands::system::custom_delete,
             commands::system::custom_params,
+            commands::system::custom_import_file,
             commands::system::recipe_list,
             commands::system::recipe_save,
             commands::system::recipe_delete,
@@ -265,6 +267,7 @@ fn main() {
             commands::ai::layout_draft,
             commands::ai::analyze_image,
             commands::ai::analyze_blocks,
+            diagnose::diagnose_image,
             commands::ai::vision_info,
             commands::ai::layout_detect,
             commands::ai::face_detect,

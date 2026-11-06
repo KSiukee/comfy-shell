@@ -65,7 +65,32 @@ pub fn load_input_image(root: &str, name: &str) -> Result<(String, String), Stri
     } else {
         return Err("只支持 png / jpg / webp".into());
     };
-    let bytes = std::fs::read(&path).map_err(|e| format!("读不到图片 {safe}：{e}"))?;
+    load_image_file(&path)
+}
+
+/// 按真实路径读一张图 → (mime, base64)。同样有 12MB 上限、只认 png/jpg/webp。
+pub fn load_image_file(path: &std::path::Path) -> Result<(String, String), String> {
+    let meta = std::fs::metadata(path).map_err(|e| format!("读不到图片：{e}"))?;
+    if !meta.is_file() {
+        return Err("不是文件".into());
+    }
+    if meta.len() > MAX_BYTES {
+        return Err(format!(
+            "图片太大（{:.1} MB > 12 MB），云端解析请先缩小",
+            meta.len() as f64 / 1048576.0
+        ));
+    }
+    let name = path.to_string_lossy().to_lowercase();
+    let mime = if name.ends_with(".jpg") || name.ends_with(".jpeg") {
+        "image/jpeg"
+    } else if name.ends_with(".webp") {
+        "image/webp"
+    } else if name.ends_with(".png") {
+        "image/png"
+    } else {
+        return Err("只支持 png / jpg / webp".into());
+    };
+    let bytes = std::fs::read(path).map_err(|e| format!("读不到图片：{e}"))?;
     use base64::Engine as _;
     Ok((mime.to_string(), base64::engine::general_purpose::STANDARD.encode(bytes)))
 }

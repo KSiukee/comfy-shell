@@ -72,6 +72,15 @@ use super::*;
         let mut p = Project::default();
         assert!(p.cloud_vision_on(false), "普通项目默认允许");
         assert!(!p.cloud_vision_on(true), "私密项目默认关");
+        // 隐藏项目也按「锁定」算：界面上看不见它，就不该默认把图发上云
+        let mut hidden = Project::default();
+        hidden.hidden = true;
+        let locked = hidden.private || hidden.hidden;
+        assert!(locked, "隐藏就是要按锁定处理");
+        assert!(!hidden.cloud_vision_on(locked), "隐藏项目默认关");
+        // 显式打开过才放行（界面里要二次确认）
+        hidden.cloud_vision = Some(true);
+        assert!(hidden.cloud_vision_on(locked), "显式选择优先");
         p.cloud_vision = Some(true);
         assert!(p.cloud_vision_on(true), "显式选择优先");
         p.cloud_vision = Some(false);

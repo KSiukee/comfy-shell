@@ -313,6 +313,31 @@ async function aiExecuteStep(step, btn) {
       } finally {
         if (typeof setBusy === "function") setBusy(false);
       }
+    } else if (action === "import_workflow") {
+      // 把磁盘上的工作流 JSON 导入成壳里的自定义模型档（人已在上面的 confirm 点过）
+      const path = String(args.path || "").trim();
+      if (!/\.json$/i.test(path)) throw new Error("只接受 .json 工作流文件");
+      btn.textContent = "导入中…";
+      const saved = await api.call("custom_import_file", { path });
+      state.customs = await api.call("custom_list");
+      if (typeof buildModelSelect === "function") buildModelSelect();
+      toast(`已导入工作流：${saved}`);
+    } else if (action === "switch_project") {
+      // 切到某个项目；不存在就新建。私密 / 隐藏项目不开放给助手。
+      const name = String(args.name || "").trim();
+      if (!name) throw new Error("缺少项目名");
+      const list = await api.call("project_list", {});
+      const hit = (list || []).find((p) => p.name === name || p.id === name);
+      if (hit && hit.private) throw new Error("私密项目不开放给助手");
+      let id = hit ? hit.id : "";
+      if (!id) {
+        const created = await api.call("project_create", { name });
+        id = created.id;
+      }
+      await api.call("project_set_active", { id });
+      if (window.projectUI && projectUI.refresh) await projectUI.refresh(id);
+      state.projects = await api.call("project_list", {});
+      toast(`已切换到项目：${name}`);
     } else if (action === "inspect") {
       const target = String(args.target || "logs");
       btn.textContent = "查询中…";

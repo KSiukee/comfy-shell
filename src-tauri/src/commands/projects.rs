@@ -72,8 +72,13 @@ pub fn project_set_cloud_vision(
 ) -> Result<project::Project, String> {
     let cfg = cfg_dir(&app);
     let private = vault::is_private(&cfg, &id);
-    if on && private && !confirm.unwrap_or(false) {
-        return Err("私密项目打开云端看图要再确认一次：这张图会离开本机".into());
+    let hidden = project::load(&cfg, &id).map(|p| p.hidden).unwrap_or(false);
+    if on && (private || hidden) && !confirm.unwrap_or(false) {
+        return Err(if private {
+            "私密项目打开云端看图要再确认一次：这张图会离开本机".into()
+        } else {
+            "隐藏项目打开云端看图要再确认一次：这张图会离开本机".into()
+        });
     }
     project::set_cloud_vision(&cfg, &id, Some(on))
 }

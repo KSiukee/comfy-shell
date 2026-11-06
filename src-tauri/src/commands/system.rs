@@ -385,6 +385,41 @@ pub fn custom_delete(app: tauri::AppHandle, name: String) -> Result<(), String> 
     custom::delete(&cfg_dir(&app), &name)
 }
 
+/// 读一个工作流 JSON 文件（AI 助手的「导入工作流」动作用）：8MB 上限、必须是 JSON 对象。
+/// 返回 (名字, 原文)；名字取文件名（去扩展名、截 40 字）。
+fn read_workflow_file(path: &str) -> Result<(String, String), String> {
+    let p = std::path::Path::new(path);
+    if !p.is_file() {
+        return Err(format!("读不到文件：{path}"));
+    }
+    let raw = std::fs::read_to_string(p).map_err(|e| format!("读不到文件：{e}"))?;
+    if raw.len() > 8 * 1024 * 1024 {
+        return Err("工作流文件太大（上限 8MB）".into());
+    }
+    let v: serde_json::Value =
+        serde_json::from_str(&raw).map_err(|e| format!("不是合法 JSON：{e}"))?;
+    if !v.is_object() {
+        return Err("工作流 JSON 必须是对象（ComfyUI 的 API 格式）".into());
+    }
+    let stem = p
+        .file_stem()
+        .map(|s| s.to_string_lossy().trim().to_string())
+        .unwrap_or_default();
+    let name: String = if stem.is_empty() {
+        "workflow".into()
+    } else {
+        stem.chars().take(40).collect()
+    };
+    Ok((name, raw))
+}
+
+/// 从磁盘上的工作流 JSON 导入成自定义模型档（AI 助手「导入工作流」动作的执行端）。
+#[tauri::command]
+pub fn custom_import_file(app: tauri::AppHandle, path: String) -> Result<String, String> {
+    let (name, raw) = read_workflow_file(&path)?;
+    custom::save(&cfg_dir(&app), &name, &raw)
+}
+
 /// 从自定义工作流推断可调参数（给生成页画表单用）。
 #[tauri::command]
 pub fn custom_params(app: tauri::AppHandle, name: String) -> Result<Vec<custom::Param>, String> {
@@ -509,3 +544,42 @@ pub fn job_cancel(state: State<AppState>) {
 // ---------------------------------------------------------------------------
 // Entry point
 // ---------------------------------------------------------------------------
+
+#[cfg(test)]
+mod import_file_tests {
+    use super::read_workflow_file;
+    use std::io::Write;
+
+    fn tmp(name: &str, body: &str) -> String {
+        let dir = std::env::temp_dir().join(format!("cs_wf_{}", std::process::id()));
+        std::fs::create_dir_all(&dir).unwrap();
+        let p = dir.join(name);
+        let mut f = std::fs::File::create(&p).unwrap();
+        f.write_all(body.as_bytes()).unwrap();
+        p.to_string_lossy().to_string()
+    }
+
+    #[test]
+    fn reads_object_workflow_and_uses_file_stem() {
+        let p = tmp("my_flow.json", r#"{"1":{"class_type":"KSampler"}}"#);
+        let (name, raw) = read_workflow_file(&p).unwrap();
+        assert_eq!(name, "my_flow");
+        assert!(raw.contains("KSampler"));
+    }
+
+    #[test]
+    fn rejects_non_object_json() {
+        let p = tmp("arr.json", "[1,2,3]");
+        let err = read_workflow_file(&p).unwrap_err();
+        assert!(err.contains("必须是对象"), "{err}");
+    }
+
+    #[test]
+    fn rejects_broken_json_and_missing_file() {
+        let p = tmp("bad.json", "{not json");
+        assert!(read_workflow_file(&p).unwrap_err().contains("不是合法 JSON"));
+        assert!(read_workflow_file("不存在的目录/nope.json")
+            .unwrap_err()
+            .contains("读不到文件"));
+    }
+}

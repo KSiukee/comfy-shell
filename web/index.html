@@ -1315,6 +1315,32 @@
     </div>
   </div>
 
+  <!-- 崩图诊断：看坏图 + 刚才的参数，说原因、给能直接应用的改法 -->
+  <div class="modal" id="diagModal" hidden>
+    <div class="modal-card" style="max-width:780px">
+      <h3>崩图诊断 <span class="muted" style="font-size:12px">看这张图 + 表单里的参数，说原因、给能点的改法</span></h3>
+      <div class="row tight">
+        <span class="muted">图</span>
+        <select id="diagPick" style="flex:1 1 0;min-width:0"></select>
+        <select id="diagEngine" title="云端更快，但图会离开本机；私密项目只能本地">
+          <option value="local">本地（Qwen3-VL）</option>
+          <option value="cloud">云端（DeepSeek 视觉）</option>
+        </select>
+        <span class="muted" id="diagSource" style="font-size:11.5px"></span>
+      </div>
+      <div class="row tight" style="align-items:flex-start;gap:12px;margin-top:10px">
+        <img id="diagImg" alt="" style="width:200px;border-radius:8px;border:1px solid var(--line)" />
+        <div id="diagOut" style="flex:1 1 0;min-width:0;min-height:140px;font-size:12.5px"></div>
+      </div>
+      <div class="row tight" style="margin-top:12px">
+        <button class="btn small primary" id="diagRun">诊断</button>
+        <button class="btn small" id="diagApply" disabled>应用这些修改</button>
+        <span class="spacer"></span>
+        <button class="btn small ghost" id="diagClose">关闭</button>
+      </div>
+    </div>
+  </div>
+
   <!-- 提示词辅助器：把散在提示词栏的小按钮收成一张卡片页 -->
   <div class="modal" id="phModal" hidden>
     <div class="modal-card ph-card">
@@ -1629,6 +1655,7 @@
   <script src="faceswap.js"></script>
   <script src="layout-editor.js"></script>
   <script src="analyze.js"></script>
+<script src="diagnose.js"></script>
 <script src="tools.js"></script>
   <script src="region.js"></script>
   <script src="meta.js"></script>

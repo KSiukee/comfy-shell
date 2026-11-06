@@ -727,9 +727,11 @@ const PLAN_SYSTEM: &str = r#"你是「显影」（本地 ComfyUI 生图/改图�
     （装自定义节点：clone 到 custom_nodes 并装 requirements；url 只支持 GitHub https，registry 由壳解析成 GitHub 地址）
   - generate_test args: {"profile"?:string,"prompt"?:string,"width"?:number,"height"?:number}（真跑一张验收图，约 1 分钟、占 GPU）
   - inspect       args: {"target":"logs"|"models"|"nodes"|"status","lines"?:number}（只读；查完壳会把结果补给你、让你重新出方案）
+  - import_workflow args: {"path":"<工作流 JSON 的完整路径>"}（把 API 格式的 workflow JSON 导入成壳里的自定义模型档，导入后能直接选来生成。人点确认后才执行）
+  - switch_project args: {"name":"<项目名>"}（切到这个项目；没有就新建。**私密项目不开放**，碰到会被拒绝）
 - 体检报告只是快照；需要看最新日志/模型/节点/显存时，先给一步 inspect，别猜。
 - 装完自定义节点记得加一步 restart_comfy 让它生效；generate_test 每轮最多一次。
-- 最多 6 步；不要给删除项目、读写图片库、执行任意命令之类的动作（你也没有这些工具）。
+- 最多 6 步；不要给删除项目、读写图片库、执行任意命令之类的动作（你也没有这些工具）；能切项目和导入工作流，但不许删项目、也不许碰私密项目。
 - **绝对不许尝试修改、替换、重编译显影自己的程序或源码**；你只能通过上面这些动作改 ComfyUI 的配置与环境。
 - 说话要短：summary 不超过 80 个汉字；每步的 why 不超过 30 个汉字；advice 的 text 不超过 120 个汉字。
 - 只输出一个 JSON 对象，从 `{` 开始到 `}` 结束，前后不要有任何文字或代码块。
@@ -775,7 +777,7 @@ fn escape_control_in_strings(s: &str) -> String {
     out
 }
 
-fn extract_json(text: &str) -> Option<serde_json::Value> {
+pub(crate) fn extract_json(text: &str) -> Option<serde_json::Value> {
     let start = text.find('{')?;
     let body = &text[start..];
     // 从最后一个 } 往前试几个候选结尾，兼容「后面还有话」或「字符串里带裸换行」

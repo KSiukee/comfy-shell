@@ -43,8 +43,12 @@ impl Project {
     ///
     /// 显式选择优先；没选过就按规矩：**私密项目默认关**（红线是默认值，不是提醒），
     /// 普通项目默认开（不打扰原来的用法）。
-    pub fn cloud_vision_on(&self, is_private: bool) -> bool {
-        self.cloud_vision.unwrap_or(!is_private)
+    /// 这个项目许不许把图发去云端。没显式设过就按规矩：**锁定（私密或隐藏）默认关**，普通项目默认开。
+    ///
+    /// 隐藏也算锁定：隐藏的项目在界面上看不见，用户对它的预期跟私密项目一样——
+    /// 不能因为「它只是不显示」就把图悄悄发上云。
+    pub fn cloud_vision_on(&self, locked: bool) -> bool {
+        self.cloud_vision.unwrap_or(!locked)
     }
 }
 

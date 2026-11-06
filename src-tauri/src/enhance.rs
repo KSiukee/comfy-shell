@@ -311,6 +311,9 @@ pub fn analyze(port: u16, image: &str) -> Result<String, String> {
 
 pub const BLOCKS_PROMPT: &str = include_str!("../prompts/analyze_blocks.txt");
 
+/// 崩图诊断：给一张坏图 + 当次参数，让模型说原因、给可执行的改法（只输出一个 JSON）。
+pub const DIAG_PROMPT: &str = include_str!("../prompts/diagnose.txt");
+
 /// 一张图 → 视觉模型的一段 JSON。`extract_text` + 切 JSON 是两条分析路共用的收口。
 fn vision_json(port: u16, image: &str, prompt: &str, max_length: u32) -> Result<String, String> {
     let wf = json!({
@@ -332,6 +335,15 @@ fn vision_json(port: u16, image: &str, prompt: &str, max_length: u32) -> Result<
 /// 只出 JSON 文本；怎么收口（去重、限长、块数校验）在 `vblocks::parse`。
 pub fn blocks(port: u16, image: &str) -> Result<String, String> {
     vision_json(port, image, BLOCKS_PROMPT, 520)
+}
+
+/// 本机诊断（私密项目 / 没配云端 key 时的路）：同一张图 + 参数拼进提示词。
+pub fn diagnose_local(port: u16, image: &str, params_json: &str) -> Result<String, String> {
+    let prompt = format!(
+        "{}\n\n## 这次生成用的参数（JSON）\n`json\n{}\n`",
+        DIAG_PROMPT, params_json
+    );
+    vision_json(port, image, &prompt, 520)
 }
 
 /// Ask the vision model to ground text blocks + objects, then convert its answer

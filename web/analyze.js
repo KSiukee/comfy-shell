@@ -132,7 +132,9 @@ function anaProjObj() {
 function anaCloudAllowed() {
   const p = anaProjObj();
   if (!p) return true;
-  return p.cloudVision === null || p.cloudVision === undefined ? !p.private : !!p.cloudVision;
+  // 私密 / 隐藏都算锁定：没显式开过就只许本地
+  const locked = !!(p.private || p.hidden);
+  return p.cloudVision === null || p.cloudVision === undefined ? !locked : !!p.cloudVision;
 }
 
 /// 项目开关一变，引擎选择要跟着收：不许云端的项目只有本地一条路，并且说清为什么。
@@ -160,7 +162,7 @@ function anaSyncEngine() {
     hint.textContent =
       p && p.private
         ? "这个私密项目没开云端——勾上「本项目允许云端」才能发（要再确认一次）"
-        : "这个项目关掉了云端——勾上「本项目允许云端」才能发";
+        : "这个项目没开云端（隐藏项目也算锁定）——勾上「本项目允许云端」才能发";
   }
 }
 

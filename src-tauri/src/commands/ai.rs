@@ -101,7 +101,7 @@ pub async fn analyze_image(app: tauri::AppHandle, image: String, two_pass: Optio
 /// 云端解析许不许发：项目开关必须先开；私密项目默认就是关的。没 key 只能本地。
 ///
 /// 返回 Ok(true) = 可以发云端；Ok(false) = 走本地；Err = 用户明确要云端但这个项目不放行。
-fn cloud_allowed(
+pub(crate) fn cloud_allowed(
     private: bool,
     project_allows: bool,
     want_cloud: bool,
@@ -111,7 +111,7 @@ fn cloud_allowed(
         return Err(if private {
             "这个私密项目没开云端看图——默认只用本地（项目菜单里可以二次确认打开）".into()
         } else {
-            "这个项目关掉了云端看图——项目菜单里可以打开，或者直接用本地".into()
+            "这个项目没开云端看图——默认只用本地（隐藏项目也算锁定，项目菜单里可以二次确认打开）".into()
         });
     }
     Ok(want_cloud && has_key)
@@ -147,12 +147,15 @@ pub async fn analyze_blocks(
         let project_rec = project
             .as_deref()
             .and_then(|p| crate::project::load(&cfg, p).ok());
+        // 私密 **或** 隐藏都算锁定：没显式开过就只许本地
+        let hidden = project_rec.as_ref().map(|p| p.hidden).unwrap_or(false);
+        let locked = private || hidden;
         let allows = match project.as_deref() {
             Some(_) => project_rec
                 .as_ref()
-                .map(|p| p.cloud_vision_on(private))
+                .map(|p| p.cloud_vision_on(locked))
                 .unwrap_or(false),
-            None => !private,
+            None => !locked,
         };
 
         // ① 云端（只有被允许时才走）
@@ -199,6 +202,7 @@ pub async fn analyze_blocks(
     .await
     .map_err(|e| format!("解析任务失败: {e}"))?
 }
+
 
 /// 前端「发送确认」要展示的原文——发到哪、用哪个模型、真正会发出去的那段提示词。
 #[tauri::command]
@@ -272,7 +276,9 @@ mod policy_tests {
     #[test]
     fn closed_projects_stay_local_even_when_asked() {
         let err = cloud_allowed(false, false, true, true).unwrap_err();
-        assert!(err.contains("关掉了云端"), "{err}");
+        assert!(err.contains("没开云端"), "{err}");
+        // 隐藏项目走的是同一条拒绝路径：也要说清「默认只用本地」
+        assert!(err.contains("隐藏项目也在内") || err.contains("隐藏项目"), "{err}");
     }
 
     #[test]
@@ -282,3 +288,4 @@ mod policy_tests {
         assert_eq!(cloud_allowed(false, true, false, true).unwrap(), false);
     }
 }
+
