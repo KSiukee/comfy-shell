@@ -188,3 +188,107 @@ $("modelSearch").oninput = () => {
   renderModels();
 };
 $("modelRescan").onclick = () => modelsOpen();
+
+// ---------------------------------------------------------------- 模型下载
+// 从 app.js 搬来（模型管理里「下载」按钮用）；行为不变。
+async function downloadModel(entry, btn) {
+  if (!confirm(`下载 ${entry.target}？\n约 ${dlFmt(entry.size)}，下到 ${entry.kind}/\n来源：hf-mirror（失败自动回退 HF）`)) return;
+  btn.disabled = true;
+  btn.textContent = "下载中…";
+  const bar = $("wfBar");
+  const fill = $("wfFill");
+  const st = $("wfState");
+  if (bar) bar.hidden = false;
+  if (fill) fill.style.width = "0%";
+  if (st) {
+    st.hidden = false;
+    st.textContent = `下载 ${entry.target}…`;
+  }
+  try {
+    await api.call("model_download", {
+      target: entry.target,
+      kind: entry.kind,
+      urls: entry.sources || [],
+    });
+    toast(`已下载：${entry.target}`);
+  } catch (e) {
+    toast(String(e), true);
+  } finally {
+    if (bar) bar.hidden = true;
+    if (st) st.hidden = true;
+    renderWorkflowPresets();
+  }
+}
+
+listen("model-progress", (ev) => {
+  const p = ev.payload || {};
+  const st = $("wfState");
+  const fill = $("wfFill");
+  if (st) {
+    st.hidden = false;
+    const parts = [p.phase || "下载中", p.target || ""];
+    if (p.got) parts.push(`${dlFmt(p.got)} / ${p.total ? dlFmt(p.total) : "?"}`);
+    if (p.mbps) parts.push(`${p.mbps.toFixed(1)} MB/s`);
+    if (p.error) parts.push(p.error.slice(0, 160));
+    st.textContent = parts.filter(Boolean).join(" · ");
+  }
+  if (fill && p.total) fill.style.width = Math.min(100, (p.got / p.total) * 100).toFixed(1) + "%";
+  if (p.phase === "完成") {
+    setTimeout(() => {
+      if ($("wfState")) $("wfState").hidden = true;
+      if ($("wfBar")) $("wfBar").hidden = true;
+    }, 1800);
+  }
+});
+
+$("btnSettings").onclick = () => {
+  // 先把弹窗画出来，再做填充/扫描这些后台活，避免「点了没反应」
+  setSettingsTab("general");
+  $("settingsModal").hidden = false;
+  setTimeout(() => {
+    if (window.shortcuts) window.shortcuts.build();
+    if ($("dlDir")) $("dlDir").value = (state.settings && state.settings.comfyRoot) || "";
+    if (typeof dlFillMirrors === "function") dlFillMirrors();
+    if (window.aiAgent) window.aiAgent.refresh();
+    refreshSettingsInfo();
+  }, 16);
+};
+$("btnSettingsCancel").onclick = () => ($("settingsModal").hidden = true);
+if ($("btnSettingsCloseX")) $("btnSettingsCloseX").onclick = () => ($("settingsModal").hidden = true);
+if ($("setOpenCfg")) {
+  $("setOpenCfg").onclick = async () => {
+    try {
+      const dir = await api.call("config_dir_path");
+      await api.call("open_folder", { path: dir });
+    } catch (e) {
+      toast(String(e), true);
+    }
+  };
+}
+if ($("setOpenComfy")) {
+  $("setOpenComfy").onclick = () => {
+    const p = $("setRoot").value.trim();
+    if (p) api.call("open_folder", { path: p });
+  };
+}
+if ($("setOpenModels")) {
+  $("setOpenModels").onclick = () => {
+    const p = $("setRoot").value.trim();
+    if (p) api.call("open_folder", { path: `${p}\\ComfyUI\\models` });
+  };
+}
+if ($("setRestartComfy")) {
+  $("setRestartComfy").onclick = async () => {
+    try {
+      await saveSettings(false);
+      toast("正在重启 ComfyUI…");
+      await api.call("server_stop");
+      await api.call("server_start");
+      toast("ComfyUI 已重启");
+    } catch (e) {
+      toast(String(e), true);
+    } finally {
+      refreshSettingsInfo();
+    }
+  };
+}
