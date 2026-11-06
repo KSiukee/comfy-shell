@@ -140,19 +140,55 @@ function anaSyncEngine() {
   const sel = $("anaEngine");
   if (!sel) return;
   const allow = anaCloudAllowed();
+  const p = anaProjObj();
   const opt = [...sel.options].find((o) => o.value === "cloud");
   if (opt) opt.disabled = !allow;
   if (!allow && sel.value === "cloud") sel.value = "local";
+  // 项目级开关就摆在这里（不挤项目栏）；「临时」没有项目，不显示
+  const wrap = $("anaCloudWrap");
+  const box = $("anaProjectCloud");
+  if (wrap) wrap.hidden = !p;
+  if (box) {
+    box.checked = allow;
+    box.onchange = anaToggleProjectCloud;
+  }
   const hint = $("anaEngineHint");
   if (!hint) return;
-  const p = anaProjObj();
   if (allow) {
     hint.textContent = "";
   } else {
     hint.textContent =
       p && p.private
-        ? "这个私密项目没开云端看图（项目菜单 ▸ 云端看图）——只能用本地"
-        : "这个项目关掉了云端看图（项目菜单 ▸ 云端看图）——只能用本地";
+        ? "这个私密项目没开云端——勾上「本项目允许云端」才能发（要再确认一次）"
+        : "这个项目关掉了云端——勾上「本项目允许云端」才能发";
+  }
+}
+
+/// #84：在用到它的地方直接开关，不去挤顶栏。
+async function anaToggleProjectCloud() {
+  const p = anaProjObj();
+  const box = $("anaProjectCloud");
+  if (!p || !box) return;
+  const on = !!box.checked;
+  if (on && p.private) {
+    const yes = confirm(
+      `「${p.name}」在锁定区里（私密项目）。\n\n` +
+        "打开云端看图后，每次「解析图」选云端，这张图都会被发到视觉 API（离开本机）。\n" +
+        "默认只用本地 Qwen3-VL。\n\n确定要为这个项目打开云端看图吗？"
+    );
+    if (!yes) {
+      box.checked = false;
+      return;
+    }
+  }
+  try {
+    await api.call("project_set_cloud_vision", { id: p.id, on, confirm: on && p.private });
+    if (window.projectUI && projectUI.refresh) await projectUI.refresh(p.id);
+    anaSyncEngine();
+    toast(`「${p.name}」云端看图已${on ? "打开" : "关掉"}`);
+  } catch (e) {
+    box.checked = !on;
+    toast(String(e), true);
   }
 }
 
