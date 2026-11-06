@@ -985,11 +985,14 @@ $("btnOpenOut").onclick = async () => {
   await api.call("open_folder", { path: `${root}\\ComfyUI\\output` });
 };
 $("btnClearHistory").onclick = async () => {
-  if (!confirm("清空历史记录？（只删列表，不删图片文件）")) return;
+  if (!confirm("清空历史记录？\n\n图区会立刻清空；磁盘上的图片不删，切项目或重开后会重新扫出来。")) return;
   await api.call("history_clear");
   state.results = [];
+  // v0.109.1 起图区 = 历史 + 当前项目磁盘上的图：不清这一份，点了看着像没反应
+  state.libExtra = [];
+  state.gridCleared = true;
   renderResults();
-  toast("历史已清空");
+  toast("历史已清空（磁盘图未删，刷新后会再扫出来）");
 };
 
 // settings modal（v0.97：左侧分类 + 右侧内容）

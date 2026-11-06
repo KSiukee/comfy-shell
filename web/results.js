@@ -62,6 +62,7 @@ function resultsInScope() {
  */
 async function refreshLibExtra() {
   const want = resultScopeWant();
+  state.gridCleared = false;
   if (!want) {
     state.libExtra = [];
     renderResults();
@@ -92,6 +93,10 @@ async function refreshLibExtra() {
 function emptyHint() {
   const p = $("empty") && $("empty").querySelector("p");
   if (!p) return;
+  if (state.gridCleared) {
+    p.textContent = "图区已清空；磁盘上的图还在，切项目或重开后会重新扫出来。";
+    return;
+  }
   p.textContent = !resultScopeWant()
     ? "先在左上角项目栏选一个项目（图区只显示当前项目的图）。"
     : "本项目还没有图。左边写好提示词，点「生成」。";
@@ -101,6 +106,7 @@ function renderResults() {
   const box = $("results");
   box.querySelectorAll(".card").forEach((c) => c.remove());
   const list = resultsInScope().filter((x) => !x.missing);
+  if (list.length) state.gridCleared = false;
   $("empty").hidden = list.length > 0;
   emptyHint();
   for (const r of list) {
