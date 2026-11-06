@@ -151,14 +151,11 @@ function syncDisabledLoras() {
 }
 
 function applyLoraFilter() {
-  const sel = $("lora");
-  if (!sel || !state.models) return;
-  const all = state.models.loras || [];
-  const kept = all.filter((n) => !disabledLoras.has(n));
-  const cur = sel.value;
-  sel.innerHTML =
-    `<option value="">（无）</option>` + kept.map((l) => `<option value="${l}">${l}</option>`).join("");
-  if (kept.includes(cur)) sel.value = cur;
+  // 只负责「禁用标记」这件事：模型过滤、注释、lora2 全部由 rebuildLoraOptions 一处出。
+  // 以前这里自己拼一份**不分模型**的全量表塞进 #lora（还不管 #lora2），
+  // 于是启动/扫完模型后两个下拉各说各话：lora 全量混着别的家族，lora2 停在旧模型的表上。
+  if (!state.models || typeof rebuildLoraOptions !== "function") return;
+  rebuildLoraOptions();
 }
 
 async function modelsOpen() {

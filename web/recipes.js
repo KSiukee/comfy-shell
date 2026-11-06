@@ -89,6 +89,14 @@ async function recipeSaveFromVersion(v) {
 
 function applyRecipe(r) {
   const f = r.form || {};
+  // 先切模型：LoRA 下拉是按模型过滤重建的，顺序反了就会拿旧模型的表去选（第二个 LoRA 直接选不上）
+  if (f.model) {
+    const sel = $("model");
+    if ([...sel.options].some((o) => o.value === f.model)) {
+      sel.value = f.model;
+      sel.dispatchEvent(new Event("change"));
+    }
+  }
   const setVal = (id, val) => {
     const el = $(id);
     if (!el || val === undefined || val === null) return;
@@ -96,10 +104,6 @@ function applyRecipe(r) {
     else el.value = String(val);
   };
   for (const id of RECIPE_FIELDS) setVal(id, f[id]);
-  if (f.model) {
-    const sel = $("model");
-    if ([...sel.options].some((o) => o.value === f.model)) sel.value = f.model;
-  }
   if (f.presetSel !== undefined) {
     const s = $("presetSel");
     if (s && [...s.options].some((o) => o.value === f.presetSel)) s.value = f.presetSel;

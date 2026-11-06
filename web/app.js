@@ -178,22 +178,30 @@ function loraTip(name) {
   return hit ? hit[1] : "";
 }
 
+// 家族 → 能用这套 LoRA 的模型。漏一个 id 的后果是「这个模型的 LoRA 下拉里看不到自己的 LoRA」，
+// 所以按家族列常量，别再在每条规则里手抄一遍。
+const MOSS_MODELS = ["moss", "mossbase", "mossimagine", "mossedit", "kromoss"];
+const FLUX3_MODELS = ["flux3", "flux3base"];
+
 const LORA_RULES = [
   { test: /minimax_h3/i, models: [], note: "MiniMax 视频专用" },
   { test: /flux2|spritesheet/i, models: [], note: "FLUX.2 专用，FLUX.3 不适配" },
   { test: /qwen_image_2\.1_turbo/i, models: ["qwen21"], rank: 1, strength: 1.0, note: "加速（配 8 步）" },
   { test: /Qwen-Image-2512.*Pixel-Art/i, models: ["qwen21"], rank: 2, strength: 0.85, note: "像素风" },
   { test: /anything2real|Qwen2\.1_/i, models: ["qwen21"], rank: 2, strength: 0.8, note: "风格转真人（改图）" },
-  { test: /moss/i, models: ["moss", "mossbase", "mossimagine"], rank: 3, strength: 0.8, note: "MOSS 生态 LoRA" },
+  { test: /moss/i, models: MOSS_MODELS, rank: 3, strength: 0.8, note: "MOSS 生态 LoRA" },
+  { test: /bfs_(head|body)/i, models: ["qwen21"], rank: 4, strength: 0.85, note: "换头 / 换身（Qwen2.1 专用）" },
+  { test: /qwen_image_2\.1_8step/i, models: [], note: "壳里自动挂的 8 步加速，不用手选" },
+  { test: /crop_probe/i, models: FLUX3_MODELS, rank: 1, strength: 0.9, note: "你自训（FLUX.3 Base）" },
   {
     test: /natural facial skin texture/i,
-    models: ["flux3", "flux3base"],
+    models: FLUX3_MODELS,
     rank: 2,
     strength: 1.0,
     note: "皮肤纹理（FLUX.3 Klein 编辑，无触发词）",
   },
-  { test: /MOSS-Image-NSFW/i, models: ["moss", "mossbase", "mossimagine"], rank: 1, strength: 0.85, note: "NSFW 人像/场景" },
-  { test: /folder_probe|ui_probe|low_probe|mirror_probe/i, models: ["flux3base", "flux3"], rank: 1, strength: 0.9, note: "你自训（FLUX.3 Base）" },
+  { test: /MOSS-Image-NSFW/i, models: MOSS_MODELS, rank: 1, strength: 0.85, note: "NSFW 人像/场景" },
+  { test: /folder_probe|ui_probe|low_probe|mirror_probe/i, models: FLUX3_MODELS, rank: 1, strength: 0.9, note: "你自训（FLUX.3 Base）" },
 ];
 
 function loraMeta(name, profileId) {
@@ -202,7 +210,7 @@ function loraMeta(name, profileId) {
       return { compatible: r.models.includes(profileId), rank: r.rank || 9, strength: r.strength, note: r.note };
     }
   }
-  return { compatible: ["flux3", "flux3base"].includes(profileId), rank: 5, note: "未登记" };
+  return { compatible: FLUX3_MODELS.includes(profileId), rank: 5, note: "未登记" };
 }
 
 function rebuildLoraOptions() {
@@ -214,7 +222,10 @@ function rebuildLoraOptions() {
     updateLoraUI();
     return;
   }
-  const items = (state.models.loras || []).map((n) => ({ n, m: loraMeta(n, p.id) }));
+  const off = typeof disabledLoras !== "undefined" ? disabledLoras : new Set();
+  const items = (state.models.loras || [])
+    .filter((n) => !off.has(n))
+    .map((n) => ({ n, m: loraMeta(n, p.id) }));
   // incompatible LoRAs (video models, other families) are hidden, not greyed out
   const ok = items.filter((x) => x.m.compatible).sort((a, b) => a.m.rank - b.m.rank || a.n.localeCompare(b.n));
   const hidden = items.length - ok.length;
