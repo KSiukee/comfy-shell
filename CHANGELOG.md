@@ -35,10 +35,10 @@
 - 验收：界面 12/12（含 640px 窄窗与超长候选），单测 +11。详见 `docs/82-看图拆提示词-20261105.md`。
 
 ## v0.121.1
-- **构建产物清理门（#101，从圈记移植）**：`src-tauri/target` 实测 **162 GiB**（incremental 120.9 · deps 18.4 · build 15.2 · release 7.5）——真正能双击跑的 exe 只有 26.7 MB，99.9% 是中间缓存。移植圈记的 `tools/qa/clean_build.py`：留 `*.exe/*.dll` 与 `bundle/`，删 `deps/build/incremental/examples/.fingerprint` 与 `pdb/rlib/rmeta/d/lib/exp/obj/ilk`。清一次 **162.08 → 0.04 GiB、22 秒、保留 2 个产物**，D 盘可用 +120 GB。
+- **构建产物清理门（#101）**：`src-tauri/target` 实测 **162 GiB**（incremental 120.9 · deps 18.4 · build 15.2 · release 7.5）——真正能双击跑的 exe 只有 26.7 MB，99.9% 是中间缓存。`tools/qa/clean_build.py`：留 `*.exe/*.dll` 与 `bundle/`，删 `deps/build/incremental/examples/.fingerprint` 与 `pdb/rlib/rmeta/d/lib/exp/obj/ilk`。清一次 **162.08 → 0.04 GiB、22 秒、保留 2 个产物**，D 盘可用 +120 GB。
 - **根因一起修**：`[profile.dev] incremental = false` + `debug = 1`——增量缓存 123 GiB 的源头，以及每构建一份 196 MB 的 `.pdb`。从零跑一遍门（check + 151 例 + debug 构建 + 冒烟，2 分钟）回到 **2.52 GiB**：incremental **0.00**、`comfy_shell.pdb` 196 → **76.9 MB**。
 - `check_all` 新增第 6 层「构建产物」：**只量不删**，超 **8 GiB** 判红，并跑 `--selftest` 自证会红（阈值 = 三轮满构建）。
-- ★ 顺手修掉源版一个坑：圈记的 `--check` 其实会真删缓存（临时假树实测：`deps/` 与 `app.pdb` 在检查后消失）⇒ 那道门量到的永远是 0、**永远绿**，人也不知道下次为什么变慢。本版 `--check` 隐含 dry-run，selftest 专门钉住「check 不许删」。圈记那边没动（跨项目，等用户点头）。
+- ★ 顺手修掉这类清理门常见的一个坑：源版 `--check` 会真删缓存（临时假树实测：`deps/` 与 `app.pdb` 在检查后消失）⇒ 那道门量到的永远是 0、**永远绿**，人也不知道下次为什么变慢。本版 `--check` 隐含 dry-run，selftest 专门钉住「check 不许删」。
 - 验收：清理前 check 红（162 > 8）、清理后绿（0.04）；重建后绿（2.52）；`--selftest` 4 项过。详见 `docs/101-构建产物清理门-20261105.md`。
 
 ## v0.121.0
