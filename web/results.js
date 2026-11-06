@@ -127,7 +127,7 @@ function renderResults() {
     meta.className = "meta";
     meta.innerHTML =
       `<span class="label" title="${r.filename}">${r.label}</span>` +
-      `<span class="time mono">${r.width}×${r.height} · ${fmtTime(r.seconds)}</span>`;
+      `<span class="time mono">${r.width}×${r.height}${r.seconds ? " · " + fmtTime(r.seconds) : ""}</span>`;
     const star = document.createElement("button");
     star.className = "btn ghost small star" + (state.stars.has(r.path) ? " on" : "");
     star.title = "收藏";

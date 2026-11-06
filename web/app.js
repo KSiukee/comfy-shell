@@ -183,25 +183,38 @@ function loraTip(name) {
 const MOSS_MODELS = ["moss", "mossbase", "mossimagine", "mossedit", "kromoss"];
 const FLUX3_MODELS = ["flux3", "flux3base"];
 
+// 规则**按顺序取第一条命中的**：具体条目一定排在通用规则前面，
+// 否则 /moss/i 这种宽规则会把后面所有 MOSS 细分条目全吃掉（备注就变成一句废话）。
 const LORA_RULES = [
+  // —— 不可用的：命中即藏
   { test: /minimax_h3/i, models: [], note: "MiniMax 视频专用" },
   { test: /flux2|spritesheet/i, models: [], note: "FLUX.2 专用，FLUX.3 不适配" },
+  { test: /qwen_image_2\.1_8step/i, models: [], note: "壳里自动挂的 8 步加速，不用手选" },
+  // —— Qwen
   { test: /qwen_image_2\.1_turbo/i, models: ["qwen21"], rank: 1, strength: 1.0, note: "加速（配 8 步）" },
   { test: /Qwen-Image-2512.*Pixel-Art/i, models: ["qwen21"], rank: 2, strength: 0.85, note: "像素风" },
   { test: /anything2real|Qwen2\.1_/i, models: ["qwen21"], rank: 2, strength: 0.8, note: "风格转真人（改图）" },
-  { test: /moss/i, models: MOSS_MODELS, rank: 3, strength: 0.8, note: "MOSS 生态 LoRA" },
   { test: /bfs_(head|body)/i, models: ["qwen21"], rank: 4, strength: 0.85, note: "换头 / 换身（Qwen2.1 专用）" },
-  { test: /qwen_image_2\.1_8step/i, models: [], note: "壳里自动挂的 8 步加速，不用手选" },
-  { test: /crop_probe/i, models: FLUX3_MODELS, rank: 1, strength: 0.9, note: "你自训（FLUX.3 Base）" },
+  // —— MOSS：细分条目放在通用 /moss/i 之前
+  { test: /MOSS-Image-NSFW/i, models: MOSS_MODELS, rank: 1, strength: 0.85, note: "NSFW 人像 / 场景" },
+  { test: /MOSS-Image-Beauty/i, models: MOSS_MODELS, rank: 2, strength: 0.75, note: "人像美化、柔和磨皮" },
+  { test: /kromoss.*8step/i, models: MOSS_MODELS, rank: 1, strength: 1.0, note: "Kromoss 8 步加速" },
+  { test: /moss_hires/i, models: MOSS_MODELS, rank: 3, strength: 0.8, note: "高清细节（hires）" },
+  { test: /charref/i, models: MOSS_MODELS, rank: 3, strength: 0.8, note: "角色参考 / 一致性" },
+  { test: /moss_image_edit/i, models: MOSS_MODELS, rank: 3, strength: 0.8, note: "MOSS 改图专用" },
+  { test: /ultra_real/i, models: MOSS_MODELS, rank: 3, strength: 0.7, note: "写实向微调（真皮质感）" },
+  { test: /moss384/i, models: MOSS_MODELS, rank: 3, strength: 0.8, note: "MOSS384 配套" },
+  { test: /moss_kohya_probe/i, models: MOSS_MODELS, rank: 4, strength: 0.9, note: "自训测试（kohya）" },
+  { test: /moss/i, models: MOSS_MODELS, rank: 3, strength: 0.8, note: "MOSS 生态 LoRA（未细分）" },
+  // —— FLUX.3
   {
     test: /natural facial skin texture/i,
     models: FLUX3_MODELS,
     rank: 2,
     strength: 1.0,
-    note: "皮肤纹理（FLUX.3 Klein 编辑，无触发词）",
+    note: "皮肤纹理（Klein 编辑，无触发词）",
   },
-  { test: /MOSS-Image-NSFW/i, models: MOSS_MODELS, rank: 1, strength: 0.85, note: "NSFW 人像/场景" },
-  { test: /folder_probe|ui_probe|low_probe|mirror_probe/i, models: FLUX3_MODELS, rank: 1, strength: 0.9, note: "你自训（FLUX.3 Base）" },
+  { test: /folder_probe|ui_probe|low_probe|mirror_probe|crop_probe/i, models: FLUX3_MODELS, rank: 1, strength: 0.9, note: "你自训（FLUX.3 Base）" },
 ];
 
 function loraMeta(name, profileId) {
