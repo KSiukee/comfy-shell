@@ -614,6 +614,11 @@ body.mode-pro .simple-only { display: none !important; }
 .chips .ana-chip { text-align: left; color: #cfd6e4; background: #131926; border-color: #2a3346; }
 .chips .ana-chip:hover { border-color: #3f4f78; color: var(--text); }
 .chips .ana-chip.on { border-color: #4c7bd9; background: #16203a; color: #dbe6ff; }
+
+/* 顶栏显示开关（提示词辅助页里那格） */
+.topbar-pop { border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; background: #0f1219; }
+.topbar-list { display: grid; grid-template-columns: 1fr 1fr; gap: 6px 14px; }
+.topbar-item { white-space: nowrap; font-size: 12px; }
 #anaFields input { font-size: 12.5px; }
 
 #anaFields input, #anaPrompt, #anaRaw {

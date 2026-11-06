@@ -3,6 +3,8 @@
 
 const PH_TILES = [
   { icon: "🧩", title: "编译", desc: "一句话 → 按当前模型方言写完整提示词（Qwen 中文长句 / MOSS 排版 / FLUX 自然语言）", onclick: () => openCompile() },
+  { icon: "🧑", title: "角色", desc: "角色卡：身份 / 造型 / 一致性，一键出 3:4 身份底板", onclick: () => charOpen() },
+  { icon: "🎬", title: "镜头", desc: "一话 = 一组镜头：拆分、挂卡、逐格补身份", onclick: () => $("shotsBtn").click() },
   { src: "btnPoses2", icon: "🕺", title: "姿势库", desc: "白模姿势：点一条抄描述，或直接加参考图" },
   { src: "btnDeAi", icon: "🎞", title: "去 AI 感", desc: "追加自然光 / 颗粒 / 轻微畸变，压掉塑料感" },
   { src: "btnEnhance", icon: "✨", title: "扩写", desc: "一句话扩成完整画面描述（官方增强器）" },
