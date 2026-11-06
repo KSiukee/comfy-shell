@@ -617,9 +617,9 @@ body.mode-pro .simple-only { display: none !important; }
 
 /* 顶栏显示开关（提示词辅助页里那格） */
 .topbar-pop {
-  position: absolute;
-  top: calc(100% + 6px);
-  right: 16px;
+  position: fixed;
+  top: 0;
+  left: 0;
   width: 560px;
   max-width: calc(100vw - 32px);
   max-height: min(68vh, 520px);
@@ -631,7 +631,7 @@ body.mode-pro .simple-only { display: none !important; }
   background: #0f1219;
   box-shadow: 0 14px 36px rgba(0, 0, 0, 0.5);
 }
-.topbar-list { display: grid; grid-template-columns: 1fr 1fr; gap: 6px 14px; }
+.topbar-list { display: grid; grid-template-columns: 1fr 1fr; gap: 6px 14px; min-width: 0; }
 .topbar-item { white-space: nowrap; font-size: 12px; }
 .pin-bar { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
 .pin-bar .btn { white-space: nowrap; }
@@ -672,10 +672,15 @@ body.mode-pro .simple-only { display: none !important; }
   padding: 0 16px;
   border-bottom: 1px solid var(--line);
   background: #0c0e13;
-  /* 顶栏显示管理挂在这一排下面（绝对定位），别被内容裁掉 */
   position: relative;
   z-index: 30;
+  /* 窄窗时这一排横着滚，别把按钮挤成竖排；浮层在栏外面（fixed），不受这里裁剪 */
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: thin;
+  scrollbar-color: #2a3346 transparent;
 }
+.projectbar > :not(.spacer) { flex-shrink: 0; }
 .projectbar select { width: 220px; flex: 0 0 220px; padding: 4px 8px; font-size: 12px; }
 .projectbar .btn { flex: 0 0 auto; white-space: nowrap; }
 /* 顶栏左：显影 + 连接状态（正常时只留一个点，故障态才露短句） */

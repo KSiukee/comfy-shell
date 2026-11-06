@@ -60,16 +60,17 @@
     <button class="btn small ghost" id="btnClearHistory" title="只清列表，不删图片文件">清空历史</button>
     <button class="btn small ghost" id="btnOpenOut" title="在资源管理器中打开输出目录">打开输出目录</button>
     <label class="check" style="font-size:12px"><input type="checkbox" id="projShowHidden" /> 显示隐藏</label>
-    <div class="topbar-pop" id="topbarPop" hidden>
-      <div class="muted" style="font-size:11.5px;margin-bottom:8px">钉在顶栏的功能（改了立刻生效，只记在本机）</div>
-      <div class="topbar-list" id="topbarList"></div>
-      <div class="muted" style="font-size:11.5px;margin:10px 0 8px">提示词辅助的快捷方式</div>
-      <div class="topbar-list" id="topbarTools"></div>
-      <div class="row tight" style="margin-top:10px">
-        <span class="muted" style="font-size:11.5px">镜头 / 角色 / 提示词库没勾也在提示词辅助里</span>
-        <span class="spacer"></span>
-        <button class="btn small ghost" id="topbarReset">恢复默认</button>
-      </div>
+  </div>
+  <!-- 顶栏管理浮层：放在项目栏外面，项目栏横向滚动时才不会被裁掉；位置由 topbar.js 按按钮算 -->
+  <div class="topbar-pop" id="topbarPop" hidden>
+    <div class="muted" style="font-size:11.5px;margin-bottom:8px">钉在顶栏的功能（改了立刻生效，只记在本机）</div>
+    <div class="topbar-list" id="topbarList"></div>
+    <div class="muted" style="font-size:11.5px;margin:10px 0 8px">提示词辅助的快捷方式</div>
+    <div class="topbar-list" id="topbarTools"></div>
+    <div class="row tight" style="margin-top:10px">
+      <span class="muted" style="font-size:11.5px">镜头 / 角色 / 提示词库没勾也在提示词辅助里</span>
+      <span class="spacer"></span>
+      <button class="btn small ghost" id="topbarReset">恢复默认</button>
     </div>
   </div>
 

@@ -141,12 +141,28 @@ function topbarRender() {
   topbarRenderList("topbarTools", HELPER_ITEMS);
 }
 
+/** 浮层挂在「⚙ 顶栏」按钮下方（fixed：项目栏自己会横向滚动，别让它裁掉）。 */
+function topbarPlace() {
+  const pop = $("topbarPop");
+  const btn = $("topbarBtn");
+  if (!pop || !btn) return;
+  const r = btn.getBoundingClientRect();
+  const w = pop.offsetWidth || 560;
+  let left = r.right - w;
+  left = Math.max(8, Math.min(left, window.innerWidth - w - 8));
+  pop.style.top = `${Math.round(r.bottom + 6)}px`;
+  pop.style.left = `${Math.round(left)}px`;
+}
+
 function topbarOpen(force) {
   const pop = $("topbarPop");
   if (!pop) return;
   const want = force === undefined ? pop.hidden : force;
   pop.hidden = !want;
-  if (want) topbarRender();
+  if (want) {
+    topbarRender();
+    topbarPlace();
+  }
 }
 
 function topbarInit() {
@@ -158,6 +174,16 @@ function topbarInit() {
   };
   const reset = $("topbarReset");
   if (reset) reset.onclick = topbarReset;
+  // 顶栏横滚 / 窗口变了，浮层跟着重新贴到按钮下面
+  const bar = $("projectbar");
+  if (bar) bar.addEventListener("scroll", () => {
+    const pop = $("topbarPop");
+    if (pop && !pop.hidden) topbarPlace();
+  });
+  window.addEventListener("resize", () => {
+    const pop = $("topbarPop");
+    if (pop && !pop.hidden) topbarPlace();
+  });
   // 点面板外面收起（点勾选框不算外面）
   document.addEventListener("click", (e) => {
     const pop = $("topbarPop");
