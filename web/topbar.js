@@ -151,15 +151,18 @@ function topbarOpen(force) {
 
 function topbarInit() {
   topbarApply();
-  const btn = $("phTopbar");
-  if (btn) btn.onclick = () => topbarOpen();
+  const btn = $("topbarBtn");
+  if (btn) btn.onclick = (e) => {
+    e.stopPropagation();
+    topbarOpen();
+  };
   const reset = $("topbarReset");
   if (reset) reset.onclick = topbarReset;
   // 点面板外面收起（点勾选框不算外面）
   document.addEventListener("click", (e) => {
     const pop = $("topbarPop");
     if (!pop || pop.hidden) return;
-    if (pop.contains(e.target) || (e.target && e.target.id === "phTopbar")) return;
+    if (pop.contains(e.target) || (e.target && e.target.id === "topbarBtn")) return;
     pop.hidden = true;
   });
 }

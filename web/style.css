@@ -616,7 +616,21 @@ body.mode-pro .simple-only { display: none !important; }
 .chips .ana-chip.on { border-color: #4c7bd9; background: #16203a; color: #dbe6ff; }
 
 /* 顶栏显示开关（提示词辅助页里那格） */
-.topbar-pop { border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; background: #0f1219; }
+.topbar-pop {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 16px;
+  width: 560px;
+  max-width: calc(100vw - 32px);
+  max-height: min(68vh, 520px);
+  overflow: auto;
+  z-index: 60;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 12px 14px;
+  background: #0f1219;
+  box-shadow: 0 14px 36px rgba(0, 0, 0, 0.5);
+}
 .topbar-list { display: grid; grid-template-columns: 1fr 1fr; gap: 6px 14px; }
 .topbar-item { white-space: nowrap; font-size: 12px; }
 .pin-bar { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
@@ -658,6 +672,9 @@ body.mode-pro .simple-only { display: none !important; }
   padding: 0 16px;
   border-bottom: 1px solid var(--line);
   background: #0c0e13;
+  /* 顶栏显示管理挂在这一排下面（绝对定位），别被内容裁掉 */
+  position: relative;
+  z-index: 30;
 }
 .projectbar select { width: 220px; flex: 0 0 220px; padding: 4px 8px; font-size: 12px; }
 .projectbar .btn { flex: 0 0 auto; white-space: nowrap; }

@@ -56,9 +56,21 @@
         <span class="pin-bar" id="pinBar" hidden></span>
     <button class="btn small ghost" id="btnAiTop" title="AI 助手：体检、配 ComfyUI、装节点、跑验收">🤖 AI 助手</button>
     <span class="spacer"></span>
+    <button class="btn small ghost" id="topbarBtn" title="哪些功能挂在顶栏：勾选立刻生效（只记本机）">⚙ 顶栏</button>
     <button class="btn small ghost" id="btnClearHistory" title="只清列表，不删图片文件">清空历史</button>
     <button class="btn small ghost" id="btnOpenOut" title="在资源管理器中打开输出目录">打开输出目录</button>
     <label class="check" style="font-size:12px"><input type="checkbox" id="projShowHidden" /> 显示隐藏</label>
+    <div class="topbar-pop" id="topbarPop" hidden>
+      <div class="muted" style="font-size:11.5px;margin-bottom:8px">钉在顶栏的功能（改了立刻生效，只记在本机）</div>
+      <div class="topbar-list" id="topbarList"></div>
+      <div class="muted" style="font-size:11.5px;margin:10px 0 8px">提示词辅助的快捷方式</div>
+      <div class="topbar-list" id="topbarTools"></div>
+      <div class="row tight" style="margin-top:10px">
+        <span class="muted" style="font-size:11.5px">镜头 / 角色 / 提示词库没勾也在提示词辅助里</span>
+        <span class="spacer"></span>
+        <button class="btn small ghost" id="topbarReset">恢复默认</button>
+      </div>
+    </div>
   </div>
 
   <main class="layout">
@@ -1315,19 +1327,7 @@
         </button>
         <button class="btn small ghost" id="styleDirBtn" title="打开样式目录：放风格包 *.json 与 wildcards/*.txt">样式目录</button>
         <button class="btn small ghost" id="styleImportBtn" title="导入 sdxl_styles / Fooocus 那种 json（整份数组也行）">导入风格包…</button>
-        <button class="btn small ghost" id="phTopbar" title="选哪些功能钉在顶栏；没勾的仍能从这一页进去">顶栏显示…</button>
         <input type="file" id="styleFile" accept=".json,application/json" hidden />
-      </div>
-      <div class="topbar-pop" id="topbarPop" hidden>
-        <div class="muted" style="font-size:11.5px;margin-bottom:8px">钉在顶栏的功能（改了立刻生效，只记在本机）</div>
-        <div class="topbar-list" id="topbarList"></div>
-        <div class="muted" style="font-size:11.5px;margin:10px 0 8px">提示词辅助的快捷方式（勾上就挂到顶栏）</div>
-        <div class="topbar-list" id="topbarTools"></div>
-        <div class="row tight" style="margin-top:8px">
-          <span class="muted" style="font-size:11.5px">镜头 / 角色 / 提示词库没勾也在这一页里</span>
-          <span class="spacer"></span>
-          <button class="btn small ghost" id="topbarReset">恢复默认</button>
-        </div>
       </div>
       <div class="style-pop" id="stylePop" hidden>
         <div class="style-pop-head">
