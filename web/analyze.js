@@ -1,7 +1,7 @@
-// 看图拆提示词（#82）：五块候选 + 点选回填 + 云端/本地双引擎。
+// 看图拆提示词：五块候选 + 点选回填 + 云端/本地双引擎。
 // 2026-11-05 从 tools.js 拆出来——那边只留姿势库，别让一个文件同时管两件事。
 
-// ---------------------------------------------------------------- image analyzer（#82）
+// ---------------------------------------------------------------- image analyzer
 // 五块候选（主体/镜头/光线/色彩/风格），点一下接进提示词，再点一次撤回。
 // 只动提示词，不动参数；视觉模型在本地跑（不联网）。
 
@@ -128,7 +128,7 @@ function anaProjObj() {
   return (window.projectUI && projectUI.currentObj && projectUI.currentObj()) || null;
 }
 
-/// #84：这个项目允许把图发去云端吗。没归项目的「临时」按允许算（否则每次都要先建项目）。
+/// 这个项目允许把图发去云端吗。没归项目的「临时」按允许算（否则每次都要先建项目）。
 function anaCloudAllowed() {
   const p = anaProjObj();
   if (!p) return true;
@@ -164,7 +164,7 @@ function anaSyncEngine() {
   }
 }
 
-/// #84：在用到它的地方直接开关，不去挤顶栏。
+/// 在用到它的地方直接开关，不去挤顶栏。
 async function anaToggleProjectCloud() {
   const p = anaProjObj();
   const box = $("anaProjectCloud");
@@ -203,7 +203,7 @@ function anaInitEngine() {
   };
 }
 
-/// #84：发送前把「这次会发什么」摊开——图 + 端点 + 那段提示词，可取消。
+/// 发送前把「这次会发什么」摊开——图 + 端点 + 那段提示词，可取消。
 function askCloudSend() {
   return new Promise((resolve) => {
     const box = $("cloudSend");

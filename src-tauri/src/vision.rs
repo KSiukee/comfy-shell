@@ -1,4 +1,4 @@
-//! 云端视觉（#82 的「云解析」）：OpenAI 兼容的 `chat/completions` + `image_url`。
+//! 云端视觉（「云解析」）：OpenAI 兼容的 `chat/completions` + `image_url`。
 //!
 //! 实测（2026-11-05）：DeepSeek 的 `deepseek-flash` **能看图**——同一套 `image_url` dataURL
 //! 格式，返回正文之前会先产出一大段 `reasoning_content`（推理 token 也算在 max_tokens 里），

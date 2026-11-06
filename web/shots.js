@@ -6,7 +6,7 @@ function shotProject() {
   return window.projectUI && window.projectUI.currentObj ? window.projectUI.currentObj() : null;
 }
 
-// #90 分镜连续性：每格写「这一格结束时」的状态，下一格拼成「接上一格：…」。
+// 分镜连续性：每格写「这一格结束时」的状态，下一格拼成「接上一格：…」。
 function continuityRender() {
   const box = $("continuityBody");
   if (!box) return;
@@ -108,7 +108,7 @@ function shotRow(s) {
   maskBtn.className = "btn small ghost";
   maskBtn.textContent = "蒙";
   maskBtn.title = "手动画头蒙版再换头（保构图模式用；侧脸/回头靠它）";
-  maskBtn.hidden = true; // #101 收摊：手画蒙版只服务已藏起来的「局部重绘」模式
+  maskBtn.hidden = true; // 收摊：手画蒙版只服务已藏起来的「局部重绘」模式
   maskBtn.onclick = () => openShotMask(s);
   row.append(idx, prompt, shotCastChips(s), count, fill, again, swap, maskBtn, del);
   return row;
@@ -160,7 +160,7 @@ async function shotsRefresh() {
 }
 
 async function fillShot(s) {
-  // 最终提示词由后端拼（#94 画风前缀 + #90 上一格落点 + 本格原文），前端不重复拼
+  // 最终提示词由后端拼（画风前缀 上一格落点 本格原文），前端不重复拼
   let prompt = s.prompt || "";
   let negative = s.negative || "";
   try {

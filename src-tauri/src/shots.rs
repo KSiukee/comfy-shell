@@ -54,7 +54,7 @@ pub struct Shot {
     pub characters: Vec<String>,
     /// 上一次出图实际用到的角色与底板（存证据）
     pub cast: Vec<CastRef>,
-    /// #90 这一格**结束时**的人物状态/位置/时间（给下一格接续用；空 = 不拼）
+    /// 这一格**结束时**的人物状态/位置/时间（给下一格接续用；空 = 不拼）
     #[serde(default)]
     pub continuity: String,
     pub created_at: u64,
@@ -221,7 +221,7 @@ pub fn set_characters(cfg: &Path, project: &str, id: &str, ids: Vec<String>) -> 
     Ok(updated)
 }
 
-/// #90 写一格的「落点」：这一格结束时人物在哪、什么状态、时间推进到哪。
+/// 写一格的「落点」：这一格结束时人物在哪、什么状态、时间推进到哪。
 pub fn set_continuity(cfg: &Path, project: &str, id: &str, text: &str) -> Result<Shot, String> {
     let mut shots = load(cfg, project)?;
     let updated = {
@@ -233,7 +233,7 @@ pub fn set_continuity(cfg: &Path, project: &str, id: &str, text: &str) -> Result
     Ok(updated)
 }
 
-/// #90 一次写完全部的落点（顺序与镜头一致）。落点为空的格子不覆盖。
+/// 一次写完全部的落点（顺序与镜头一致）。落点为空的格子不覆盖。
 pub fn set_continuity_all(cfg: &Path, project: &str, texts: &[String]) -> Result<usize, String> {
     let mut shots = load(cfg, project)?;
     let mut n = 0;

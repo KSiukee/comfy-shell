@@ -940,7 +940,7 @@ fn parse_pi_lines(lines: &[String]) -> (String, String) {
     (assistant, last_err)
 }
 
-/// 一次性文本问答（#81 编译器用）：不给工具、不带上下文文件，只要模型把话说回来。
+/// 一次性文本问答（编译器用）：不给工具、不带上下文文件，只要模型把话说回来。
 pub fn run_text(
     cfg: &Path,
     s: &Settings,

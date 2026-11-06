@@ -84,7 +84,7 @@ pub async fn upscale_image(    app: tauri::AppHandle,
         relocate_into_project(&canon_out, &src, &mut img);
         // 统一成不带 `\\?\` 的路径：图库/收藏/历史都按这个形状比对，带了前缀就对不上
         img.path = crate::commands::generation::strip_win_prefix(&img.path);
-        // #86：开启「超分后替换原图」时，先把旧图的参数块读出来（下面要合并到新图上）
+        // 开启「超分后替换原图」时，先把旧图的参数块读出来（下面要合并到新图上）
         let old_name = src
             .file_name()
             .map(|x| x.to_string_lossy().to_string())
@@ -139,7 +139,7 @@ pub async fn upscale_image(    app: tauri::AppHandle,
             };
             crate::history::append(&crate::state::cfg_dir(&handle), item);
 
-            // #86：收藏跟到新图，然后把原图挪进回收站。
+            // 收藏跟到新图，然后把原图挪进回收站。
             // 先摘旧收藏再删，否则 _favorites 里会留一个指向废图的硬链接。
             if replace {
                 let cfg = crate::state::cfg_dir(&handle);
@@ -187,7 +187,7 @@ pub fn one_f() -> f64 {
 pub async fn inpaint_image(app: tauri::AppHandle, mut req: InpaintCall) -> Result<GenResp, String> {
     let handle = app.clone();
     tauri::async_runtime::spawn_blocking(move || -> Result<GenResp, String> {
-        // #88：随机种子在提交前定下来，元数据/历史才能记真实值
+        // 随机种子在提交前定下来，元数据/历史才能记真实值
         if req.seed < 0 {
             req.seed = api::pick_seed(-1);
         }

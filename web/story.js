@@ -1,4 +1,4 @@
-// 剧本设定（#94）：一部戏的「长什么样」——画风、时代地点、光线色彩、镜头语言。
+// 剧本设定：一部戏的「长什么样」——画风、时代地点、光线色彩、镜头语言。
 //
 // 起因：剧情拆出来的每格只有一句 40~80 字的画面描述，生成时也只多挂了 @角色名，
 // 六张图能长出六个派系。这里把设定存进 projects/<id>/story.json，逐格拼在描述前面。
@@ -160,7 +160,7 @@ function storyRender() {
 
   box.appendChild(storyField("统一负面词（格子自己没填时用它）", "storyNeg", d.negative, "低清，畸形手，多余手指，文字水印"));
 
-  // #92 风格参考图：只读它的画风（不当生成参考图，免得模型抄内容）
+  // 风格参考图：只读它的画风（不当生成参考图，免得模型抄内容）
   const refRow = document.createElement("div");
   refRow.className = "row tight";
   const refBtn = document.createElement("button");

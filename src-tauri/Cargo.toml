@@ -25,7 +25,7 @@ lettre = { version = "0.11", default-features = false, features = ["smtp-transpo
 [target.'cfg(windows)'.dependencies]
 windows-sys = { version = "0.61", features = ["Win32_Foundation", "Win32_Security", "Win32_System_Threading", "Win32_Security_Cryptography", "Win32_System_Memory"] }
 
-# 构建产物清理门（#101）：这两行是**根因修复**，不是口味。
+# 构建产物清理门：这两行是**根因修复**，不是口味。
 # ① incremental = false —— 本仓 target/debug/incremental 实测 120.9 GiB（它只缓存我们自己的
 #    crate，依赖不走增量；关掉 = 每次重编本地那几个 crate，几秒到几分钟）。
 # ② debug = 1 —— 只留行号表。debug = 2（默认）的完整调试信息 + *.pdb 才是另一个大头

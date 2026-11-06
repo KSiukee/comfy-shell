@@ -161,7 +161,7 @@ $("projHide").onclick = async () => {
   }
 };
 
-// #84：项目级的「云端看图」开关——入口在看图弹窗里（不挤项目栏）。
+// 项目级的「云端看图」开关——入口在看图弹窗里（不挤项目栏）。
 // 判定逻辑与开关本身在 analyze.js（anaCloudAllowed / anaToggleProjectCloud）。
 
 $("projDelete").onclick = async () => {

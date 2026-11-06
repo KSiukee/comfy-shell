@@ -42,7 +42,7 @@ pub async fn story_split(
         if api::health(port).is_none() {
             return Err("ComfyUI 没有在运行".into());
         }
-        // #91：拆的时候就带上这部戏的设定（画风/时代/光线），别等出图才对齐
+        // 拆的时候就带上这部戏的设定（画风/时代/光线），别等出图才对齐
         let ctx = project
             .map(|p| story::load(&state::cfg_dir(&handle), &p).split_context())
             .filter(|c| !c.trim().is_empty());
@@ -117,7 +117,7 @@ fn cloud_allowed(
     Ok(want_cloud && has_key)
 }
 
-/// #82 看图拆提示词：五块候选（主体/镜头/光线/色彩/风格），每块 2~3 条短句，界面点一下接进提示词。
+/// 看图拆提示词：五块候选（主体/镜头/光线/色彩/风格），每块 2~3 条短句，界面点一下接进提示词。
 ///
 /// 两种引擎：`cloud`（OpenAI 兼容端点，默认 DeepSeek deepseek-flash）+ `local`（本机 Qwen3-VL）。
 /// - 私密项目**只能本地**（`cloud_allowed` 直接拒）；
@@ -143,7 +143,7 @@ pub async fn analyze_blocks(
         let mut notes: Vec<String> = Vec::new();
         let t0 = std::time::Instant::now();
 
-        // #84：项目级开关决定「许不许发」，私密项目没显式打开就是关的
+        // 项目级开关决定「许不许发」，私密项目没显式打开就是关的
         let project_rec = project
             .as_deref()
             .and_then(|p| crate::project::load(&cfg, p).ok());
@@ -200,7 +200,7 @@ pub async fn analyze_blocks(
     .map_err(|e| format!("解析任务失败: {e}"))?
 }
 
-/// #84：前端「发送确认」要展示的原文——发到哪、用哪个模型、真正会发出去的那段提示词。
+/// 前端「发送确认」要展示的原文——发到哪、用哪个模型、真正会发出去的那段提示词。
 #[tauri::command]
 pub fn vision_info(app: tauri::AppHandle) -> serde_json::Value {
     let state = app.state::<AppState>();
@@ -245,7 +245,7 @@ pub async fn face_detect(app: tauri::AppHandle, image: String) -> Result<serde_j
     .map_err(|e| format!("找脸任务失败: {e}"))?
 }
 
-/// #91：拆分实际会发给模型的正文（界面/测试都能看到设定有没有带上）。
+/// 拆分实际会发给模型的正文（界面/测试都能看到设定有没有带上）。
 #[tauri::command]
 pub fn story_split_preview(app: tauri::AppHandle, project: Option<String>, text: String, max_panels: u32) -> String {
     let ctx = project

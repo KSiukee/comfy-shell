@@ -59,7 +59,7 @@ pub fn project_set_hidden(app: tauri::AppHandle, id: String, hidden: bool) -> Re
     project::set_hidden(&cfg_dir(&app), &id, hidden)
 }
 
-/// #84：项目的云端看图开关。
+/// 项目的云端看图开关。
 ///
 /// **私密项目打开必须带 `confirm: true`**——界面会先弹一次写明后果的确认；
 /// 没带就直接拒。红线由后端守，不指望每个调用方都记得。

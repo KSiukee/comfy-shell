@@ -73,7 +73,7 @@ fn read_meta_under_only_inside_root() {
     let _ = std::fs::remove_dir_all(&base);
 }
 
-// ---------------------------------------------------------------- #88 种子互查
+// ---------------------------------------------------------------- 种子互查
 
 /// 造一张「ComfyUI 会写出来的样子」的 PNG：带一个 fake 的 prompt 文本块。
 fn png_with_prompt(json_text: &str) -> Vec<u8> {

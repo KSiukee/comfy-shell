@@ -1,4 +1,4 @@
-// 设置弹窗的读写（#86 起从 app.js 搬出来：那边只许缩，不许长）。
+// 设置弹窗的读写（起从 app.js 搬出来：那边只许缩，不许长）。
 //
 // 规矩没变：**从现有设置铺开再覆盖表单上的字段**——别把 simpleUi / kohya 路径
 // 之类的旧字段冲掉，否则保存一次就把它们重置成默认值。
@@ -12,9 +12,9 @@ function collectSettings() {
     autoStart: $("setAutoStart").checked,
     stopOnExit: $("setStopOnExit").checked,
     freeEnhance: $("setFreeEnhance").checked,
-    // #86 超分后替换原图（默认关）
+    // 超分后替换原图（默认关）
     replaceOriginal: $("setReplaceOriginal") ? $("setReplaceOriginal").checked : false,
-    // #82 云端视觉端点（留空 = DeepSeek / deepseek-flash）
+    // 云端视觉端点（留空 = DeepSeek / deepseek-flash）
     visionBase: $("aiVisionBase") ? $("aiVisionBase").value.trim() : "",
     visionModel: $("aiVisionModel") ? $("aiVisionModel").value.trim() : "",
   });

@@ -1,4 +1,4 @@
-//! 换脸（#60）：裁脸 → 重绘 → 羽化贴回。
+//! 换脸：裁脸 → 重绘 → 羽化贴回。
 //!
 //! 和「局部重绘」的区别在取景：这里给模型一张**完整的脸**（脸框外扩 1.6 倍的
 //! 方形裁块、缩放到 1024），蒙版只盖脸（脸框 ×1.15 的圆角矩形）——模型看到的是
@@ -178,7 +178,7 @@ where
         _ => None,
     };
 
-    // #88：随机种子在提交前定下来——换脸的最终图是壳自己合成的 PNG（没有 ComfyUI 的
+    // 随机种子在提交前定下来——换脸的最终图是壳自己合成的 PNG（没有 ComfyUI 的
     // 工作流块），种子只能靠我们自己记牢，否则永远找不回来。
     let seed = if req.seed < 0 { api::pick_seed(-1) } else { req.seed };
     let ireq = api::InpaintReq {
@@ -393,8 +393,8 @@ mod tests {
     /// 真机集成测试（默认忽略）：跑一次完整的「找脸 → 裁脸 → 重绘 → 贴回」。
     ///
     /// 跑法（PowerShell）：
-    ///   $env:CS_COMFY_ROOT="D:\...\ComfyUI_windows_portable"
-    ///   $env:CS_TEST_SRC="D:\...\有人脸的图.png"   # 不给就现生成一张中性人像
+    ///   $env:CS_COMFY_ROOT="<ComfyUI 根目录>"
+    ///   $env:CS_TEST_SRC="<一张有人脸的图>"   # 不给就现生成一张中性人像
     ///   cargo test live_swap -- --ignored --nocapture
     #[test]
     #[ignore = "真机：需要本机 ComfyUI 在跑，且给出 CS_COMFY_ROOT"]

@@ -119,7 +119,7 @@ pub fn image_meta(state: State<AppState>, path: String) -> Option<serde_json::Va
     let root = { state.settings.lock().ok()?.comfy_root.clone() };
     let p = std::path::Path::new(&path);
     let mut meta = crate::imgmeta::read_meta_under(std::path::Path::new(&root), p);
-    // #88：老图（和 v0.113 之前的随机图）元数据里种子只有 -1；
+    // 老图（和 v0.113 之前的随机图）元数据里种子只有 -1；
     // ComfyUI 自己写在 PNG 里的 `prompt` 工作流块有真实种子，从那里兜底读回。
     let need = match meta.as_ref().and_then(|m| m.get("seed")).and_then(|v| v.as_i64()) {
         Some(s) => s < 0,
@@ -134,7 +134,7 @@ pub fn image_meta(state: State<AppState>, path: String) -> Option<serde_json::Va
             }
         }
     }
-    // #88：种子交给前端一律用字符串——i64 超过 2^53 时 JSON 数字会被 JS 舍入
+    // 种子交给前端一律用字符串——i64 超过 2^53 时 JSON 数字会被 JS 舍入
     if let Some(o) = meta.as_mut().and_then(|m| m.as_object_mut()) {
         if let Some(s) = o.get("seed").and_then(|v| v.as_i64()) {
             o.insert("seed".into(), json!(s.to_string()));

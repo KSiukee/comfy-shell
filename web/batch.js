@@ -228,7 +228,7 @@ async function runBatchEdit() {
   const target = p && p.supportsEdit ? p.id : "qwen21";
   const w = Number($("width").value);
   const h = Number($("height").value);
-  const seed = $("seed").value; // #88 原样保留（可能是超过 2^53 的老种子）
+  const seed = $("seed").value; // 原样保留（可能是超过 2^53 的老种子）
   $("model").value = target;
   $("model").dispatchEvent(new Event("change", { bubbles: true }));
   $("width").value = w;

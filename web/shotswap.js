@@ -1,4 +1,4 @@
-// 每格补身份（#98）：先出图，再换脸 / 换头。
+// 每格补身份：先出图，再换脸 / 换头。
 //
 // 两条路都在壳里现成：
 //   换脸 = FLUX 裁脸贴回（faceswap.rs 的 face_swap），保留这一格自己的发型/头饰；
@@ -157,7 +157,7 @@ $("shotsSwapAll").onclick = async () => {
 $("shotsSwapCards").onclick = () => shotSwapFillCards();
 shotSwapFillCards();
 
-/// 换头但保构图（#97）：只把「头那一块」用局部重绘换成角色卡的发型与头饰，身体、衣服、背景原样。
+/// 换头但保构图：只把「头那一块」用局部重绘换成角色卡的发型与头饰，身体、衣服、背景原样。
 /// 和整图换头的区别：不动构图，代价是只换得到头发/头饰，脸换得没那么「整」。
 async function shotSwapHeadKeepOne(s, card, maskOverride) {
   const src = (s.images || []).slice(-1)[0];
@@ -233,7 +233,7 @@ document.querySelectorAll('input[name="shotSwapMode"]').forEach((el) => {
   });
 });
 
-/// #99 换头·裁块贴回：裁一块带头带肩膀的方图 → BFS 换头 → 椭圆软边贴回原图。
+/// 换头·裁块贴回：裁一块带头带肩膀的方图 → BFS 换头 → 椭圆软边贴回原图。
 /// 尺度天然正确（裁块里头的比例就是原图的），构图/身体/背景一个字都不动。
 async function shotSwapHeadCropOne(s, card) {
   const src = (s.images || []).slice(-1)[0];

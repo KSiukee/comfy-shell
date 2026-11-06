@@ -32,7 +32,7 @@ pub struct Project {
     pub hidden: bool,
     /// 占位：锁定区
     pub private: bool,
-    /// 云端视觉（#84）：`None` = 按规矩（私密项目默认关、普通项目默认开）；`Some` = 用户显式选择
+    /// 云端视觉：`None` = 按规矩（私密项目默认关、普通项目默认开）；`Some` = 用户显式选择
     pub cloud_vision: Option<bool>,
     /// 保留：测试项目 `_test`
     pub test: bool,
@@ -220,7 +220,7 @@ pub fn set_hidden(cfg: &Path, id: &str, hidden: bool) -> Result<Project, String>
     Ok(p)
 }
 
-/// #84：写项目级的云端视觉开关（`None` = 回到「按规矩」）。
+/// 写项目级的云端视觉开关（`None` = 回到「按规矩」）。
 pub fn set_cloud_vision(cfg: &Path, id: &str, on: Option<bool>) -> Result<Project, String> {
     let mut p = load(cfg, id)?;
     p.cloud_vision = on;

@@ -328,7 +328,7 @@ fn vision_json(port: u16, image: &str, prompt: &str, max_length: u32) -> Result<
     Ok(extract_json(&text))
 }
 
-/// #82 看图拆提示词：五块候选（主体 / 镜头 / 光线 / 色彩 / 风格），每块 2~3 条。
+/// 看图拆提示词：五块候选（主体 / 镜头 / 光线 / 色彩 / 风格），每块 2~3 条。
 /// 只出 JSON 文本；怎么收口（去重、限长、块数校验）在 `vblocks::parse`。
 pub fn blocks(port: u16, image: &str) -> Result<String, String> {
     vision_json(port, image, BLOCKS_PROMPT, 520)
@@ -505,7 +505,7 @@ fn looks_refused(text: &str) -> bool {
     NEEDLES.iter().any(|n| t.contains(n))
 }
 
-/// 通用本地改写（#81 编译器用）：同一个本地文本模型，系统提示由调用方给。
+/// 通用本地改写（编译器用）：同一个本地文本模型，系统提示由调用方给。
 /// 走 heretic 那份文本编码器——它是这台机器上唯一「你说什么它写什么」的本地写手。
 pub fn rewrite(port: u16, system: &str, prompt: &str, max_length: u32) -> Result<String, String> {
     let wf = json!({
@@ -571,7 +571,7 @@ pub fn story_split(port: u16, text: &str, max_panels: u32, context: Option<&str>
                     .trim()
                     .trim_start_matches(|c: char| c.is_ascii_digit() || c == '.' || c == '、' || c == '-' || c == '*')
                     .trim();
-                // #96：先清导演腔（动作连贯推进/定格瞬间/冷暖对比…），清完还太短就整行不要
+                // 先清导演腔（动作连贯推进/定格瞬间/冷暖对比…），清完还太短就整行不要
                 let cleaned = crate::story::clean_panel(line);
                 if cleaned.chars().count() >= 8 && !cleaned.starts_with('（') {
                     panels.push(cleaned);
@@ -586,7 +586,7 @@ pub fn story_split(port: u16, text: &str, max_panels: u32, context: Option<&str>
     panels
 }
 
-/// #90：给每一格写「这一格结束时」的状态，供下一格接续。
+/// 给每一格写「这一格结束时」的状态，供下一格接续。
 /// 返回的行数尽量与输入对齐（模型少写就补空，多写就截）。
 pub fn continuity_states(port: u16, panels: &[String]) -> Vec<String> {
     let n = panels.len();

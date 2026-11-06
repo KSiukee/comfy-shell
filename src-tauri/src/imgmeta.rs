@@ -144,7 +144,7 @@ pub fn read_png_meta(path: &Path) -> Option<Value> {    let bytes = std::fs::rea
 
 /// 从 ComfyUI 写进 PNG 的 `prompt` 文本块（完整 API 工作流 JSON）里捞 KSampler 的种子。
 ///
-/// #88 之前「随机」(-1) 生成时我们自己的元数据只记了 -1，真实种子只在 ComfyUI 这个块里。
+/// 之前「随机」(-1) 生成时我们自己的元数据只记了 -1，真实种子只在 ComfyUI 这个块里。
 /// 换脸那种由壳自己合成的结果图没有这个块，捞不到（只能靠新版本写入的真种子）。
 pub fn read_comfy_seed(path: &Path) -> Option<i64> {
     let bytes = std::fs::read(path).ok()?;

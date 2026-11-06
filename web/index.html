@@ -344,7 +344,7 @@
     </div>
   </div>
 
-  <!-- prompt compiler (#81) -->
+  <!-- prompt compiler  -->
   <div class="modal" id="compileModal" hidden>
     <div class="modal-card" style="width: 760px; max-height: calc(100vh - 40px); overflow: auto">
       <h3>编译提示词 <span class="muted" style="font-size:12px" id="compileFor">当前模型</span></h3>
@@ -415,7 +415,7 @@
     </div>
   </div>
 
-  <!-- 看图拆提示词（#82）：五块候选，点一下接进提示词 -->
+  <!-- 看图拆提示词：五块候选，点一下接进提示词 -->
   <div class="modal" id="anaModal" hidden>
     <div class="modal-card" style="width: 880px; max-height: calc(100vh - 40px); overflow: auto">
       <h3>看图拆提示词 <span class="muted" style="font-size:12px">云端 / 本地可选 · 五块候选 · 点一下接进提示词</span></h3>
@@ -455,7 +455,7 @@
     </div>
   </div>
 
-  <!-- #84 云端发送确认：把「这次会发什么」摊开，可取消 -->
+  <!-- 云端发送确认：把「这次会发什么」摊开，可取消 -->
   <div class="modal" id="cloudSend" hidden>
     <div class="modal-card" style="width: 720px; max-height: calc(100vh - 40px); overflow: auto">
       <h3>这次会发出去 <span class="muted" style="font-size:12px">图片会离开本机</span></h3>
@@ -801,7 +801,7 @@
     </div>
   </div>
 
-  <!-- faceswap (#60) / Qwen 换头换身 (#89) -->
+  <!-- faceswap  / Qwen 换头换身  -->
   <div class="modal" id="faceModal" hidden>
     <div class="modal-card">
       <h3>换脸 <span class="muted mono" id="faceInfo"></span></h3>
@@ -1383,7 +1383,7 @@
         <select id="shotSwapCard" class="mini-select" title="用哪张角色卡的底板"></select>
         <label class="check"><input type="radio" name="shotSwapMode" value="face" checked /> 只换脸（保留本格发型）</label>
         <label class="check"><input type="radio" name="shotSwapMode" value="head" /> 换头（连发饰一起，会重排构图）</label>
-        <!-- #101 收摊：下面两个实验模式先藏起来（代码留着，随时能开回来）。
+        <!-- 收摊：下面两个实验模式先藏起来（代码留着，随时能开回来）。
              裁块贴回：能保构图保尺度，但光照/朝向是两张照片的拼贴，看着诡异；
              局部重绘：小脸会变巨脸。详见 docs/101-收摊-补身份路线结论-20261105.md -->
         <label class="check" hidden title="实验：裁块→BFS换头→软边贴回；尺度对但光照朝向对不上"><input type="radio" name="shotSwapMode" value="crop" /> 换头·裁块贴回（实验）</label>
@@ -1406,7 +1406,7 @@
       <div class="muted" style="font-size:11.5px;margin-bottom:8px">
         自动蒙版在侧脸/回头时盖不住后脑勺，会画出两个头。这里你自己框：只重绘框里的部分，其余原样保留。
       </div>
-      <div id="shotMaskWrap" style="position:relative;width:100%;aspect-ratio:2/3;background:#111;border-radius:8px;overflow:hidden">
+      <div id="shotMaskWrap" style="position:relative;width:100%;aspect-ratio:2/3;background:;border-radius:8px;overflow:hidden">
         <img id="shotMaskImg" style="display:block;width:100%;height:100%;object-fit:contain" />
         <canvas id="shotMaskCanvas" style="position:absolute;inset:0;width:100%;height:100%;cursor:crosshair"></canvas>
       </div>

@@ -65,7 +65,7 @@ use super::*;
         let _ = std::fs::remove_dir_all(&cfg);
     }
 
-    // ---- #84 云端看图开关 ----
+    // ---- 云端看图开关 ----
 
     #[test]
     fn cloud_vision_defaults_follow_the_red_line() {

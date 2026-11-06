@@ -240,7 +240,7 @@ pub fn make_private(cfg: &Path, output: &Path, id: &str) -> Result<Project, Stri
     }
     let mut project = crate::project::load(cfg, id)?;
     project.private = true;
-    // #84：变成私密项目就把云端看图收回默认关——红线不能因为「以前开过」漏过去
+    // 变成私密项目就把云端看图收回默认关——红线不能因为「以前开过」漏过去
     project.cloud_vision = Some(false);
 
     let src_imgs = output.join("projects").join(id);

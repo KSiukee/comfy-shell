@@ -149,10 +149,10 @@ pub struct GenReq {
     /// 自定义工作流的参数覆盖：键 `节点id|输入名`
     #[serde(default)]
     pub wf_params: Option<std::collections::BTreeMap<String, serde_json::Value>>,
-    /// #89：采样器覆盖（Qwen 换头/换身的 BFS 配方用 deis；空 = 用模型档默认）
+    /// 采样器覆盖（Qwen 换头/换身的 BFS 配方用 deis；空 = 用模型档默认）
     #[serde(default)]
     pub sampler: Option<String>,
-    /// #89：Qwen 编辑的 resolution（0 = latent 跟随参考图，BFS 换身要这个）
+    /// Qwen 编辑的 resolution（0 = latent 跟随参考图，BFS 换身要这个）
     #[serde(default)]
     pub edit_resolution: Option<u32>,
     /// active project id: save under `output/projects/<id>/`
@@ -386,7 +386,7 @@ fn seed_of(req: &GenReq) -> i64 {
 
 /// -1 (or any negative) means "roll a random seed".
 ///
-/// #88：随机种子上限压在 2^53——再大就超出 JavaScript 的安全整数范围，图库/历史里
+/// 随机种子上限压在 2^53——再大就超出 JavaScript 的安全整数范围，图库/历史里
 /// 显示和回填的种子会被舍入成另一个值，「用这张的参数再生成」就复现不了了。
 pub fn pick_seed(seed: i64) -> i64 {
     if seed < 0 {
@@ -424,12 +424,12 @@ where
 }
 
 /// Build an API-format graph for the requested profile/mode.
-/// #99 换头（BFS）共用：提示词与 LoRA 名。
+/// 换头（BFS）共用：提示词与 LoRA 名。
 pub const HEAD_SWAP_PROMPT: &str = "head_swap: start with <image1> as the base image, keeping its lighting, environment, and background. remove the head from <image1> completely and replace it with the head from <image2>, strictly preserving the hair, eye color, nose structure from <image2>. copy the direction of the eye, head rotation, micro expressions from <image1>, high quality, sharp details, 4k";
 pub const BFS_HEAD_LORA: &str = "bfs_head_v1.1_qwen_2.1.safetensors";
 pub const QWEN_ACCEL_LORA: &str = "p_qwen_image_2.1_8step_v0.1.safetensors";
 
-/// #99：裁块换头的图（image_1 = 带肩膀的裁块，image_2 = 底板紧裁头）。
+/// 裁块换头的图（image_1 = 带肩膀的裁块，image_2 = 底板紧裁头）。
 /// 8 步 + cfg1 + deis + 加速 LoRA 是 BFS 官方配方。
 pub fn build_head_swap(scene_name: &str, head_name: &str, steps: u32, cfg: f64, seed: i64) -> Value {
     let p = profile("qwen21").expect("qwen21 profile");
@@ -468,7 +468,7 @@ pub fn build_graph(req: &GenReq, turbo: bool) -> Result<Value, String> {
         req.cfg
     };
     let batch = req.batch.clamp(1, 8);
-    // #89：允许请求方覆盖采样器（BFS 配方是 8 步 + cfg1 + deis，和 qwen21 默认的 euler/45 不同）
+    // 允许请求方覆盖采样器（BFS 配方是 8 步 + cfg1 + deis，和 qwen21 默认的 euler/45 不同）
     let sampler = req
         .sampler
         .as_deref()
@@ -588,11 +588,11 @@ pub fn build_graph(req: &GenReq, turbo: bool) -> Result<Value, String> {
             te.insert("clip".into(), json!(["3", 0]));
             te.insert("prompt".into(), json!(req.prompt));
             te.insert("negative_prompt".into(), json!(req.negative));
-            // #89：0 = 让 latent 跟着参考图（BFS 换身的工作流就是这么用的）
+            // 0 = 让 latent 跟着参考图（BFS 换身的工作流就是这么用的）
             let res = req.edit_resolution.unwrap_or_else(|| req.width.max(req.height).clamp(512, 2048));
             te.insert("resolution".into(), json!(res));
             te.insert("vae".into(), json!(["4", 0]));
-            // #89：两张参考（image_1 = 场景/底图，image_2 = 头或人）——BFS 换头/换身要这个
+            // 两张参考（image_1 = 场景/底图，image_2 = 头或人）——BFS 换头/换身要这个
             for (i, img) in req.ref_images.iter().take(2).enumerate() {
                 let nid = format!("{}", 20 + i);
                 g.insert(nid.clone(), json!({"class_type": "LoadImage", "inputs": {"image": img}}));

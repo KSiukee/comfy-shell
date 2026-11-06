@@ -47,7 +47,7 @@ function shotCastOf(s) {
 
 /// 出图要用的提示词：原文 + 这一镜挂的 `@名字`（原文里已经写了的就不重复塞）。
 async function shotCastPrompt(s) {
-  // 后端拼好「画风前缀 + 上一格落点 + 本格原文」（#94 + #90），这里只追加 @角色名
+  // 后端拼好「画风前缀 + 上一格落点 + 本格原文」，这里只追加 @角色名
   let raw = (s.prompt || "").trim();
   try {
     const p = shotProject();
