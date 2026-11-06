@@ -175,7 +175,9 @@ function lazyLoadPoses() {
   });
 }
 
-$("btnPoses").onclick = () => { $("anaModal").hidden = true; $("layoutModal").hidden = true; openPoses(); };
+// 姿势库的入口现在只在「提示词辅助」里（参考图那一行不再单放一个按钮）
+const posesBtn = document.getElementById("btnPoses");
+if (posesBtn) posesBtn.onclick = () => { $("anaModal").hidden = true; $("layoutModal").hidden = true; openPoses(); };
 $("btnPoses2").onclick = () => { $("anaModal").hidden = true; $("layoutModal").hidden = true; openPoses(); };
 $("poseClose").onclick = () => ($("poseModal").hidden = true);
 $("poseSearch").oninput = () => { poseShown = 0; renderPoses(); };

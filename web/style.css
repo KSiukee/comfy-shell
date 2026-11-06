@@ -619,6 +619,8 @@ body.mode-pro .simple-only { display: none !important; }
 .topbar-pop { border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; background: #0f1219; }
 .topbar-list { display: grid; grid-template-columns: 1fr 1fr; gap: 6px 14px; }
 .topbar-item { white-space: nowrap; font-size: 12px; }
+.pin-bar { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.pin-bar .btn { white-space: nowrap; }
 #anaFields input { font-size: 12.5px; }
 
 #anaFields input, #anaPrompt, #anaRaw {
